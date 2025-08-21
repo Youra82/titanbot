@@ -1,0 +1,26 @@
+{
+    "symbol": "XRP/USDT:USDT",
+    "htf_timeframe": "1d",
+    "ltf_timeframe": "15m",
+    "margin_mode": "isolated",
+    "leverage": 10,
+    "use_longs": true,
+    "use_shorts": true,
+    "trade_size_pct": 30,
+    "max_retries": 3,
+    "retry_delay": 2,
+
+    "retest_tolerance_pct": 0.1,
+    "trade_split_ratio": 0.5,
+
+    "enable_initial_stop_loss": true,
+    "initial_sl_placement_pct": 0.4,
+
+    "enable_trailing_stop_loss": true,
+    "tsl_lookback_candles": 3,
+
+    "sma_filter": {
+        "enabled": false,
+        "period": 20
+    }
+}
