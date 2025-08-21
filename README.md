@@ -5,11 +5,11 @@ _A homemade humble library to run automated python crypto trading bots_
 \
 🛠️ Setup commands (virtual environment included)
 -------------
-> git clone https://github.com/Youra82/jaegerbot.git \
-> bash jaegerbot/install.sh
+> git clone https://github.com/Youra82/titanbot.git \
+> bash titanbot/install.sh
 
 Botausführung:
-> bash jaegerbot/code/run_envelope.sh
+> bash titanbot/code/run_envelope.sh
 
 Monitorinstallation:
 > chmod +x monitor_bot.sh
@@ -25,7 +25,7 @@ Cache vom Optimizer löschen:
 
 Abfrage der letzten Trading-Entscheidungen:
 
-> grep "TRADE_DECISION:" /home/ubuntu/jaegerbot/logs/envelope.log | tail -n 20
+> grep "TRADE_DECISION:" /home/ubuntu/titanbot/logs/envelope.log | tail -n 20
 
 Crontab -e jobs ansehen:
 > grep CRON /var/log/syslog | tail -n 20
