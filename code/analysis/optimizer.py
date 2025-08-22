@@ -206,16 +206,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Strategie-Optimierer für den Titan Bot.")
     parser.add_argument('--start', required=True, help="Startdatum YYYY-MM-DD")
     parser.add_argument('--end', required=True, help="Enddatum YYYY-MM-DD")
-    parser.add_argument('--symbol', required=True, help="Handelspaar (z.B. BTC/USDT:USDT)")
+    parser.add_argument('--symbol', required=True, help="Handelspaar (z.B. BTC oder BTC/USDT:USDT)")
     parser.add_argument('--leverage', type=float, default=10.0, help="Maximaler Hebel für die Simulation")
     parser.add_argument('--start_capital', type=float, default=1000.0, help="Startkapital in USDT")
     parser.add_argument('--trade_size_pct', type=float, default=10.0, help="Prozent des Kapitals pro Trade (Margin)")
     args = parser.parse_args()
+
+    # +++ NEUE, AUTOMATISCHE SYMBOL-FORMATIERUNG +++
+    raw_symbol = args.symbol
+    if '/' not in raw_symbol:
+        formatted_symbol = f"{raw_symbol.upper()}/USDT:USDT"
+        print(f"INFO: Symbol '{raw_symbol}' wurde zu '{formatted_symbol}' formatiert.")
+    else:
+        formatted_symbol = raw_symbol.upper()
     
     run_titan_optimization(
         args.start, 
         args.end, 
-        args.symbol, 
+        formatted_symbol,  # Hier wird das formatierte Symbol übergeben
         args.leverage, 
         args.start_capital,
         args.trade_size_pct
