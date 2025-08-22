@@ -1,49 +1,31 @@
 {
     "_HEADING_STEP_1_": "------------------- 1. STRATEGIE AUSWÄHLEN -------------------",
     "_info_step_1_": "Trage die Nummer der gewünschten Strategie aus der 'strategy_map' unten ein:",
-
     "active_strategy_number": 1,
-
     "strategy_map": {
         "1": "momentum_accelerator -> Schnelle Ausbrüche mit Volumen & VWAP.",
         "2": "volatility_catcher   -> Ausbrüche nach Marktberuhigung (Bollinger Bänder).",
         "3": "tidal_wave_rider     -> Trend-Handel mit Pullbacks zu den EMAs."
     },
-
     "_HEADING_STEP_2_": "------------------- 2. STRATEGIE-PARAMETER -------------------",
     "_info_step_2_": "Hier kannst du die Einstellungen für jede Strategie anpassen.",
-
     "strategies": {
-        "momentum_accelerator": {
-            "volume_ma_period": 20,
-            "volume_ma_multiplier": 1.5,
-            "crv": 2.0
-        },
+        "momentum_accelerator": { "volume_ma_period": 20, "volume_ma_multiplier": 1.5, "crv": 2.0 },
         "_separator_1_": "----------------------------------------------------",
-        "volatility_catcher": {
-            "bb_period": 20,
-            "bb_std_dev": 2.0
-        },
+        "volatility_catcher": { "bb_period": 20, "bb_std_dev": 2.0 },
         "_separator_2_": "----------------------------------------------------",
-        "tidal_wave_rider": {
-            "ema_fast_period": 9,
-            "ema_slow_period": 21
-        }
+        "tidal_wave_rider": { "ema_fast_period": 9, "ema_slow_period": 21 }
     },
-
     "_HEADING_STEP_3_": "------------------- 3. GLOBALE EINSTELLUNGEN -------------------",
     "_info_step_3_": "Diese Einstellungen gelten immer, egal welche Strategie aktiv ist.",
-
     "global_settings": {
         "symbol": "BTC/USDT:USDT",
         "timeframe": "15m",
         "margin_mode": "isolated",
         "loss_account_max_strikes": 3
     },
-
     "_HEADING_STEP_4_": "------------------- 4. DYNAMISCHES RISIKOMANAGEMENT -------------------",
     "_info_step_4_": "Diese Einstellung bestimmt, wie viel % des Gesamtkapitals pro Trade riskiert wird.",
-
     "risk_management": {
         "risk_per_trade_pct": 1.5
     }
