@@ -1,162 +1,222 @@
-# code/analysis/optimizer.py
-import os, sys, json, pandas as pd, warnings
+import os
+import sys
+import json
+import pandas as pd
+import warnings
 from itertools import product
 import argparse
+import time
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+# Systempfad hinzufügen, um andere Module zu finden
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from analysis.backtest import load_data_for_timeframe, map_levels_to_ltf, run_jaeger_backtest
-from utilities.strategy_logic import calculate_jaeger_signals, add_sma_to_htf
+from analysis.backtest import load_data, run_titan_backtest
+from utilities.strategy_logic import calculate_momentum_signals, calculate_volatility_signals, calculate_tidal_wave_signals
 
-def run_jaeger_optimization(start_date, end_date, symbol, custom_leverage=None, timeframe_str=None, filter_mode=None, sma_periods_str=None, start_capital=None, initial_sls_str=None, tsl_lookbacks_str=None, target_pnl=None):
-    if '/' not in symbol:
-        formatted_symbol = f"{symbol.upper()}/USDT:USDT"
-        print(f"Formatiere '{symbol}' zu '{formatted_symbol}'.")
-    else: formatted_symbol = symbol.upper()
-
-    config_path = os.path.join(os.path.dirname(__file__), '..', 'strategies', 'envelope', 'config.json')
-    with open(config_path, 'r') as f: base_params = json.load(f)
-    
-    if custom_leverage is not None:
-        print(f"HINWEIS: Standard-Hebel wird überschrieben. Verwende {custom_leverage}x für diesen Lauf.")
-        base_params['leverage'] = custom_leverage
-    if start_capital is not None:
-        base_params['start_capital'] = start_capital
-
-    base_params['symbol'] = formatted_symbol
-    print(f"\n#################### START OPTIMIERUNG FÜR: {formatted_symbol} ####################")
-
-    timeframe_pairs = [tuple(pair.split('/')) for pair in timeframe_str.split(',')]
-    
-    filter_options = []
-    if filter_mode == 'on': filter_options = [True]
-    elif filter_mode == 'off': filter_options = [False]
-    else: filter_options = [True, False]
-
-    sma_periods = [20] 
-    if sma_periods_str:
-        sma_periods = [int(p) for p in sma_periods_str.split()]
-        
-    initial_sl_list = [float(p) for p in initial_sls_str.split()]
-    tsl_lookback_list = [int(p) for p in tsl_lookbacks_str.split()]
-
-    param_grid = {
-        'retest_tolerance_pct': [0.05, 0.1],
-        'initial_sl_placement_pct': initial_sl_list,
-        'tsl_lookback_candles': tsl_lookback_list,
-        'use_sma_filter': filter_options,
-        'sma_period': sma_periods
+# --- Strategie-Konfiguration für den Optimizer ---
+STRATEGY_CONFIG = {
+    "momentum_accelerator": {
+        "signal_func": calculate_momentum_signals,
+        "params": {
+            "volume_ma_period": "20 30",
+            "volume_ma_multiplier": "1.5 2.0",
+            "crv": "1.5 2.0 2.5"
+        }
+    },
+    "volatility_catcher": {
+        "signal_func": calculate_volatility_signals,
+        "params": {
+            "bb_period": "20 25",
+            "bb_std_dev": "2 2.5"
+        }
+    },
+    "tidal_wave_rider": {
+        "signal_func": calculate_tidal_wave_signals,
+        "params": {
+            "ema_fast_period": "9 12",
+            "ema_slow_period": "21 26"
+        }
     }
-    
-    if filter_mode == 'off':
-        param_grid['sma_period'] = [sma_periods[0]] 
+}
 
-    keys, values = zip(*param_grid.items())
-    param_combinations = [dict(zip(keys, v)) for v in product(*values)]
-    
-    all_results = []
-    
-    for htf, ltf in timeframe_pairs:
-        print(f"\n--- Teste Zeitrahmen-Paar: HTF={htf}, LTF={ltf} ---")
-        print("Lade Daten für Optimierung...")
-        htf_data_full = load_data_for_timeframe(formatted_symbol, htf, start_date, end_date)
-        ltf_data_full = load_data_for_timeframe(formatted_symbol, ltf, start_date, end_date)
-        if htf_data_full.empty or ltf_data_full.empty:
-            print(f"Nicht genügend Daten für {formatted_symbol} mit Timeframes {htf}/{ltf}. Überspringe.")
-            continue
+def get_user_params(strategy_name):
+    """Fragt den Nutzer interaktiv nach den Optimierungsparametern."""
+    print(f"\n--- Parameter für '{strategy_name}' konfigurieren ---")
+    config = STRATEGY_CONFIG[strategy_name]['params']
+    user_params = {}
+    for param, default_values in config.items():
+        user_input = input(f"Werte für '{param}' eingeben (getrennt durch Leerzeichen, Enter für '{default_values}'): ")
+        user_params[param] = user_input.split() if user_input else default_values.split()
+        try:
+            user_params[param] = [int(p) for p in user_params[param]]
+        except ValueError:
+            user_params[param] = [float(p) for p in user_params[param]]
+    return user_params
+
+def parse_default_params(strategy_name):
+    """Liest die Standard-Parameter für den Automatik-Modus aus."""
+    config = STRATEGY_CONFIG[strategy_name]['params']
+    parsed_params = {}
+    for param, values_str in config.items():
+        values = values_str.split()
+        try:
+            parsed_params[param] = [int(p) for p in values]
+        except ValueError:
+            parsed_params[param] = [float(p) for p in values]
+    return parsed_params
+
+
+def run_titan_optimization(start_date, end_date, symbol, leverage, start_capital, trade_size_pct):
+    # --- Interaktive Auswahl der Strategie ---
+    print("\n=================================================")
+    print("           TITANBOT - STRATEGIE-OPTIMIZER          ")
+    print("=================================================")
+    print("Wähle eine Strategie zur Optimierung:")
+    strategy_names = list(STRATEGY_CONFIG.keys())
+    for i, name in enumerate(strategy_names):
+        print(f"  [{i+1}] {name.replace('_', ' ').title()}")
+    print(f"  [{len(strategy_names) + 1}] Alle Strategien nacheinander testen")
+
+    try:
+        choice = int(input(f"Auswahl [1-{len(strategy_names) + 1}]: "))
+    except ValueError:
+        print("Ungültige Eingabe. Abbruch.")
+        return
+
+    # --- Festlegen, welche Strategien durchlaufen werden ---
+    strategies_to_run = []
+    if choice == len(strategy_names) + 1:
+        strategies_to_run = strategy_names
+        print("\nINFO: Alle Strategien werden mit Standard-Parametern getestet.")
+    elif 1 <= choice <= len(strategy_names):
+        strategies_to_run.append(strategy_names[choice - 1])
+    else:
+        print("Ungültige Auswahl. Abbruch.")
+        return
+
+    timeframe = input("Zu testenden Timeframe eingeben (z.B. 15m): ")
+    if not timeframe:
+        print("Fehler: Timeframe ist erforderlich. Abbruch.")
+        return
+        
+    # --- Daten laden (nur einmal für alle Läufe) ---
+    print("\nLade historische Daten...")
+    data = load_data(symbol, timeframe, start_date, end_date)
+    if data.empty:
+        print(f"Nicht genügend Daten für {symbol} auf {timeframe}. Abbruch.")
+        return
+
+    # --- Hauptschleife, die über die ausgewählten Strategien iteriert ---
+    for strategy_name in strategies_to_run:
+        print("\n" + "#"*60)
+        print(f"#####  Starte Optimierung für Strategie: {strategy_name.upper()}  #####")
+        print("#"*60)
+
+        if len(strategies_to_run) > 1:
+            param_grid = parse_default_params(strategy_name)
+        else:
+            param_grid = get_user_params(strategy_name)
+        
+        signal_func = STRATEGY_CONFIG[strategy_name]['signal_func']
+
+        keys, values = zip(*param_grid.items())
+        param_combinations = [dict(zip(keys, v)) for v in product(*values)]
         total_runs = len(param_combinations)
-        print(f"Starte Optimierungslauf mit {total_runs} Kombinationen für {htf}/{ltf}...")
+
+        # BENCHMARK-LOGIK ZUR ZEITABSCHÄTZUNG
+        estimated_time_str = ""
+        if total_runs > 5:
+            print("\nFühre Benchmark zur Zeitabschätzung durch...", end="", flush=True)
+            sample_size = min(5, total_runs)
+            sample_params = param_combinations[:sample_size]
+            
+            start_benchmark = time.time()
+            for params_to_test in sample_params:
+                base_params = { 'leverage': leverage, 'start_capital': start_capital, 'trade_size_pct': trade_size_pct }
+                current_params = {**base_params, **params_to_test}
+                data_with_signals = signal_func(data.copy(), params_to_test)
+                run_titan_backtest(data_with_signals, current_params, verbose=False)
+            end_benchmark = time.time()
+            
+            avg_time_per_variant = (end_benchmark - start_benchmark) / sample_size
+            estimated_total_seconds = avg_time_per_variant * total_runs
+            
+            if estimated_total_seconds > 60:
+                minutes = int(estimated_total_seconds / 60)
+                seconds = int(estimated_total_seconds % 60)
+                estimated_time_str = f"Geschätzte Gesamtdauer: ca. {minutes} Minuten und {seconds} Sekunden."
+            else:
+                estimated_time_str = f"Geschätzte Gesamtdauer: ca. {int(estimated_total_seconds)} Sekunden."
+            print(" Fertig.")
+
+        # BESTÄTIGUNGS-SCHRITT
+        print(f"\nEs werden insgesamt {total_runs} Varianten simuliert.")
+        if estimated_time_str:
+            print(estimated_time_str)
+            
+        confirm = input("\nMöchten Sie mit der Berechnung fortfahren? [j/N]: ")
+        if confirm.lower() != 'j':
+            print("Optimierung für diese Strategie abgebrochen.")
+            continue 
+
+        print(f"\nStarte Lauf mit {total_runs} Kombinationen...")
+
+        all_results = []
         for i, params_to_test in enumerate(param_combinations):
-            print(f"\r  -> Bearbeite Variante {i+1} von {total_runs}...", end="", flush=True)
-            current_params = base_params.copy()
-            current_params.update(params_to_test)
-            current_params['sma_filter']['enabled'] = params_to_test['use_sma_filter']
-            current_params['sma_filter']['period'] = params_to_test['sma_period']
-            current_params['htf_timeframe'], current_params['ltf_timeframe'] = htf, ltf
-            htf_data = add_sma_to_htf(htf_data_full.copy(), current_params)
-            ltf_with_levels = map_levels_to_ltf(ltf_data_full.copy(), htf_data, htf)
-            data_with_signals = calculate_jaeger_signals(ltf_with_levels, None, current_params)
-            result = run_jaeger_backtest(data_with_signals, current_params, verbose=False)
+            print(f"\r  -> Simuliere Variante {i+1}/{total_runs}...", end="", flush=True)
+
+            base_params = {
+                'strategy_name': strategy_name, 'symbol': symbol, 'timeframe': timeframe,
+                'leverage': leverage, 'start_capital': start_capital, 'trade_size_pct': trade_size_pct
+            }
+            current_params = {**base_params, **params_to_test}
+
+            data_with_signals = signal_func(data.copy(), params_to_test)
+            result = run_titan_backtest(data_with_signals, current_params, verbose=False)
             all_results.append(result)
-        print(f"\r  -> Bearbeite Variante {total_runs} von {total_runs}... Fertig.")
+        print(" Fertig.")
 
-    if not all_results:
-        print("\nKeine Ergebnisse erzielt."); return
-        
-    print("\n\n--- Optimierung über alle Zeitrahmen abgeschlossen ---")
-    results_df = pd.DataFrame(all_results)
-    params_df = pd.json_normalize(results_df['params'])
-    results_df = pd.concat([results_df.drop('params', axis=1), params_df], axis=1)
-    
-    sorted_results_pnl = results_df.sort_values(
-        by=['total_pnl_pct', 'win_rate', 'trades_count'], 
-        ascending=[False, False, False]
-    ).head(10)
+        if not all_results:
+            print(f"\nKeine Ergebnisse für {strategy_name} erzielt."); continue
 
-    print(f"\nBeste Gesamtergebnisse für {formatted_symbol} (Top 10 nach PnL):")
-    for i, row in sorted_results_pnl.reset_index(drop=True).iterrows():
-        filter_status = f"Aktiviert (SMA {int(row['sma_filter.period'])})" if row['sma_filter.enabled'] else "Deaktiviert"
-        print("\n" + "="*30)
-        print(f"     --- PLATZ {i+1} ---")
-        print("="*30)
-        print("\n  LEISTUNG:")
-        print(f"    Gewinn (PnL):        {row['total_pnl_pct']:.2f} % (Hebel: {row['leverage']}x)")
-        if 'end_capital' in row and pd.notna(row['end_capital']):
-            print(f"    Endkapital:          {row['end_capital']:.2f} USDT (Start: {row['start_capital']:.2f} USDT)")
-        print(f"    Trefferquote:        {row['win_rate']:.2f} %")
-        print(f"    Anzahl Trades:       {int(row['trades_count'])}")
-        print("\n  BESTE EINSTELLUNGEN:")
-        print(f"    Zeitrahmen:          {row['htf_timeframe']} / {row['ltf_timeframe']}")
-        print(f"    SMA Filter:          {filter_status}")
-        print(f"    Retest Toleranz:     {row['retest_tolerance_pct']}%")
-        print(f"    Initial SL Platz.:   {row['initial_sl_placement_pct']}%")
-        print(f"    TSL Lookback:        {int(row['tsl_lookback_candles'])} Kerzen")
-    
-    if target_pnl is not None:
-        results_df['pnl_diff'] = abs(results_df['total_pnl_pct'] - target_pnl)
-        sorted_results_target = results_df.sort_values(by='pnl_diff').head(1)
-        
-        print(f"\nBeste Übereinstimmung für Ziel-PnL von {target_pnl}%:")
-        if not sorted_results_target.empty:
-            row = sorted_results_target.iloc[0]
-            filter_status = f"Aktiviert (SMA {int(row['sma_filter.period'])})" if row['sma_filter.enabled'] else "Deaktiviert"
-            print("\n" + "="*30)
-            print(f"     --- BESTE ÜBEREINSTIMMUNG ---")
-            print("="*30)
+        results_df = pd.DataFrame(all_results)
+        params_df = pd.json_normalize(results_df['params'])
+        results_df = pd.concat([results_df.drop('params', axis=1), params_df], axis=1)
+        sorted_results = results_df.sort_values(by='total_pnl_pct', ascending=False).head(10)
+
+        print(f"\n--- Beste Ergebnisse für {symbol} ({strategy_name}) ---")
+        for i, row in sorted_results.reset_index(drop=True).iterrows():
+            print("\n" + "="*40)
+            print(f"               --- PLATZ {i+1} ---")
+            print("="*40)
             print("\n  LEISTUNG:")
-            print(f"    Gewinn (PnL):        {row['total_pnl_pct']:.2f} % (Hebel: {row['leverage']}x)")
-            if 'end_capital' in row and pd.notna(row['end_capital']):
-                print(f"    Endkapital:          {row['end_capital']:.2f} USDT (Start: {row['start_capital']:.2f} USDT)")
-            print(f"    Trefferquote:        {row['win_rate']:.2f} %")
-            print(f"    Anzahl Trades:       {int(row['trades_count'])}")
-            print("\n  GEFUNDENE PARAMETER:")
-            print(f"    Zeitrahmen:          {row['htf_timeframe']} / {row['ltf_timeframe']}")
-            print(f"    SMA Filter:          {filter_status}")
-            print(f"    Retest Toleranz:     {row['retest_tolerance_pct']}%")
-            print(f"    Initial SL Platz.:   {row['initial_sl_placement_pct']}%")
-            print(f"    TSL Lookback:        {int(row['tsl_lookback_candles'])} Kerzen")
-    
-    print("\n" + "="*30)
-    print(f"#################### ENDE OPTIMIERUNG FÜR: {formatted_symbol} ####################\n")
-    if not sorted_results_pnl.empty:
-        best_run = sorted_results_pnl.iloc[0]
-        filter_status_short = f"ON (SMA{int(best_run['sma_filter.period'])})" if best_run['sma_filter.enabled'] else "OFF"
-        end_capital_str = f"{best_run['end_capital']:.2f}" if 'end_capital' in best_run and pd.notna(best_run['end_capital']) else "N/A"
-        print(f"BEST_RESULT_FOR_SCRIPT;{best_run['total_pnl_pct']};{best_run['win_rate']};{best_run['trades_count']};{best_run['symbol']};{best_run['htf_timeframe']}/{best_run['ltf_timeframe']};{filter_status_short};{best_run['retest_tolerance_pct']};{best_run['initial_sl_placement_pct']};{best_run['tsl_lookback_candles']};{best_run['leverage']};{end_capital_str}")
+            print(f"    Gewinn (PnL):       {row['total_pnl_pct']:.2f} % (Hebel: {row['leverage']:.0f}x)")
+            print(f"    Endkapital:         {row['end_capital']:.2f} USDT")
+            print(f"    Trefferquote:       {row['win_rate']:.2f} %")
+            print(f"    Anzahl Trades:      {int(row['trades_count'])}")
+            print(f"    Maximaler Hebel:    {row.get('max_leverage', float('inf')):.2f}x")
+            print(f"    Empfohlener Hebel:  {row['recommended_leverage']:.2f}x")
+            print("\n  BESTE PARAMETER:")
+            for p_name in param_grid.keys():
+                print(f"    {p_name:<20}{row[p_name]}")
+        print("\n" + "="*40)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Strategie-Optimierer für den Jäger Bot.")
+    parser = argparse.ArgumentParser(description="Strategie-Optimierer für den Titan Bot.")
     parser.add_argument('--start', required=True, help="Startdatum YYYY-MM-DD")
     parser.add_argument('--end', required=True, help="Enddatum YYYY-MM-DD")
-    parser.add_argument('--symbol', required=True, help="Handelspaar (z.B. BTC)")
-    parser.add_argument('--leverage', type=float, help="Optional: Hebel")
-    parser.add_argument('--start_capital', type=float, help="Optional: Startkapital in USDT")
-    parser.add_argument('--timeframes', required=True, help="Zu testende Zeitrahmen-Paare")
-    parser.add_argument('--filter_mode', required=True, help="SMA Filter Modus: 'on', 'off', oder 'both'")
-    parser.add_argument('--sma_periods', help="Zu testende SMA Perioden, z.B. '20 50'")
-    parser.add_argument('--initial_sls', required=True, help="Zu testende Initial SL Werte")
-    parser.add_argument('--tsl_lookbacks', required=True, help="Zu testende TSL Lookback Werte")
-    parser.add_argument('--target_pnl', type=float, help="Optional: Ziel-PnL in % für die Zielsuche")
+    parser.add_argument('--symbol', required=True, help="Handelspaar (z.B. BTC/USDT:USDT)")
+    parser.add_argument('--leverage', type=float, default=10.0, help="Maximaler Hebel für die Simulation")
+    parser.add_argument('--start_capital', type=float, default=1000.0, help="Startkapital in USDT")
+    parser.add_argument('--trade_size_pct', type=float, default=10.0, help="Prozent des Kapitals pro Trade (Margin)")
     args = parser.parse_args()
-    run_jaeger_optimization(args.start, args.end, args.symbol, args.leverage, args.timeframes, args.filter_mode, args.sma_periods, args.start_capital, args.initial_sls, args.tsl_lookbacks, args.target_pnl)
+    
+    run_titan_optimization(
+        args.start, 
+        args.end, 
+        args.symbol, 
+        args.leverage, 
+        args.start_capital,
+        args.trade_size_pct
+    )
