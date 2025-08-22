@@ -1,71 +1,92 @@
-# code/utilities/strategy_logic.py
 import pandas as pd
 import ta
+import numpy as np
 
-def get_daily_levels(htf_data):
+# =============================================================================
+# STRATEGIE 1: MOMENTUM-BESCHLEUNIGER
+# =============================================================================
+def calculate_momentum_signals(data, params):
     """
-    Extrahiert die Niveaus der letzten abgeschlossenen Tageskerze.
+    Berechnet Signale basierend auf VWAP und Volumen-Ausbrüchen.
     """
-    if len(htf_data) < 2:
-        return None
-    
-    last_complete_candle = htf_data.iloc[-2]
-    
-    body_top = max(last_complete_candle['open'], last_complete_candle['close'])
-    body_bottom = min(last_complete_candle['open'], last_complete_candle['close'])
-    
-    return {
-        "wick_high": last_complete_candle['high'],
-        "wick_low": last_complete_candle['low'],
-        "body_top": body_top,
-        "body_bottom": body_bottom,
-        "timestamp": last_complete_candle.name
-    }
+    vol_ma_period = params.get("volume_ma_period", 20)
+    vol_multiplier = params.get("volume_ma_multiplier", 1.5)
+    crv = params.get("crv", 2.0)
 
-def add_sma_to_htf(htf_df, params):
-    """Berechnet den SMA für den HTF DataFrame."""
-    filter_params = params.get('sma_filter', {})
-    period = filter_params.get('period', 20)
-    
-    htf_df['sma'] = ta.trend.sma_indicator(close=htf_df['close'], window=period)
-    
-    # Definiert den Trend: 1 für Long-Bias (Kurs > SMA), -1 für Short-Bias (Kurs < SMA)
-    htf_df['sma_trend'] = 0
-    htf_df.loc[htf_df['close'] > htf_df['sma'], 'sma_trend'] = 1
-    htf_df.loc[htf_df['close'] < htf_df['sma'], 'sma_trend'] = -1
-    return htf_df
+    # Indikatoren berechnen
+    data['vwap'] = ta.volume.volume_weighted_average_price(data['high'], data['low'], data['close'], data['volume'])
+    data['volume_ma'] = data['volume'].rolling(window=vol_ma_period).mean()
 
-def calculate_jaeger_signals(ltf_data, daily_levels, params):
+    # Einstiegssignale
+    long_condition = (data['close'] > data['vwap']) & (data['volume'] > data['volume_ma'] * vol_multiplier)
+    short_condition = (data['close'] < data['vwap']) & (data['volume'] > data['volume_ma'] * vol_multiplier)
+
+    data['buy_signal'] = long_condition & ~long_condition.shift(1).fillna(False)
+    data['sell_signal'] = short_condition & ~short_condition.shift(1).fillna(False)
+
+    # Stop-Loss und Take-Profit Level für den Backtester
+    data['sl_price'] = data['vwap']
+    risk = abs(data['close'] - data['sl_price'])
+    data['tp_price'] = np.where(data['buy_signal'], data['close'] + (risk * crv),
+                              np.where(data['sell_signal'], data['close'] - (risk * crv), np.nan))
+    return data
+
+# =============================================================================
+# STRATEGIE 2: VOLATILITÄTS-FÄNGER
+# =============================================================================
+def calculate_volatility_signals(data, params):
     """
-    Berechnet die Jäger-Signale und filtert sie optional mit dem SMA Trend.
+    Berechnet Signale basierend auf Bollinger Band Ausbrüchen.
     """
-    retest_tolerance_pct = params.get("retest_tolerance_pct", 0.05) / 100
-    
-    if daily_levels is not None:
-        body_top = daily_levels['body_top']
-        body_bottom = daily_levels['body_bottom']
-    else:
-        body_top = ltf_data['htf_body_top']
-        body_bottom = ltf_data['htf_body_bottom']
+    bb_period = params.get("bb_period", 20)
+    bb_std_dev = params.get("bb_std_dev", 2)
 
-    tolerance_long = body_top * retest_tolerance_pct
-    tolerance_short = body_bottom * retest_tolerance_pct
+    # Indikatoren berechnen
+    indicator_bb = ta.volatility.BollingerBands(close=data['close'], window=bb_period, window_dev=bb_std_dev)
+    data['bb_high'] = indicator_bb.bollinger_hband()
+    data['bb_mid'] = indicator_bb.bollinger_mavg()
+    data['bb_low'] = indicator_bb.bollinger_lband()
 
-    was_above = (ltf_data['close'].shift(1) > body_top)
-    is_testing_top = (ltf_data['low'] <= body_top + tolerance_long)
-    rebounded_from_top = (ltf_data['close'] > body_top)
-    ltf_data['buy_signal'] = was_above & is_testing_top & rebounded_from_top
+    # Einstiegssignale
+    long_condition = data['close'] > data['bb_high']
+    short_condition = data['close'] < data['bb_low']
 
-    was_below = (ltf_data['close'].shift(1) < body_bottom)
-    is_testing_bottom = (ltf_data['high'] >= body_bottom - tolerance_short)
-    rebounded_from_bottom = (ltf_data['close'] < body_bottom)
-    ltf_data['sell_signal'] = was_below & is_testing_bottom & rebounded_from_bottom
-    
-    filter_params = params.get('sma_filter', {})
-    use_filter = filter_params.get('enabled', False)
-    
-    if use_filter and 'htf_sma_trend' in ltf_data.columns:
-        ltf_data.loc[ltf_data['htf_sma_trend'] != 1, 'buy_signal'] = False
-        ltf_data.loc[ltf_data['htf_sma_trend'] != -1, 'sell_signal'] = False
-        
-    return ltf_data
+    data['buy_signal'] = long_condition & ~long_condition.shift(1).fillna(False)
+    data['sell_signal'] = short_condition & ~short_condition.shift(1).fillna(False)
+
+    # Stop-Loss und Take-Profit Level
+    data['sl_price'] = data['bb_mid']
+    data['tp_price'] = np.where(data['buy_signal'], data['bb_low'],
+                              np.where(data['sell_signal'], data['bb_high'], np.nan))
+    return data
+
+# =============================================================================
+# STRATEGIE 3: GEZEITEN-WELLEN-REITER
+# =============================================================================
+def calculate_tidal_wave_signals(data, params):
+    """
+    Berechnet Signale basierend auf EMA-Crossover und Pullbacks.
+    """
+    ema_fast_period = params.get("ema_fast_period", 9)
+    ema_slow_period = params.get("ema_slow_period", 21)
+
+    # Indikatoren berechnen
+    data['ema_fast'] = ta.trend.ema_indicator(data['close'], window=ema_fast_period)
+    data['ema_slow'] = ta.trend.ema_indicator(data['close'], window=ema_slow_period)
+
+    # Trend- und Pullback-Bedingungen
+    uptrend = data['ema_fast'] > data['ema_slow']
+    downtrend = data['ema_fast'] < data['ema_slow']
+    pullback_long = (data['low'] <= data['ema_fast']) & (data['close'] > data['ema_fast'])
+    pullback_short = (data['high'] >= data['ema_fast']) & (data['close'] < data['ema_fast'])
+
+    data['buy_signal'] = uptrend & pullback_long
+    data['sell_signal'] = downtrend & pullback_short
+
+    # Stop-Loss und Take-Profit Level
+    data['sl_price'] = data['ema_slow']
+    # TP beim letzten relevanten Hoch/Tief (hier vereinfacht als fester CRV für Backtesting)
+    risk = abs(data['close'] - data['sl_price'])
+    data['tp_price'] = np.where(data['buy_signal'], data['close'] + (risk * 2.0),
+                              np.where(data['sell_signal'], data['close'] - (risk * 2.0), np.nan))
+    return data
