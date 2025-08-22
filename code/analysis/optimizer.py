@@ -44,7 +44,7 @@ def parse_default_params(strategy_name):
             parsed_params[param] = [float(p) for p in values]
     return parsed_params
 
-def run_titan_optimization(start_date, end_date, symbols, start_capital, risk_per_trade_pct, log_threshold):
+def run_titan_optimization(start_date, end_date, symbols, start_capital, risk_per_trade_pct_str, log_threshold):
     grand_total_results = []
     print("\n=================================================")
     print("           TITANBOT - STRATEGIE-OPTIMIZER          ")
@@ -74,6 +74,8 @@ def run_titan_optimization(start_date, end_date, symbols, start_capital, risk_pe
         print("Fehler: Mindestens ein Timeframe ist erforderlich. Abbruch."); return
     timeframes_to_run = timeframe_input.split()
     
+    risk_pct_list = [float(p) for p in risk_per_trade_pct_str.split()]
+
     pre_gathered_param_grids = {}
     if len(strategies_to_run) == 1:
         strategy_name = strategies_to_run[0]
@@ -82,8 +84,10 @@ def run_titan_optimization(start_date, end_date, symbols, start_capital, risk_pe
         for strategy_name in strategies_to_run:
             pre_gathered_param_grids[strategy_name] = parse_default_params(strategy_name)
     
-    user_approved_long_run = False
+    for strategy_name in pre_gathered_param_grids:
+        pre_gathered_param_grids[strategy_name]['risk_per_trade_pct'] = risk_pct_list
 
+    user_approved_long_run = False
     for symbol_short in symbols:
         if '/' not in symbol_short:
             symbol = f"{symbol_short.upper()}/USDT:USDT"
@@ -114,14 +118,52 @@ def run_titan_optimization(start_date, end_date, symbols, start_capital, risk_pe
                 total_runs = len(param_combinations)
 
                 proceed = True
+                estimated_total_seconds = 0
+                if total_runs > 5:
+                    print("\nFühre Benchmark zur Zeitabschätzung durch...", end="", flush=True)
+                    sample_size = min(5, total_runs)
+                    sample_params = param_combinations[:sample_size]
+                    start_benchmark = time.time()
+                    for params_to_test in sample_params:
+                        base_params = {'start_capital': start_capital, 'risk_per_trade_pct': params_to_test['risk_per_trade_pct']}
+                        current_params = {**base_params, **params_to_test}
+                        data_with_signals = signal_func(data.copy(), params_to_test)
+                        run_titan_backtest(data_with_signals, current_params, verbose=False)
+                    end_benchmark = time.time()
+                    avg_time_per_variant = (end_benchmark - start_benchmark) / sample_size
+                    estimated_total_seconds = avg_time_per_variant * total_runs
+                    print(" Fertig.")
+
+                print(f"\nEs werden insgesamt {total_runs} Varianten simuliert.")
+                if estimated_total_seconds > 0:
+                    if estimated_total_seconds > 60:
+                        minutes = int(estimated_total_seconds / 60)
+                        seconds = int(estimated_total_seconds % 60)
+                        print(f"Geschätzte Gesamtdauer: ca. {minutes} Minuten und {seconds} Sekunden.")
+                    else:
+                        print(f"Geschätzte Gesamtdauer: ca. {int(estimated_total_seconds)} Sekunden.")
                 
-                # ... (Benchmark und Bestätigungslogik bleibt unverändert) ...
+                if estimated_total_seconds > 120:
+                    if not user_approved_long_run:
+                        confirm = input("\nMöchten Sie mit der Berechnung fortfahren? [j/N]: ")
+                        if confirm.lower() == 'j':
+                            user_approved_long_run = True
+                        else:
+                            proceed = False
+                    else:
+                        print("Lange Berechnung wird automatisch fortgesetzt (bereits bestätigt).")
+                elif total_runs > 5:
+                     print("Berechnung startet automatisch (geschätzte Dauer unter 2 Minuten).")
                 
+                if not proceed:
+                    print("Optimierung für diese Strategie abgebrochen.")
+                    continue
+
                 print(f"\nStarte Lauf mit {total_runs} Kombinationen...")
                 all_results_for_run = []
                 for i, params_to_test in enumerate(param_combinations):
                     print(f"\r  -> Simuliere Variante {i+1}/{total_runs}...", end="", flush=True)
-                    base_params = {'strategy_name': strategy_name, 'symbol': symbol, 'timeframe': timeframe, 'start_capital': start_capital, 'risk_per_trade_pct': risk_per_trade_pct}
+                    base_params = {'strategy_name': strategy_name, 'symbol': symbol, 'timeframe': timeframe, 'start_capital': start_capital}
                     current_params = {**base_params, **params_to_test}
                     data_with_signals = signal_func(data.copy(), params_to_test)
                     result = run_titan_backtest(data_with_signals, current_params, verbose=False)
@@ -148,7 +190,8 @@ def run_titan_optimization(start_date, end_date, symbols, start_capital, risk_pe
         strategy_name_for_row = row['strategy_name']
         print(f"  HANDELSPAAR: {row['symbol']}"); print(f"  TIMEFRAME:   {row['timeframe']}"); print(f"  STRATEGIE:   {strategy_name_for_row.replace('_', ' ').title()}")
         print("\n  LEISTUNG:")
-        print(f"    Gewinn (PnL):       {row['total_pnl_pct']:.2f} % (Risiko: {row['risk_per_trade_pct']:.2f}%)")
+        print(f"    Gewinn (PnL):       {row['total_pnl_pct']:.2f} %")
+        print(f"    Risiko pro Trade:   {row['risk_per_trade_pct']:.2f}%")
         print(f"    Endkapital:         {row['end_capital']:.2f} USDT")
         print(f"    Anzahl Trades:      {int(row['trades_count'])}")
         print(f"    Max. Drawdown:      {row.get('max_drawdown_pct', 0)*100:.2f}%")
@@ -183,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument('--end', required=True)
     parser.add_argument('--symbol', required=True)
     parser.add_argument('--start_capital', type=float, default=1000.0)
-    parser.add_argument('--risk_per_trade_pct', type=float, default=1.0)
+    parser.add_argument('--risk_per_trade_pct', type=str, default="1.0")
     parser.add_argument('--log_threshold', type=int, default=30)
     args = parser.parse_args()
     symbols_to_run = args.symbol.split()
