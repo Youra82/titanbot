@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # --- Dynamische Pfadermittlung ---
+# Stellt sicher, dass das Skript von überall aus funktioniert.
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 
 # Pfade zu wichtigen Dateien und Verzeichnissen
@@ -9,7 +10,7 @@ LOG_FILE="$SCRIPT_DIR/logs/titanbot.log"
 OPTIMIZER_SCRIPT="$SCRIPT_DIR/code/analysis/optimizer.py"
 CACHE_DIR="$SCRIPT_DIR/code/analysis/historical_data"
 
-# --- Farbcodes ---
+# --- Farbcodes für eine schönere Ausgabe ---
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
@@ -27,7 +28,6 @@ function run_optimizer() {
     read -p "Maximaler Hebel für Simulation (z.B. 10): " LEVERAGE
     read -p "Startkapital in USDT (z.B. 1000): " START_CAPITAL
     read -p "Margin pro Trade in % (z.B. 10): " TRADE_SIZE_PCT
-    # +++ NEUE ABFRAGE FÜR DEN SCHWELLENWERT +++
     read -p "Detail-Log anzeigen bis max. Trades (Enter für 30): " LOG_THRESHOLD
     # Standardwert setzen, falls die Eingabe leer ist
     if [ -z "$LOG_THRESHOLD" ]; then
@@ -38,6 +38,7 @@ function run_optimizer() {
         echo -e "${RED}Fehler: Grundlegende Felder müssen ausgefüllt werden.${NC}"; exit 1;
     fi
 
+    # Aktiviere die virtuelle Umgebung und starte den Optimizer
     source "$SCRIPT_DIR/code/.venv/bin/activate"
 
     python3 "$OPTIMIZER_SCRIPT" \
@@ -47,7 +48,7 @@ function run_optimizer() {
         --leverage "$LEVERAGE" \
         --start_capital "$START_CAPITAL" \
         --trade_size_pct "$TRADE_SIZE_PCT" \
-        --log_threshold "$LOG_THRESHOLD" # +++ NEUER PARAMETER WIRD ÜBERGEBEN +++
+        --log_threshold "$LOG_THRESHOLD"
 
     echo -e "\n${GREEN}Optimierungslauf abgeschlossen.${NC}"
 }
@@ -69,9 +70,50 @@ case "$1" in
         ;;
 esac
 
-# --- STANDARD-MONITORING-ANSICHT ---
+# ######################################################################
+# ### STANDARD-MONITORING-ANSICHT ###
+# ######################################################################
 echo -e "${CYAN}=======================================================${NC}"
 echo -e "${CYAN}             TITAN TRADING BOT MONITORING              ${NC}"
 echo -e "${CYAN}=======================================================${NC}"
 echo "Verwende './monitor_bot.sh <mode>', Modi: ${GREEN}optimize, clear-cache${NC}"
-# ... (Rest des Skripts bleibt unverändert)
+echo -e "Letzte Aktualisierung: $(date '+%Y-%m-%d %H:%M:%S')"
+echo ""
+
+# --- Konfiguration & Strategie ---
+echo -e "${YELLOW}--- KONFIGURATION ---${NC}"
+if [ -f "$CONFIG_FILE" ]; then
+    if command -v jq &> /dev/null; then
+        SYMBOL=$(jq -r '._HEADING_STEP_3_.global_settings.symbol' "$CONFIG_FILE")
+        LEVERAGE=$(jq -r '._HEADING_STEP_3_.global_settings.leverage' "$CONFIG_FILE")
+        STRATEGY_NUM=$(jq -r '._HEADING_STEP_1_.active_strategy_number' "$CONFIG_FILE")
+        STRATEGY_NAME=$(jq -r "._HEADING_STEP_1_.strategy_map[\"$STRATEGY_NUM\"]" "$CONFIG_FILE")
+        
+        echo "Handelspaar: $SYMBOL, Hebel: ${LEVERAGE}x"
+        echo -e "Aktive Strategie: ${GREEN}$STRATEGY_NAME${NC}"
+    else
+        echo -e "${RED}Fehler: 'jq' ist nicht installiert. Bitte mit 'sudo apt install jq' nachholen.${NC}"
+    fi
+else
+    echo -e "${RED}Fehler: Konfigurationsdatei nicht gefunden unter $CONFIG_FILE${NC}"
+fi
+echo ""
+
+# --- Bot-Status aus Log ---
+echo -e "${YELLOW}--- AKTUELLER STATUS & LETZTE AKTIVITÄT ---${NC}"
+if [ -f "$LOG_FILE" ]; then
+    # Zeige die letzten 5 relevanten Zeilen aus dem Log
+    echo "Letzte Log-Einträge:"
+    grep -v "^\s*$" "$LOG_FILE" | tail -n 5
+    
+    echo ""
+    ERROR_COUNT=$(grep -c -iE "Fehler|error|fatal" "$LOG_FILE")
+    if [ "$ERROR_COUNT" -gt 0 ]; then
+        echo -e "Fehlerzähler: ${RED}${ERROR_COUNT} Fehler protokolliert${NC}"
+    else
+        echo -e "Fehlerzähler: ${GREEN}Keine Fehler im Log gefunden${NC}"
+    fi
+else
+    echo "Log-Datei ($LOG_FILE) noch nicht vorhanden."
+fi
+echo -e "${CYAN}=======================================================${NC}"
