@@ -74,16 +74,13 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
         
     grand_total_results = []
 
-    # +++ NEU: Äußerste Schleife für jedes Handelspaar +++
     for symbol_short in symbols:
-        # Symbol-Formatierung für jedes einzelne Symbol
         if '/' not in symbol_short:
             symbol = f"{symbol_short.upper()}/USDT:USDT"
             print(f"\nINFO: Symbol '{symbol_short}' wird als '{symbol}' verarbeitet.")
         else:
             symbol = symbol_short.upper()
 
-        # Schleife für jeden Timeframe
         for timeframe in timeframes_to_run:
             print("\n" + "="*60)
             print(f"=== OPTIMIERE: {symbol} auf TIMEFRAME: {timeframe.upper()} ===")
@@ -95,7 +92,6 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
                 print(f"Nicht genügend Daten. Überspringe {symbol} auf {timeframe}.")
                 continue
 
-            # Innere Schleife für jede Strategie
             for strategy_name in strategies_to_run:
                 print("\n" + "#"*60)
                 print(f"#####  Strategie: {strategy_name.upper()}  #####")
@@ -106,7 +102,6 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
                 else:
                     param_grid = get_user_params(strategy_name)
                 
-                # ... (Rest der Logik bleibt fast identisch, nur eingerückt)
                 signal_func = STRATEGY_CONFIG[strategy_name]['signal_func']
                 keys, values = zip(*param_grid.items())
                 param_combinations = [dict(zip(keys, v)) for v in product(*values)]
@@ -115,15 +110,43 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
                 proceed = True
                 estimated_total_seconds = 0
                 if total_runs > 5:
-                    # ... (Benchmark-Logik) ...
-                    pass 
-                
+                    print("\nFühre Benchmark zur Zeitabschätzung durch...", end="", flush=True)
+                    sample_size = min(5, total_runs)
+                    sample_params = param_combinations[:sample_size]
+                    
+                    start_benchmark = time.time()
+                    for params_to_test in sample_params:
+                        base_params = {'leverage': leverage, 'start_capital': start_capital, 'trade_size_pct': trade_size_pct}
+                        current_params = {**base_params, **params_to_test}
+                        data_with_signals = signal_func(data.copy(), params_to_test)
+                        run_titan_backtest(data_with_signals, current_params, verbose=False)
+                    end_benchmark = time.time()
+                    
+                    avg_time_per_variant = (end_benchmark - start_benchmark) / sample_size
+                    estimated_total_seconds = avg_time_per_variant * total_runs
+                    print(" Fertig.")
+
                 print(f"\nEs werden insgesamt {total_runs} Varianten simuliert.")
-                if estimated_total_seconds > 120:
-                    confirm = input("\nMöchten Sie fortfahren? [j/N]: ")
-                    if confirm.lower() != 'j': proceed = False
+                if estimated_total_seconds > 0:
+                    minutes = int(estimated_total_seconds / 60)
+                    seconds = int(estimated_total_seconds % 60)
+                    if estimated_total_seconds > 60:
+                        print(f"Geschätzte Gesamtdauer: ca. {minutes} Minuten und {seconds} Sekunden.")
+                    else:
+                        print(f"Geschätzte Gesamtdauer: ca. {int(estimated_total_seconds)} Sekunden.")
                 
-                if not proceed: continue
+                if estimated_total_seconds > 120:
+                    confirm = input("\nMöchten Sie mit der Berechnung fortfahren? [j/N]: ")
+                    if confirm.lower() != 'j':
+                        print("Optimierung durch Benutzer abgebrochen.")
+                        proceed = False
+                elif total_runs > 5 :
+                     print("Berechnung startet automatisch (geschätzte Dauer unter 2 Minuten).")
+                
+                if not proceed:
+                    continue
+
+                print(f"\nStarte Lauf mit {total_runs} Kombinationen...")
 
                 all_results_for_run = []
                 for i, params_to_test in enumerate(param_combinations):
@@ -135,12 +158,22 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
                     all_results_for_run.append(result)
                 print(" Fertig.")
 
-                if not all_results_for_run: continue
+                if not all_results_for_run:
+                    print(f"\nKeine Ergebnisse für {strategy_name} erzielt.")
+                    continue
+                
                 grand_total_results.extend(all_results_for_run)
                 
-                # ... (Ausgabe der Top 5 pro Lauf) ...
+                results_df = pd.DataFrame(all_results_for_run)
+                params_df_inner = pd.json_normalize(results_df['params'])
+                results_df = pd.concat([results_df.drop('params', axis=1), params_df_inner], axis=1)
+                sorted_results = results_df.sort_values(by='total_pnl_pct', ascending=False).head(5)
 
-    # FINALE GESAMTAUSWERTUNG am Ende
+                print(f"\n--- Top 5 Ergebnisse für {strategy_name} auf {timeframe} ---")
+                for i, row in sorted_results.reset_index(drop=True).iterrows():
+                    param_display = {k: row[k] for k in param_grid.keys()}
+                    print(f"  Platz {i+1}: PnL {row['total_pnl_pct']:.2f}%, Trades {int(row['trades_count'])}, Params: {param_display}")
+
     if not grand_total_results:
         print("\nKeine Ergebnisse für eine Gesamtauswertung vorhanden."); return
 
@@ -166,6 +199,8 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
         print("\n  LEISTUNG:")
         print(f"    Gewinn (PnL):       {row['total_pnl_pct']:.2f} %")
         print(f"    Endkapital:         {row['end_capital']:.2f} USDT")
+        # +++ HIER IST DIE HINZUGEFÜGTE ZEILE +++
+        print(f"    Maximaler Hebel:    {row.get('max_leverage', float('inf')):.2f}x")
         print(f"    Empfohlener Hebel:  {row['recommended_leverage']:.2f}x")
         
         param_keys_for_strategy = list(STRATEGY_CONFIG[strategy_name_for_row]['params'].keys())
