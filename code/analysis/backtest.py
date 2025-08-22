@@ -21,9 +21,7 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
         data.index = pd.to_datetime(data.index, utc=True)
         required_start = pd.to_datetime(start_date_str, utc=True)
         if data.index.min() <= required_start and data.index.max() >= pd.to_datetime(end_date_str, utc=True):
-            print(f"Lade {timeframe}-Daten für {symbol} aus dem Cache.")
             return data.loc[start_date_str:end_date_str]
-    print(f"Cache für {timeframe} nicht ausreichend. Lade neue Daten...")
     try:
         from utilities.bitget_futures import BitgetFutures
         project_root = os.path.join(os.path.dirname(__file__), '..', '..')
@@ -44,6 +42,26 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
         print(f"Fehler beim Daten-Download für {timeframe}: {e}")
         return pd.DataFrame()
 
+def find_max_portfolio_leverage(trade_pnl_pcts, start_capital, trade_size_pct, fee_pct):
+    """
+    Findet den höchsten Hebel, den das Portfolio überlebt hätte.
+    """
+    for l in range(5000, 0, -5): # Testet Hebel von 50x bis 0.05x in 0.05er Schritten
+        leverage = l / 100.0
+        capital = start_capital
+        survived = True
+        for pnl_pct in trade_pnl_pcts:
+            margin = capital * trade_size_pct
+            trade_pnl = margin * pnl_pct * leverage
+            fee = margin * fee_pct * 2 * leverage
+            capital += trade_pnl - fee
+            if capital <= 0:
+                survived = False
+                break
+        if survived:
+            return leverage
+    return 0.0
+
 def run_titan_backtest(data, params, verbose=True):
     leverage = params.get('leverage', 1.0)
     fee_pct = 0.05 / 100
@@ -57,35 +75,30 @@ def run_titan_backtest(data, params, verbose=True):
     current_capital = start_capital
     trade_size_pct = params.get('trade_size_pct', 10) / 100
     trades_count, wins_count = 0, 0
-    max_adverse_excursion, current_trade_mae = 0.0, 0.0
     trade_log = []
+    trade_pnl_percentages = [] # Liste der PnL-Prozentsätze pro Trade
 
     for i in range(1, len(data)):
         current_candle = data.iloc[i]
         if status == 'in_trade':
-            adverse_move = (entry_price - current_candle['low']) / entry_price if side == 'long' else (current_candle['high'] - entry_price) / entry_price
-            current_trade_mae = max(current_trade_mae, adverse_move)
-
             closed_trade = False
             exit_price = 0.0
             total_pnl = 0.0
+            pnl_pct_of_entry = 0.0
 
             if (side == 'long' and current_candle['low'] <= liquidation_price) or (side == 'short' and current_candle['high'] >= liquidation_price):
                 exit_price = liquidation_price; pnl = - (current_capital * trade_size_pct); current_capital += pnl; consecutive_loss_count += 1; verlust_vortrag += abs(pnl); total_pnl = pnl; closed_trade = True
             elif (side == 'long' and current_candle['low'] <= sl_price) or (side == 'short' and current_candle['high'] >= sl_price):
-                exit_price = sl_price; pnl_pct = (exit_price / entry_price - 1) if side == 'long' else (1 - exit_price / entry_price); trade_pnl = current_capital * trade_size_pct * pnl_pct * leverage; fee = current_capital * trade_size_pct * fee_pct * 2 * leverage; total_pnl = trade_pnl - fee; current_capital += total_pnl; consecutive_loss_count += 1; verlust_vortrag += abs(total_pnl); max_adverse_excursion = max(max_adverse_excursion, current_trade_mae); closed_trade = True
+                exit_price = sl_price; pnl_pct_of_entry = (exit_price / entry_price - 1) if side == 'long' else (1 - exit_price / entry_price); trade_pnl = current_capital * trade_size_pct * pnl_pct_of_entry * leverage; fee = current_capital * trade_size_pct * fee_pct * 2 * leverage; total_pnl = trade_pnl - fee; current_capital += total_pnl; consecutive_loss_count += 1; verlust_vortrag += abs(total_pnl); closed_trade = True
             elif (side == 'long' and current_candle['high'] >= tp_price) or (side == 'short' and current_candle['low'] <= tp_price):
-                exit_price = tp_price; pnl_pct = (exit_price / entry_price - 1) if side == 'long' else (1 - exit_price / entry_price); trade_pnl = current_capital * trade_size_pct * pnl_pct * leverage; fee = current_capital * trade_size_pct * fee_pct * 2 * leverage; total_pnl = trade_pnl - fee; current_capital += total_pnl; wins_count += 1; consecutive_loss_count = 0; verlust_vortrag = 0.0; max_adverse_excursion = max(max_adverse_excursion, current_trade_mae); closed_trade = True
+                exit_price = tp_price; pnl_pct_of_entry = (exit_price / entry_price - 1) if side == 'long' else (1 - exit_price / entry_price); trade_pnl = current_capital * trade_size_pct * pnl_pct_of_entry * leverage; fee = current_capital * trade_size_pct * fee_pct * 2 * leverage; total_pnl = trade_pnl - fee; current_capital += total_pnl; wins_count += 1; consecutive_loss_count = 0; verlust_vortrag = 0.0; closed_trade = True
 
             if closed_trade:
                 trades_count += 1
+                trade_pnl_percentages.append(pnl_pct_of_entry)
                 trade_log.append({
-                    "date": str(current_candle.name.date()),
-                    "side": side,
-                    "entry": entry_price,
-                    "exit": exit_price,
-                    "pnl": total_pnl,
-                    "balance": current_capital # +++ NEU: Kontostand hinzufügen
+                    "date": str(current_candle.name.date()), "side": side, "entry": entry_price,
+                    "exit": exit_price, "pnl": total_pnl, "balance": current_capital
                 })
                 status = 'none'
                 continue
@@ -95,9 +108,7 @@ def run_titan_backtest(data, params, verbose=True):
             if pd.notna(current_candle.get('buy_signal')) and current_candle['buy_signal'] or pd.notna(current_candle.get('sell_signal')) and current_candle['sell_signal']:
                 side = 'long' if current_candle['buy_signal'] else 'short'
                 entry_price = data.iloc[i+1]['open'] if i+1 < len(data) else current_candle['close']
-                current_trade_mae = 0.0
-                standard_sl_price = current_candle['sl_price']
-                standard_tp_price = current_candle['tp_price']
+                standard_sl_price = current_candle['sl_price']; standard_tp_price = current_candle['tp_price']
                 standard_profit_per_unit = abs(standard_tp_price - entry_price)
                 margin = current_capital * trade_size_pct
                 amount = (margin * leverage) / entry_price
@@ -108,19 +119,17 @@ def run_titan_backtest(data, params, verbose=True):
                 status = 'in_trade'
     
     win_rate = (wins_count / trades_count * 100) if trades_count > 0 else 0
-    max_leverage = 1 / max_adverse_excursion if max_adverse_excursion > 0 else float('inf')
-    recommended_leverage = max_leverage * 0.8
     final_pnl_pct = ((current_capital / start_capital) - 1) * 100
-    end_capital_max_lev, end_capital_rec_lev = 0, 0
-    if leverage == 1.0 and final_pnl_pct is not None:
-        pnl_at_1x_pct = final_pnl_pct
-        if max_leverage != float('inf'): end_capital_max_lev = start_capital * (1 + (pnl_at_1x_pct / 100) * max_leverage)
-        if recommended_leverage != float('inf'): end_capital_rec_lev = start_capital * (1 + (pnl_at_1x_pct / 100) * recommended_leverage)
-
+    
+    max_portfolio_leverage = find_max_portfolio_leverage(trade_pnl_percentages, start_capital, trade_size_pct / 100, fee_pct)
+    if final_pnl_pct < 0:
+        recommended_leverage = 0.0
+    else:
+        recommended_leverage = max_portfolio_leverage * 0.8
+        
     return {
         "total_pnl_pct": final_pnl_pct, "trades_count": trades_count,
         "win_rate": win_rate, "params": params, "end_capital": current_capital,
-        "recommended_leverage": recommended_leverage, "max_leverage": max_leverage,
-        "end_capital_max_lev": end_capital_max_lev, "end_capital_rec_lev": end_capital_rec_lev,
+        "recommended_leverage": recommended_leverage, "max_portfolio_leverage": max_portfolio_leverage,
         "trade_log": trade_log
     }
