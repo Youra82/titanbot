@@ -107,6 +107,9 @@ def run_titan_optimization(start_date, end_date, symbol, leverage, start_capital
         print(f"Nicht genügend Daten für {symbol} auf {timeframe}. Abbruch.")
         return
 
+    # +++ NEU: Liste zum Sammeln aller Ergebnisse +++
+    grand_total_results = []
+
     # --- Hauptschleife, die über die ausgewählten Strategien iteriert ---
     for strategy_name in strategies_to_run:
         print("\n" + "#"*60)
@@ -179,6 +182,9 @@ def run_titan_optimization(start_date, end_date, symbol, leverage, start_capital
 
         if not all_results:
             print(f"\nKeine Ergebnisse für {strategy_name} erzielt."); continue
+            
+        # +++ NEU: Füge Ergebnisse zur Gesamtliste hinzu +++
+        grand_total_results.extend(all_results)
 
         results_df = pd.DataFrame(all_results)
         params_df = pd.json_normalize(results_df['params'])
@@ -202,6 +208,44 @@ def run_titan_optimization(start_date, end_date, symbol, leverage, start_capital
                 print(f"    {p_name:<20}{row[p_name]}")
         print("\n" + "="*40)
 
+    # +++ NEU: FINALE GESAMTAUSWERTUNG AM ENDE +++
+    if not grand_total_results:
+        print("\nKeine Ergebnisse für eine Gesamtauswertung vorhanden.")
+        return
+
+    print("\n" + "#"*60)
+    print("#####      FINALE GESAMTAUSWERTUNG (TOP 10 ALLER STRATEGIEN)     #####")
+    print("#"*60)
+
+    final_df = pd.DataFrame(grand_total_results)
+    params_df = pd.json_normalize(final_df['params'])
+    final_df = pd.concat([final_df.drop('params', axis=1), params_df], axis=1)
+
+    overall_best = final_df.sort_values(by='total_pnl_pct', ascending=False).head(10)
+
+    for i, row in overall_best.reset_index(drop=True).iterrows():
+        print("\n" + "="*40)
+        print(f"            --- GLOBALER PLATZ {i+1} ---")
+        print("="*40)
+        
+        strategy_name_for_row = row['strategy_name']
+        print(f"  STRATEGIE: {strategy_name_for_row.replace('_', ' ').title()}")
+        
+        print("\n  LEISTUNG:")
+        print(f"    Gewinn (PnL):       {row['total_pnl_pct']:.2f} % (Hebel: {row['leverage']:.0f}x)")
+        print(f"    Endkapital:         {row['end_capital']:.2f} USDT")
+        print(f"    Trefferquote:       {row['win_rate']:.2f} %")
+        print(f"    Anzahl Trades:      {int(row['trades_count'])}")
+        print(f"    Maximaler Hebel:    {row.get('max_leverage', float('inf')):.2f}x")
+        print(f"    Empfohlener Hebel:  {row['recommended_leverage']:.2f}x")
+        
+        param_keys_for_strategy = list(STRATEGY_CONFIG[strategy_name_for_row]['params'].keys())
+        print("\n  BESTE PARAMETER:")
+        for p_name in param_keys_for_strategy:
+            print(f"    {p_name:<20}{row[p_name]}")
+    print("\n" + "="*40)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Strategie-Optimierer für den Titan Bot.")
     parser.add_argument('--start', required=True, help="Startdatum YYYY-MM-DD")
@@ -212,7 +256,6 @@ if __name__ == "__main__":
     parser.add_argument('--trade_size_pct', type=float, default=10.0, help="Prozent des Kapitals pro Trade (Margin)")
     args = parser.parse_args()
 
-    # +++ NEUE, AUTOMATISCHE SYMBOL-FORMATIERUNG +++
     raw_symbol = args.symbol
     if '/' not in raw_symbol:
         formatted_symbol = f"{raw_symbol.upper()}/USDT:USDT"
@@ -223,7 +266,7 @@ if __name__ == "__main__":
     run_titan_optimization(
         args.start, 
         args.end, 
-        formatted_symbol,  # Hier wird das formatierte Symbol übergeben
+        formatted_symbol,
         args.leverage, 
         args.start_capital,
         args.trade_size_pct
