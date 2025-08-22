@@ -82,7 +82,7 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
     else:
         for strategy_name in strategies_to_run:
             pre_gathered_param_grids[strategy_name] = parse_default_params(strategy_name)
-
+    
     user_approved_long_run = False
 
     for symbol_short in symbols:
@@ -167,10 +167,7 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
                     all_results_for_run.append(result)
                 print(" Fertig.")
 
-                if not all_results_for_run:
-                    print(f"\nKeine Ergebnisse für {strategy_name} erzielt.")
-                    continue
-                
+                if not all_results_for_run: continue
                 grand_total_results.extend(all_results_for_run)
 
     if not grand_total_results:
@@ -180,8 +177,7 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
     print("##########      FINALE GESAMTAUSWERTUNG (TOP 10 ALLER LÄUFE)     ##########")
     print("#"*70)
     final_df = pd.DataFrame(grand_total_results)
-    # Konvertiere die Liste von Timestamps in eine JSON-freundliche String-Darstellung
-    final_df['trade_dates'] = final_df['trade_dates'].apply(lambda x: json.dumps([str(ts) for ts in x]))
+    final_df['trade_log'] = final_df['trade_log'].apply(lambda x: json.dumps(x))
     params_df = pd.json_normalize(final_df['params'])
     final_df = pd.concat([final_df.drop('params', axis=1), params_df], axis=1)
     overall_best = final_df.sort_values(by='total_pnl_pct', ascending=False).head(10)
@@ -205,20 +201,22 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
         for p_name in param_keys_for_strategy:
             print(f"    {p_name:<20}{row[p_name]}")
         
-        if int(row['trades_count']) < 30 and 'trade_dates' in row and not pd.isna(row['trade_dates']):
+        if int(row['trades_count']) < 30 and 'trade_log' in row and not pd.isna(row['trade_log']):
             try:
-                # ast.literal_eval ist sicher für die Konvertierung von String-Listen
-                trade_dates_list = ast.literal_eval(row['trade_dates'])
-                if trade_dates_list:
-                    print("\n  HANDELS-CHRONIK (GERINGE ANZAHL):")
-                    dates = pd.to_datetime(trade_dates_list)
-                    date_strings = [d.strftime('%Y-%m-%d') for d in dates]
-                    for j in range(0, len(date_strings), 5):
-                        print(f"    {', '.join(date_strings[j:j+5])}")
+                trade_log_list = json.loads(row['trade_log'])
+                if trade_log_list:
+                    print("\n  DETAILLIERTE HANDELS-CHRONIK (GERINGE ANZAHL):")
+                    print("    Datum        | Seite  | Einstieg | Ausstieg | Gewinn (USDT)")
+                    print("    -----------------------------------------------------------")
+                    for trade in trade_log_list:
+                        side_str = trade['side'].capitalize().ljust(5)
+                        entry_str = f"{trade['entry']:.2f}".ljust(8)
+                        exit_str = f"{trade['exit']:.2f}".ljust(8)
+                        pnl_str = f"{trade['pnl']:+.2f}"
+                        print(f"    {trade['date']} | {side_str} | {entry_str} | {exit_str} | {pnl_str}")
             except Exception:
-                pass # Fehler bei der Anzeige der Chronik unterdrücken
+                pass
     print("\n" + "="*40)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Strategie-Optimierer für den Titan Bot.")
