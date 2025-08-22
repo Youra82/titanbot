@@ -59,6 +59,8 @@ def run_titan_backtest(data, params, verbose=True):
     peak_capital = start_capital
     max_drawdown_pct = 0.0
     effective_leverages = []
+    position_size_usd = 0.0
+    risk_amount_usd = 0.0
 
     for i in range(1, len(data)):
         current_candle = data.iloc[i]
@@ -66,8 +68,7 @@ def run_titan_backtest(data, params, verbose=True):
             closed_trade = False
             exit_price = 0.0
             total_pnl = 0.0
-            
-            # Liquidation wird hier nicht mehr geprüft, da das Risiko pro Trade fix ist.
+
             if (side == 'long' and current_candle['low'] <= sl_price) or (side == 'short' and current_candle['high'] >= sl_price):
                 exit_price = sl_price; total_pnl = -abs(risk_amount_usd); current_capital += total_pnl; consecutive_loss_count += 1; verlust_vortrag += abs(total_pnl); closed_trade = True
             elif (side == 'long' and current_candle['high'] >= tp_price) or (side == 'short' and current_candle['low'] <= tp_price):
@@ -92,10 +93,9 @@ def run_titan_backtest(data, params, verbose=True):
                 entry_price = data.iloc[i+1]['open'] if i+1 < len(data) else current_candle['close']
                 sl_price = current_candle['sl_price']; standard_tp_price = current_candle['tp_price']
                 
-                # Dynamische Positionsgrößenberechnung
                 risk_amount_usd = current_capital * risk_per_trade_pct
                 stop_loss_distance_pct = abs(entry_price - sl_price) / entry_price if entry_price > 0 else 0
-                if stop_loss_distance_pct == 0: continue # Trade überspringen, wenn SL = Entry
+                if stop_loss_distance_pct == 0: continue
                 
                 position_size_usd = risk_amount_usd / stop_loss_distance_pct
                 effective_leverages.append(position_size_usd / current_capital if current_capital > 0 else 0)
@@ -110,11 +110,18 @@ def run_titan_backtest(data, params, verbose=True):
     win_rate = (wins_count / trades_count * 100) if trades_count > 0 else 0
     final_pnl_pct = ((current_capital / start_capital) - 1) * 100
     avg_effective_leverage = sum(effective_leverages) / len(effective_leverages) if effective_leverages else 0
+    
+    max_survivable_leverage = 1 / max_drawdown_pct if max_drawdown_pct > 0 else float('inf')
+    if final_pnl_pct < 0:
+        recommended_leverage = 0.0
+    else:
+        recommended_leverage = max_survivable_leverage * 0.8
         
     return {
         "total_pnl_pct": final_pnl_pct, "trades_count": trades_count,
         "win_rate": win_rate, "params": params, "end_capital": current_capital,
         "avg_effective_leverage": avg_effective_leverage,
         "max_drawdown_pct": max_drawdown_pct,
+        "max_survivable_leverage": max_survivable_leverage,
         "trade_log": trade_log
     }
