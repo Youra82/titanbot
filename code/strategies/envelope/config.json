@@ -1,26 +1,45 @@
 {
-    "symbol": "XRP/USDT:USDT",
-    "htf_timeframe": "1d",
-    "ltf_timeframe": "15m",
-    "margin_mode": "isolated",
-    "leverage": 10,
-    "use_longs": true,
-    "use_shorts": true,
-    "trade_size_pct": 30,
-    "max_retries": 3,
-    "retry_delay": 2,
+    "_HEADING_STEP_1_": "------------------- 1. STRATEGIE AUSWÄHLEN -------------------",
+    "_info_step_1_": "Trage die Nummer der gewünschten Strategie aus der 'strategy_map' unten ein:",
 
-    "retest_tolerance_pct": 0.1,
-    "trade_split_ratio": 0.5,
+    "active_strategy_number": 1,
 
-    "enable_initial_stop_loss": true,
-    "initial_sl_placement_pct": 0.4,
+    "strategy_map": {
+        "1": "momentum_accelerator -> Schnelle Ausbrüche mit Volumen & VWAP.",
+        "2": "volatility_catcher   -> Ausbrüche nach Marktberuhigung (Bollinger Bänder).",
+        "3": "tidal_wave_rider     -> Trend-Handel mit Pullbacks zu den EMAs."
+    },
 
-    "enable_trailing_stop_loss": true,
-    "tsl_lookback_candles": 3,
+    "_HEADING_STEP_2_": "------------------- 2. STRATEGIE-PARAMETER -------------------",
+    "_info_step_2_": "Hier kannst du die Einstellungen für jede Strategie anpassen.",
 
-    "sma_filter": {
-        "enabled": false,
-        "period": 20
+    "strategies": {
+        "momentum_accelerator": {
+            "volume_ma_period": 20,
+            "volume_ma_multiplier": 1.5,
+            "crv": 2.0
+        },
+        "_separator_1_": "----------------------------------------------------",
+        "volatility_catcher": {
+            "bb_period": 20,
+            "bb_std_dev": 2.0
+        },
+        "_separator_2_": "----------------------------------------------------",
+        "tidal_wave_rider": {
+            "ema_fast_period": 9,
+            "ema_slow_period": 21
+        }
+    },
+
+    "_HEADING_STEP_3_": "------------------- 3. GLOBALE EINSTELLUNGEN -------------------",
+    "_info_step_3_": "Diese Einstellungen gelten immer, egal welche Strategie aktiv ist.",
+
+    "global_settings": {
+        "symbol": "BTC/USDT:USDT",
+        "timeframe": "15m",
+        "margin_mode": "isolated",
+        "leverage": 10,
+        "trade_size_pct": 10,
+        "loss_account_max_strikes": 3
     }
 }
