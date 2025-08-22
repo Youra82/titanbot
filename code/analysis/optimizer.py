@@ -135,7 +135,8 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
                 
                 if estimated_total_seconds > 120:
                     confirm = input("\nMöchten Sie mit der Berechnung fortfahren? [j/N]: ")
-                    if confirm.lower() != 'j': proceed = False
+                    if confirm.lower() != 'j':
+                        proceed = False
                 elif total_runs > 5:
                      print("Berechnung startet automatisch (geschätzte Dauer unter 2 Minuten).")
                 
@@ -160,8 +161,6 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
                     continue
                 
                 grand_total_results.extend(all_results_for_run)
-                
-                # --- ZWISCHENERGEBNISSE WURDEN HIER ENTFERNT ---
 
     if not grand_total_results:
         print("\nKeine Ergebnisse für eine Gesamtauswertung vorhanden."); return
@@ -188,6 +187,8 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
         print("\n  LEISTUNG:")
         print(f"    Gewinn (PnL):       {row['total_pnl_pct']:.2f} % (bei {row['leverage']:.0f}x Hebel)")
         print(f"    Endkapital (bei {row['leverage']:.0f}x):{row['end_capital']:.2f} USDT")
+        # +++ HIER IST DIE HINZUGEFÜGTE ZEILE +++
+        print(f"    Anzahl Trades:      {int(row['trades_count'])}")
         if row.get('end_capital_max_lev', 0) > 0 and row['leverage'] == 1.0:
             print(f"    Maximaler Hebel:    {row['max_leverage']:.2f}x (-> {row['end_capital_max_lev']:.2f} USDT)")
             print(f"    Empfohlener Hebel:  {row['recommended_leverage']:.2f}x (-> {row['end_capital_rec_lev']:.2f} USDT)")
