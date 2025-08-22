@@ -58,7 +58,7 @@ def run_titan_backtest(data, params, verbose=True):
     trade_size_pct = params.get('trade_size_pct', 10) / 100
     trades_count, wins_count = 0, 0
     max_adverse_excursion, current_trade_mae = 0.0, 0.0
-    trade_log = [] # +++ NEU: Detailliertes Logbuch +++
+    trade_log = []
 
     for i in range(1, len(data)):
         current_candle = data.iloc[i]
@@ -71,8 +71,7 @@ def run_titan_backtest(data, params, verbose=True):
             total_pnl = 0.0
 
             if (side == 'long' and current_candle['low'] <= liquidation_price) or (side == 'short' and current_candle['high'] >= liquidation_price):
-                exit_price = liquidation_price
-                pnl = - (current_capital * trade_size_pct); current_capital += pnl; consecutive_loss_count += 1; verlust_vortrag += abs(pnl); total_pnl = pnl; closed_trade = True
+                exit_price = liquidation_price; pnl = - (current_capital * trade_size_pct); current_capital += pnl; consecutive_loss_count += 1; verlust_vortrag += abs(pnl); total_pnl = pnl; closed_trade = True
             elif (side == 'long' and current_candle['low'] <= sl_price) or (side == 'short' and current_candle['high'] >= sl_price):
                 exit_price = sl_price; pnl_pct = (exit_price / entry_price - 1) if side == 'long' else (1 - exit_price / entry_price); trade_pnl = current_capital * trade_size_pct * pnl_pct * leverage; fee = current_capital * trade_size_pct * fee_pct * 2 * leverage; total_pnl = trade_pnl - fee; current_capital += total_pnl; consecutive_loss_count += 1; verlust_vortrag += abs(total_pnl); max_adverse_excursion = max(max_adverse_excursion, current_trade_mae); closed_trade = True
             elif (side == 'long' and current_candle['high'] >= tp_price) or (side == 'short' and current_candle['low'] <= tp_price):
@@ -85,7 +84,8 @@ def run_titan_backtest(data, params, verbose=True):
                     "side": side,
                     "entry": entry_price,
                     "exit": exit_price,
-                    "pnl": total_pnl
+                    "pnl": total_pnl,
+                    "balance": current_capital # +++ NEU: Kontostand hinzufügen
                 })
                 status = 'none'
                 continue
@@ -106,7 +106,7 @@ def run_titan_backtest(data, params, verbose=True):
                 sl_price, tp_price = standard_sl_price, final_tp_price
                 liquidation_price = entry_price * (1 - 0.99 / leverage) if side == 'long' else entry_price * (1 + 0.99 / leverage)
                 status = 'in_trade'
-
+    
     win_rate = (wins_count / trades_count * 100) if trades_count > 0 else 0
     max_leverage = 1 / max_adverse_excursion if max_adverse_excursion > 0 else float('inf')
     recommended_leverage = max_leverage * 0.8
