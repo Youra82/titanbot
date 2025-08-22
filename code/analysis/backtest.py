@@ -42,26 +42,6 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
         print(f"Fehler beim Daten-Download für {timeframe}: {e}")
         return pd.DataFrame()
 
-def find_max_portfolio_leverage(trade_pnl_pcts, start_capital, trade_size_pct, fee_pct):
-    """
-    Findet den höchsten Hebel, den das Portfolio überlebt hätte.
-    """
-    for l in range(5000, 0, -5): # Testet Hebel von 50x bis 0.05x in 0.05er Schritten
-        leverage = l / 100.0
-        capital = start_capital
-        survived = True
-        for pnl_pct in trade_pnl_pcts:
-            margin = capital * trade_size_pct
-            trade_pnl = margin * pnl_pct * leverage
-            fee = margin * fee_pct * 2 * leverage
-            capital += trade_pnl - fee
-            if capital <= 0:
-                survived = False
-                break
-        if survived:
-            return leverage
-    return 0.0
-
 def run_titan_backtest(data, params, verbose=True):
     leverage = params.get('leverage', 1.0)
     fee_pct = 0.05 / 100
@@ -76,7 +56,10 @@ def run_titan_backtest(data, params, verbose=True):
     trade_size_pct = params.get('trade_size_pct', 10) / 100
     trades_count, wins_count = 0, 0
     trade_log = []
-    trade_pnl_percentages = [] # Liste der PnL-Prozentsätze pro Trade
+    
+    # +++ NEU: Drawdown-Berechnung +++
+    peak_capital = start_capital
+    max_drawdown_pct = 0.0
 
     for i in range(1, len(data)):
         current_candle = data.iloc[i]
@@ -84,7 +67,6 @@ def run_titan_backtest(data, params, verbose=True):
             closed_trade = False
             exit_price = 0.0
             total_pnl = 0.0
-            pnl_pct_of_entry = 0.0
 
             if (side == 'long' and current_candle['low'] <= liquidation_price) or (side == 'short' and current_candle['high'] >= liquidation_price):
                 exit_price = liquidation_price; pnl = - (current_capital * trade_size_pct); current_capital += pnl; consecutive_loss_count += 1; verlust_vortrag += abs(pnl); total_pnl = pnl; closed_trade = True
@@ -95,11 +77,14 @@ def run_titan_backtest(data, params, verbose=True):
 
             if closed_trade:
                 trades_count += 1
-                trade_pnl_percentages.append(pnl_pct_of_entry)
                 trade_log.append({
                     "date": str(current_candle.name.date()), "side": side, "entry": entry_price,
                     "exit": exit_price, "pnl": total_pnl, "balance": current_capital
                 })
+                # +++ NEU: Drawdown nach jedem Trade aktualisieren +++
+                peak_capital = max(peak_capital, current_capital)
+                drawdown = (peak_capital - current_capital) / peak_capital
+                max_drawdown_pct = max(max_drawdown_pct, drawdown)
                 status = 'none'
                 continue
         if status == 'none':
@@ -121,15 +106,18 @@ def run_titan_backtest(data, params, verbose=True):
     win_rate = (wins_count / trades_count * 100) if trades_count > 0 else 0
     final_pnl_pct = ((current_capital / start_capital) - 1) * 100
     
-    max_portfolio_leverage = find_max_portfolio_leverage(trade_pnl_percentages, start_capital, trade_size_pct / 100, fee_pct)
+    # +++ NEUE, KORREKTE HEBEL-BERECHNUNG BASIEREND AUF DRAWDOWN +++
+    max_survivable_leverage = 1 / max_drawdown_pct if max_drawdown_pct > 0 else float('inf')
     if final_pnl_pct < 0:
         recommended_leverage = 0.0
     else:
-        recommended_leverage = max_portfolio_leverage * 0.8
+        recommended_leverage = max_survivable_leverage * 0.8
         
     return {
         "total_pnl_pct": final_pnl_pct, "trades_count": trades_count,
         "win_rate": win_rate, "params": params, "end_capital": current_capital,
-        "recommended_leverage": recommended_leverage, "max_portfolio_leverage": max_portfolio_leverage,
+        "recommended_leverage": recommended_leverage, 
+        "max_survivable_leverage": max_survivable_leverage, # <-- NEUER, KORREKTER WERT
+        "max_drawdown_pct": max_drawdown_pct, # <-- ZUSÄTZLICHE INFO
         "trade_log": trade_log
     }
