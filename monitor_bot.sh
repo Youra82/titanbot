@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # --- Dynamische Pfadermittlung ---
+# Stellt sicher, dass das Skript von überall aus funktioniert.
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 
 # Pfade zu wichtigen Dateien und Verzeichnissen
@@ -9,7 +10,7 @@ LOG_FILE="$SCRIPT_DIR/logs/titanbot.log"
 OPTIMIZER_SCRIPT="$SCRIPT_DIR/code/analysis/optimizer.py"
 CACHE_DIR="$SCRIPT_DIR/code/analysis/historical_data"
 
-# --- Farbcodes ---
+# --- Farbcodes für eine schönere Ausgabe ---
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
@@ -23,7 +24,8 @@ function run_optimizer() {
     echo -e "${CYAN}=======================================================${NC}"
     read -p "Startdatum (YYYY-MM-DD): " START_DATE
     read -p "Enddatum (YYYY-MM-DD): " END_DATE
-    read -p "Handelspaar (z.B. BTC/USDT:USDT): " SYMBOL
+    # +++ HIER IST DIE GEWÜNSCHTE ÄNDERUNG +++
+    read -p "Handelspaar (z.B. BTC ETH): " SYMBOL
     read -p "Maximaler Hebel für Simulation (z.B. 10): " LEVERAGE
     read -p "Startkapital in USDT (z.B. 1000): " START_CAPITAL
     read -p "Margin pro Trade in % (z.B. 10): " TRADE_SIZE_PCT
@@ -63,7 +65,9 @@ case "$1" in
         ;;
 esac
 
-# --- STANDARD-MONITORING-ANSICHT ---
+# ######################################################################
+# ### STANDARD-MONITORING-ANSICHT ###
+# ######################################################################
 echo -e "${CYAN}=======================================================${NC}"
 echo -e "${CYAN}             TITAN TRADING BOT MONITORING              ${NC}"
 echo -e "${CYAN}=======================================================${NC}"
@@ -93,6 +97,7 @@ echo ""
 # --- Bot-Status aus Log ---
 echo -e "${YELLOW}--- AKTUELLER STATUS & LETZTE AKTIVITÄT ---${NC}"
 if [ -f "$LOG_FILE" ]; then
+    # Zeige die letzten 5 relevanten Zeilen aus dem Log
     echo "Letzte Log-Einträge:"
     grep -v "^\s*$" "$LOG_FILE" | tail -n 5
     
