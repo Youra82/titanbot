@@ -38,8 +38,13 @@
         "symbol": "BTC/USDT:USDT",
         "timeframe": "15m",
         "margin_mode": "isolated",
-        "leverage": 10,
-        "trade_size_pct": 10,
         "loss_account_max_strikes": 3
+    },
+
+    "_HEADING_STEP_4_": "------------------- 4. DYNAMISCHES RISIKOMANAGEMENT -------------------",
+    "_info_step_4_": "Diese Einstellung bestimmt, wie viel % des Gesamtkapitals pro Trade riskiert wird.",
+
+    "risk_management": {
+        "risk_per_trade_pct": 1.5
     }
 }
