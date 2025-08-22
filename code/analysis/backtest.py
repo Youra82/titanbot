@@ -32,7 +32,14 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
         from utilities.bitget_futures import BitgetFutures
         project_root = os.path.join(os.path.dirname(__file__), '..', '..')
         key_path = os.path.abspath(os.path.join(project_root, 'secret.json'))
-        with open(key_path, "r") as f: api_setup = json.load(f).get('envelope', json.load(f).get('bitget_example'))
+        
+        # +++ HIER IST DIE KORREKTUR +++
+        # Die Datei wird jetzt nur noch einmal korrekt geladen.
+        with open(key_path, "r") as f:
+            secrets = json.load(f)
+        api_setup = secrets.get('envelope', secrets.get('bitget_example'))
+        # +++ ENDE DER KORREKTUR +++
+
         bitget = BitgetFutures(api_setup)
         
         download_start = (pd.to_datetime(start_date_str) - timedelta(days=50)).strftime('%Y-%m-%d')
@@ -49,7 +56,7 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
         print(f"Fehler beim Daten-Download für {timeframe}: {e}")
         return pd.DataFrame()
 
-# --- Die Titanbot Backtest-Engine ---
+# --- Die Titanbot Backtest-Engine (unverändert) ---
 def run_titan_backtest(data, params, verbose=True):
     leverage = params.get('leverage', 1.0)
     fee_pct = 0.05 / 100
