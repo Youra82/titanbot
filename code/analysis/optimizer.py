@@ -107,9 +107,6 @@ def run_titan_optimization(start_date, end_date, symbol, leverage, start_capital
         print(f"Nicht genügend Daten für {symbol} auf {timeframe}. Abbruch.")
         return
 
-    # +++ NEU: Liste zum Sammeln aller Ergebnisse +++
-    grand_total_results = []
-
     # --- Hauptschleife, die über die ausgewählten Strategien iteriert ---
     for strategy_name in strategies_to_run:
         print("\n" + "#"*60)
@@ -127,8 +124,9 @@ def run_titan_optimization(start_date, end_date, symbol, leverage, start_capital
         param_combinations = [dict(zip(keys, v)) for v in product(*values)]
         total_runs = len(param_combinations)
 
-        # BENCHMARK-LOGIK ZUR ZEITABSCHÄTZUNG
-        estimated_time_str = ""
+        # +++ NEUE LOGIK FÜR ZEITABSCHÄTZUNG UND KONDITIONALE BESTÄTIGUNG +++
+        proceed = True
+        estimated_total_seconds = 0
         if total_runs > 5:
             print("\nFühre Benchmark zur Zeitabschätzung durch...", end="", flush=True)
             sample_size = min(5, total_runs)
@@ -144,24 +142,28 @@ def run_titan_optimization(start_date, end_date, symbol, leverage, start_capital
             
             avg_time_per_variant = (end_benchmark - start_benchmark) / sample_size
             estimated_total_seconds = avg_time_per_variant * total_runs
-            
-            if estimated_total_seconds > 60:
-                minutes = int(estimated_total_seconds / 60)
-                seconds = int(estimated_total_seconds % 60)
-                estimated_time_str = f"Geschätzte Gesamtdauer: ca. {minutes} Minuten und {seconds} Sekunden."
-            else:
-                estimated_time_str = f"Geschätzte Gesamtdauer: ca. {int(estimated_total_seconds)} Sekunden."
             print(" Fertig.")
 
-        # BESTÄTIGUNGS-SCHRITT
         print(f"\nEs werden insgesamt {total_runs} Varianten simuliert.")
-        if estimated_time_str:
-            print(estimated_time_str)
+        if estimated_total_seconds > 0:
+            minutes = int(estimated_total_seconds / 60)
+            seconds = int(estimated_total_seconds % 60)
+            if estimated_total_seconds > 60:
+                print(f"Geschätzte Gesamtdauer: ca. {minutes} Minuten und {seconds} Sekunden.")
+            else:
+                print(f"Geschätzte Gesamtdauer: ca. {int(estimated_total_seconds)} Sekunden.")
             
-        confirm = input("\nMöchten Sie mit der Berechnung fortfahren? [j/N]: ")
-        if confirm.lower() != 'j':
-            print("Optimierung für diese Strategie abgebrochen.")
-            continue 
+        if estimated_total_seconds > 120: # Schwellenwert: 2 Minuten
+            confirm = input("\nMöchten Sie mit der Berechnung fortfahren? [j/N]: ")
+            if confirm.lower() != 'j':
+                print("Optimierung durch Benutzer abgebrochen.")
+                proceed = False
+        else:
+            print("Berechnung startet automatisch (geschätzte Dauer unter 2 Minuten).")
+        
+        if not proceed:
+            continue
+        # +++ ENDE DER NEUEN LOGIK +++
 
         print(f"\nStarte Lauf mit {total_runs} Kombinationen...")
 
@@ -182,8 +184,7 @@ def run_titan_optimization(start_date, end_date, symbol, leverage, start_capital
 
         if not all_results:
             print(f"\nKeine Ergebnisse für {strategy_name} erzielt."); continue
-            
-        # +++ NEU: Füge Ergebnisse zur Gesamtliste hinzu +++
+        
         grand_total_results.extend(all_results)
 
         results_df = pd.DataFrame(all_results)
@@ -208,7 +209,6 @@ def run_titan_optimization(start_date, end_date, symbol, leverage, start_capital
                 print(f"    {p_name:<20}{row[p_name]}")
         print("\n" + "="*40)
 
-    # +++ NEU: FINALE GESAMTAUSWERTUNG AM ENDE +++
     if not grand_total_results:
         print("\nKeine Ergebnisse für eine Gesamtauswertung vorhanden.")
         return
@@ -262,6 +262,9 @@ if __name__ == "__main__":
         print(f"INFO: Symbol '{raw_symbol}' wurde zu '{formatted_symbol}' formatiert.")
     else:
         formatted_symbol = raw_symbol.upper()
+    
+    # Initialize grand_total_results before the call
+    grand_total_results = []
     
     run_titan_optimization(
         args.start, 
