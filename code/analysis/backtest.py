@@ -68,7 +68,7 @@ def run_titan_backtest(data, params, verbose=True):
             closed_trade = False
             exit_price = 0.0
             total_pnl = 0.0
-
+            
             if (side == 'long' and current_candle['low'] <= sl_price) or (side == 'short' and current_candle['high'] >= sl_price):
                 exit_price = sl_price; total_pnl = -abs(risk_amount_usd); current_capital += total_pnl; consecutive_loss_count += 1; verlust_vortrag += abs(total_pnl); closed_trade = True
             elif (side == 'long' and current_candle['high'] >= tp_price) or (side == 'short' and current_candle['low'] <= tp_price):
@@ -76,6 +76,11 @@ def run_titan_backtest(data, params, verbose=True):
 
             if closed_trade:
                 trades_count += 1
+                
+                # +++ NEUER SANITY CHECK: Kapital kann nicht unter 0 fallen +++
+                if current_capital < 0:
+                    current_capital = 0
+
                 trade_log.append({
                     "date": str(current_candle.name.date()), "side": side, "entry": entry_price,
                     "exit": exit_price, "pnl": total_pnl, "balance": current_capital
@@ -84,7 +89,12 @@ def run_titan_backtest(data, params, verbose=True):
                 drawdown = (peak_capital - current_capital) / peak_capital if peak_capital > 0 else 0
                 max_drawdown_pct = max(max_drawdown_pct, drawdown)
                 status = 'none'
+                
+                if current_capital == 0:
+                    break # Breche die Simulation ab, wenn das Kapital aufgebraucht ist
+                
                 continue
+                
         if status == 'none':
             if consecutive_loss_count >= max_consecutive_losses:
                 verlust_vortrag = 0.0; consecutive_loss_count = 0
@@ -94,6 +104,9 @@ def run_titan_backtest(data, params, verbose=True):
                 sl_price = current_candle['sl_price']; standard_tp_price = current_candle['tp_price']
                 
                 risk_amount_usd = current_capital * risk_per_trade_pct
+                if risk_amount_usd < 1: # Trade nicht eingehen, wenn das Risiko zu klein ist
+                    continue
+
                 stop_loss_distance_pct = abs(entry_price - sl_price) / entry_price if entry_price > 0 else 0
                 if stop_loss_distance_pct == 0: continue
                 
@@ -110,18 +123,11 @@ def run_titan_backtest(data, params, verbose=True):
     win_rate = (wins_count / trades_count * 100) if trades_count > 0 else 0
     final_pnl_pct = ((current_capital / start_capital) - 1) * 100
     avg_effective_leverage = sum(effective_leverages) / len(effective_leverages) if effective_leverages else 0
-    
-    max_survivable_leverage = 1 / max_drawdown_pct if max_drawdown_pct > 0 else float('inf')
-    if final_pnl_pct < 0:
-        recommended_leverage = 0.0
-    else:
-        recommended_leverage = max_survivable_leverage * 0.8
         
     return {
         "total_pnl_pct": final_pnl_pct, "trades_count": trades_count,
         "win_rate": win_rate, "params": params, "end_capital": current_capital,
         "avg_effective_leverage": avg_effective_leverage,
         "max_drawdown_pct": max_drawdown_pct,
-        "max_survivable_leverage": max_survivable_leverage,
         "trade_log": trade_log
     }
