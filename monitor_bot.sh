@@ -9,7 +9,7 @@ LOG_FILE="$SCRIPT_DIR/logs/titanbot.log"
 OPTIMIZER_SCRIPT="$SCRIPT_DIR/code/analysis/optimizer.py"
 CACHE_DIR="$SCRIPT_DIR/code/analysis/historical_data"
 
-# --- Farbcodes ---
+# --- Farbcodes für eine schönere Ausgabe ---
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
@@ -25,7 +25,7 @@ function run_optimizer() {
     read -p "Enddatum (YYYY-MM-DD): " END_DATE
     read -p "Handelspaar/paare (z.B. BTC ETH): " SYMBOL
     read -p "Startkapital in USDT (z.B. 1000): " START_CAPITAL
-    read -p "Risiko pro Trade in % (z.B. 1.5): " RISK_PER_TRADE
+    read -p "Risiko pro Trade in % (getrennt durch Leerzeichen, z.B. '1 1.5 2'): " RISK_PER_TRADE
     read -p "Detail-Log anzeigen bis max. Trades (Enter für 30): " LOG_THRESHOLD
     
     if [ -z "$LOG_THRESHOLD" ]; then
