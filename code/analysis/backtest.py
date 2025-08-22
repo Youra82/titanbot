@@ -57,7 +57,6 @@ def run_titan_backtest(data, params, verbose=True):
     trades_count, wins_count = 0, 0
     trade_log = []
     
-    # +++ NEU: Drawdown-Berechnung +++
     peak_capital = start_capital
     max_drawdown_pct = 0.0
 
@@ -81,7 +80,6 @@ def run_titan_backtest(data, params, verbose=True):
                     "date": str(current_candle.name.date()), "side": side, "entry": entry_price,
                     "exit": exit_price, "pnl": total_pnl, "balance": current_capital
                 })
-                # +++ NEU: Drawdown nach jedem Trade aktualisieren +++
                 peak_capital = max(peak_capital, current_capital)
                 drawdown = (peak_capital - current_capital) / peak_capital
                 max_drawdown_pct = max(max_drawdown_pct, drawdown)
@@ -106,7 +104,6 @@ def run_titan_backtest(data, params, verbose=True):
     win_rate = (wins_count / trades_count * 100) if trades_count > 0 else 0
     final_pnl_pct = ((current_capital / start_capital) - 1) * 100
     
-    # +++ NEUE, KORREKTE HEBEL-BERECHNUNG BASIEREND AUF DRAWDOWN +++
     max_survivable_leverage = 1 / max_drawdown_pct if max_drawdown_pct > 0 else float('inf')
     if final_pnl_pct < 0:
         recommended_leverage = 0.0
@@ -117,7 +114,7 @@ def run_titan_backtest(data, params, verbose=True):
         "total_pnl_pct": final_pnl_pct, "trades_count": trades_count,
         "win_rate": win_rate, "params": params, "end_capital": current_capital,
         "recommended_leverage": recommended_leverage, 
-        "max_survivable_leverage": max_survivable_leverage, # <-- NEUER, KORREKTER WERT
-        "max_drawdown_pct": max_drawdown_pct, # <-- ZUSÄTZLICHE INFO
+        "max_survivable_leverage": max_survivable_leverage,
+        "max_drawdown_pct": max_drawdown_pct,
         "trade_log": trade_log
     }
