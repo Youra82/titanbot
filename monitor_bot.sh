@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # --- Dynamische Pfadermittlung ---
-# Stellt sicher, dass das Skript von überall aus funktioniert.
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 
 # Pfade zu wichtigen Dateien und Verzeichnissen
@@ -10,7 +9,7 @@ LOG_FILE="$SCRIPT_DIR/logs/titanbot.log"
 OPTIMIZER_SCRIPT="$SCRIPT_DIR/code/analysis/optimizer.py"
 CACHE_DIR="$SCRIPT_DIR/code/analysis/historical_data"
 
-# --- Farbcodes für eine schönere Ausgabe ---
+# --- Farbcodes ---
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
@@ -25,16 +24,15 @@ function run_optimizer() {
     read -p "Startdatum (YYYY-MM-DD): " START_DATE
     read -p "Enddatum (YYYY-MM-DD): " END_DATE
     read -p "Handelspaar/paare (z.B. BTC ETH): " SYMBOL
-    read -p "Maximaler Hebel für Simulation (z.B. 10): " LEVERAGE
     read -p "Startkapital in USDT (z.B. 1000): " START_CAPITAL
-    read -p "Margin pro Trade in % (z.B. 10): " TRADE_SIZE_PCT
+    read -p "Risiko pro Trade in % (z.B. 1.5): " RISK_PER_TRADE
     read -p "Detail-Log anzeigen bis max. Trades (Enter für 30): " LOG_THRESHOLD
-    # Standardwert setzen, falls die Eingabe leer ist
+    
     if [ -z "$LOG_THRESHOLD" ]; then
         LOG_THRESHOLD=30
     fi
 
-    if [ -z "$START_DATE" ] || [ -z "$END_DATE" ] || [ -z "$SYMBOL" ] || [ -z "$LEVERAGE" ] || [ -z "$START_CAPITAL" ] || [ -z "$TRADE_SIZE_PCT" ]; then
+    if [ -z "$START_DATE" ] || [ -z "$END_DATE" ] || [ -z "$SYMBOL" ] || [ -z "$START_CAPITAL" ] || [ -z "$RISK_PER_TRADE" ]; then
         echo -e "${RED}Fehler: Grundlegende Felder müssen ausgefüllt werden.${NC}"; exit 1;
     fi
 
@@ -45,9 +43,8 @@ function run_optimizer() {
         --start "$START_DATE" \
         --end "$END_DATE" \
         --symbol "$SYMBOL" \
-        --leverage "$LEVERAGE" \
         --start_capital "$START_CAPITAL" \
-        --trade_size_pct "$TRADE_SIZE_PCT" \
+        --risk_per_trade_pct "$RISK_PER_TRADE" \
         --log_threshold "$LOG_THRESHOLD"
 
     echo -e "\n${GREEN}Optimierungslauf abgeschlossen.${NC}"
@@ -70,9 +67,7 @@ case "$1" in
         ;;
 esac
 
-# ######################################################################
-# ### STANDARD-MONITORING-ANSICHT ###
-# ######################################################################
+# --- STANDARD-MONITORING-ANSICHT ---
 echo -e "${CYAN}=======================================================${NC}"
 echo -e "${CYAN}             TITAN TRADING BOT MONITORING              ${NC}"
 echo -e "${CYAN}=======================================================${NC}"
@@ -85,11 +80,11 @@ echo -e "${YELLOW}--- KONFIGURATION ---${NC}"
 if [ -f "$CONFIG_FILE" ]; then
     if command -v jq &> /dev/null; then
         SYMBOL=$(jq -r '._HEADING_STEP_3_.global_settings.symbol' "$CONFIG_FILE")
-        LEVERAGE=$(jq -r '._HEADING_STEP_3_.global_settings.leverage' "$CONFIG_FILE")
+        RISK_PCT=$(jq -r '._HEADING_STEP_4_.risk_management.risk_per_trade_pct' "$CONFIG_FILE")
         STRATEGY_NUM=$(jq -r '._HEADING_STEP_1_.active_strategy_number' "$CONFIG_FILE")
         STRATEGY_NAME=$(jq -r "._HEADING_STEP_1_.strategy_map[\"$STRATEGY_NUM\"]" "$CONFIG_FILE")
         
-        echo "Handelspaar: $SYMBOL, Hebel: ${LEVERAGE}x"
+        echo "Handelspaar: $SYMBOL, Risiko pro Trade: ${RISK_PCT}%"
         echo -e "Aktive Strategie: ${GREEN}$STRATEGY_NAME${NC}"
     else
         echo -e "${RED}Fehler: 'jq' ist nicht installiert. Bitte mit 'sudo apt install jq' nachholen.${NC}"
@@ -102,7 +97,6 @@ echo ""
 # --- Bot-Status aus Log ---
 echo -e "${YELLOW}--- AKTUELLER STATUS & LETZTE AKTIVITÄT ---${NC}"
 if [ -f "$LOG_FILE" ]; then
-    # Zeige die letzten 5 relevanten Zeilen aus dem Log
     echo "Letzte Log-Einträge:"
     grep -v "^\s*$" "$LOG_FILE" | tail -n 5
     
