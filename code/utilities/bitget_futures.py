@@ -2,12 +2,14 @@
 import ccxt
 import time
 import pandas as pd
+import json
 from typing import Any, Optional, Dict, List
 
 class BitgetFutures():
     def __init__(self, api_setup: Optional[Dict[str, Any]] = None) -> None:
         api_setup = api_setup or {}
-        api_setup.setdefault("options", {"defaultType": "future"})
+        # HIER IST DIE KORREKTUR: 'future' wurde zu 'swap' geändert
+        api_setup.setdefault("options", {"defaultType": "swap"})
         self.session = ccxt.bitget(api_setup)
         self.markets = self.session.load_markets()
     
@@ -23,7 +25,6 @@ class BitgetFutures():
                 pass
         raise Exception(f"Fehler bei '{operation}': {error_message}") from e
 
-    # NEU: Funktion zum Setzen des Margin-Modus
     def set_margin_mode(self, symbol: str, margin_mode: str):
         try:
             return self.session.set_margin_mode(margin_mode, symbol)
@@ -34,7 +35,6 @@ class BitgetFutures():
             else:
                 self._handle_exception(f"set_margin_mode für {symbol}", e)
 
-    # NEU: Funktion zum Setzen des Hebels
     def set_leverage(self, symbol: str, leverage: int, margin_mode: str = 'isolated'):
         try:
             if margin_mode == 'isolated':
@@ -139,9 +139,14 @@ class BitgetFutures():
         except Exception as e:
             self._handle_exception(f"place_market_order ({side}, {amount}) für {symbol}", e)
 
+    def place_limit_order(self, symbol: str, side: str, amount: float, price: float, reduce: bool = False) -> Dict[str, Any]:
+        try:
+            return self.session.create_order(symbol, 'limit', side, amount, price, params={'reduceOnly': reduce})
+        except Exception as e:
+            self._handle_exception(f"place_limit_order ({side}, {amount}, {price}) für {symbol}", e)
+            
     def place_trigger_market_order(self, symbol: str, side: str, amount: float, trigger_price: float, reduce: bool = False) -> Dict[str, Any]:
         try:
-            trigger_price_str = self.session.price_to_precision(symbol, trigger_price)
-            return self.session.create_order(symbol, 'market', side, amount, params={'stopPrice': trigger_price_str, 'reduceOnly': reduce})
+            return self.session.create_order(symbol, 'market', side, amount, params={'stopPrice': trigger_price, 'reduceOnly': reduce})
         except Exception as e:
             self._handle_exception(f"place_trigger_market_order bei {trigger_price} für {symbol}", e)
