@@ -23,14 +23,19 @@ function run_optimizer() {
     echo -e "${CYAN}=======================================================${NC}"
     read -p "Startdatum (YYYY-MM-DD): " START_DATE
     read -p "Enddatum (YYYY-MM-DD): " END_DATE
-    # +++ TEXT ANPASSUNG HIER +++
     read -p "Handelspaar/paare (z.B. BTC ETH): " SYMBOL
     read -p "Maximaler Hebel für Simulation (z.B. 10): " LEVERAGE
     read -p "Startkapital in USDT (z.B. 1000): " START_CAPITAL
     read -p "Margin pro Trade in % (z.B. 10): " TRADE_SIZE_PCT
+    # +++ NEUE ABFRAGE FÜR DEN SCHWELLENWERT +++
+    read -p "Detail-Log anzeigen bis max. Trades (Enter für 30): " LOG_THRESHOLD
+    # Standardwert setzen, falls die Eingabe leer ist
+    if [ -z "$LOG_THRESHOLD" ]; then
+        LOG_THRESHOLD=30
+    fi
 
     if [ -z "$START_DATE" ] || [ -z "$END_DATE" ] || [ -z "$SYMBOL" ] || [ -z "$LEVERAGE" ] || [ -z "$START_CAPITAL" ] || [ -z "$TRADE_SIZE_PCT" ]; then
-        echo -e "${RED}Fehler: Alle Felder müssen ausgefüllt werden.${NC}"; exit 1;
+        echo -e "${RED}Fehler: Grundlegende Felder müssen ausgefüllt werden.${NC}"; exit 1;
     fi
 
     source "$SCRIPT_DIR/code/.venv/bin/activate"
@@ -41,7 +46,8 @@ function run_optimizer() {
         --symbol "$SYMBOL" \
         --leverage "$LEVERAGE" \
         --start_capital "$START_CAPITAL" \
-        --trade_size_pct "$TRADE_SIZE_PCT"
+        --trade_size_pct "$TRADE_SIZE_PCT" \
+        --log_threshold "$LOG_THRESHOLD" # +++ NEUER PARAMETER WIRD ÜBERGEBEN +++
 
     echo -e "\n${GREEN}Optimierungslauf abgeschlossen.${NC}"
 }
@@ -68,6 +74,4 @@ echo -e "${CYAN}=======================================================${NC}"
 echo -e "${CYAN}             TITAN TRADING BOT MONITORING              ${NC}"
 echo -e "${CYAN}=======================================================${NC}"
 echo "Verwende './monitor_bot.sh <mode>', Modi: ${GREEN}optimize, clear-cache${NC}"
-echo ""
-
 # ... (Rest des Skripts bleibt unverändert)
