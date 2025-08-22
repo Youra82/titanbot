@@ -206,14 +206,16 @@ def run_titan_optimization(start_date, end_date, symbols, leverage, start_capita
                 trade_log_list = json.loads(row['trade_log'])
                 if trade_log_list:
                     print("\n  DETAILLIERTE HANDELS-CHRONIK (GERINGE ANZAHL):")
-                    print("    Datum        | Seite  | Einstieg | Ausstieg | Gewinn (USDT)")
-                    print("    -----------------------------------------------------------")
+                    # +++ NEUE, ERWEITERTE TABELLE +++
+                    print("    Datum        | Seite  | Einstieg | Ausstieg | Gewinn (USDT) | Kontostand")
+                    print("    -------------------------------------------------------------------------")
                     for trade in trade_log_list:
                         side_str = trade['side'].capitalize().ljust(5)
                         entry_str = f"{trade['entry']:.2f}".ljust(8)
                         exit_str = f"{trade['exit']:.2f}".ljust(8)
-                        pnl_str = f"{trade['pnl']:+.2f}"
-                        print(f"    {trade['date']} | {side_str} | {entry_str} | {exit_str} | {pnl_str}")
+                        pnl_str = f"{trade['pnl']:+9.2f}".ljust(13)
+                        balance_str = f"{trade['balance']:.2f} USDT"
+                        print(f"    {trade['date']} | {side_str} | {entry_str} | {exit_str} | {pnl_str} | {balance_str}")
             except Exception:
                 pass
     print("\n" + "="*40)
