@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 # --- Funktion für den Optimizer ---
 function run_optimizer() {
     echo -e "${CYAN}=======================================================${NC}"
-    echo -e "${CYAN}            TITANBOT - STRATEGIE-OPTIMIZER             ${NC}"
+    echo -e "${CYAN}             TITANBOT - STRATEGIE-OPTIMIZER            ${NC}"
     echo -e "${CYAN}=======================================================${NC}"
     read -p "Startdatum (YYYY-MM-DD): " START_DATE
     read -p "Enddatum (YYYY-MM-DD): " END_DATE
@@ -69,7 +69,7 @@ esac
 
 # --- STANDARD-MONITORING-ANSICHT ---
 echo -e "${CYAN}=======================================================${NC}"
-echo -e "${CYAN}             TITAN TRADING BOT MONITORING              ${NC}"
+echo -e "${CYAN}              TITAN TRADING BOT MONITORING               ${NC}"
 echo -e "${CYAN}=======================================================${NC}"
 echo "Verwende './monitor_bot.sh <mode>', Modi: ${GREEN}optimize, clear-cache${NC}"
 echo -e "Letzte Aktualisierung: $(date '+%Y-%m-%d %H:%M:%S')"
@@ -79,10 +79,12 @@ echo ""
 echo -e "${YELLOW}--- KONFIGURATION ---${NC}"
 if [ -f "$CONFIG_FILE" ]; then
     if command -v jq &> /dev/null; then
-        SYMBOL=$(jq -r '._HEADING_STEP_3_.global_settings.symbol' "$CONFIG_FILE")
-        RISK_PCT=$(jq -r '._HEADING_STEP_4_.risk_management.risk_per_trade_pct' "$CONFIG_FILE")
-        STRATEGY_NUM=$(jq -r '._HEADING_STEP_1_.active_strategy_number' "$CONFIG_FILE")
-        STRATEGY_NAME=$(jq -r "._HEADING_STEP_1_.strategy_map[\"$STRATEGY_NUM\"]" "$CONFIG_FILE")
+        # +++ KORREKTUR HIER +++
+        # Die fehlerhaften Pfade über die "_HEADING_..."-Schlüssel wurden entfernt.
+        SYMBOL=$(jq -r '.global_settings.symbol' "$CONFIG_FILE")
+        RISK_PCT=$(jq -r '.risk_management.risk_per_trade_pct' "$CONFIG_FILE")
+        STRATEGY_NUM=$(jq -r '.active_strategy_number' "$CONFIG_FILE")
+        STRATEGY_NAME=$(jq -r ".strategy_map[\"$STRATEGY_NUM\"]" "$CONFIG_FILE")
         
         echo "Handelspaar: $SYMBOL, Risiko pro Trade: ${RISK_PCT}%"
         echo -e "Aktive Strategie: ${GREEN}$STRATEGY_NAME${NC}"
