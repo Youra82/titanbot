@@ -9,7 +9,7 @@ _A homemade humble library to run automated python crypto trading bots_
 > bash titanbot/install.sh
 
 Botausführung:
-> bash titanbot/code/run_envelope.sh
+> bash titanbot/run_envelope.sh
 
 Monitorinstallation:
 > chmod +x monitor_bot.sh
