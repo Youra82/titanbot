@@ -1,3 +1,4 @@
+# code/strategies/envelope/run.py
 import os
 import sys
 import json
@@ -32,7 +33,11 @@ logger = logging.getLogger('titan_bot')
 
 # --- Globale Variablen & Helfer ---
 try:
-    with open(os.path.join(PROJECT_ROOT, 'secret.json'), "r") as f: secrets = json.load(f)
+    # +++ KORREKTUR HIER +++
+    # Der PROJECT_ROOT ist /code, aber secret.json liegt im Hauptverzeichnis.
+    # Wir gehen also eine Ebene vom PROJECT_ROOT nach oben.
+    SECRET_FILE_PATH = os.path.join(os.path.dirname(PROJECT_ROOT), 'secret.json')
+    with open(SECRET_FILE_PATH, "r") as f: secrets = json.load(f)
     API_SETUP = secrets.get('envelope', secrets.get('bitget_example'))
     TELEGRAM_BOT_TOKEN = secrets.get('telegram', {}).get('bot_token')
     TELEGRAM_CHAT_ID = secrets.get('telegram', {}).get('chat_id')
@@ -65,16 +70,19 @@ def get_active_strategy():
         cfg3 = CONFIG["_HEADING_STEP_3_"]
         cfg4 = CONFIG["_HEADING_STEP_4_"]
         
-        strategy_num = cfg1["active_strategy_number"]
-        strategy_name, signal_func = STRATEGY_MAPPING[strategy_num]
+        strategy_num_str = str(CONFIG.get("active_strategy_number")) # Sicherstellen, dass es ein String ist für den map-Zugriff
+        strategy_name, signal_func = STRATEGY_MAPPING[int(strategy_num_str)]
         
-        strategy_params = cfg2["strategies"][strategy_name]
-        global_params = cfg3["global_settings"]
-        risk_params = cfg4["risk_management"]
+        strategy_params = CONFIG["strategies"][strategy_name]
+        global_params = CONFIG["global_settings"]
+        risk_params = CONFIG["risk_management"]
         
         return strategy_name, signal_func, strategy_params, global_params, risk_params
+    except KeyError as e:
+        logger.critical(f"Fehler in der config.json Struktur: Schlüssel {e} nicht gefunden"); sys.exit(1)
     except Exception as e:
-        logger.critical(f"Fehler in der config.json Struktur: {e}"); sys.exit(1)
+        logger.critical(f"Allgemeiner Fehler beim Lesen der config.json: {e}"); sys.exit(1)
+
 
 def open_position(side, signal_candle, strategy_name, strategy_params, global_params, risk_params):
     try:
