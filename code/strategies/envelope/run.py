@@ -33,9 +33,6 @@ logger = logging.getLogger('titan_bot')
 
 # --- Globale Variablen & Helfer ---
 try:
-    # +++ KORREKTUR HIER +++
-    # Der PROJECT_ROOT ist /code, aber secret.json liegt im Hauptverzeichnis.
-    # Wir gehen also eine Ebene vom PROJECT_ROOT nach oben.
     SECRET_FILE_PATH = os.path.join(os.path.dirname(PROJECT_ROOT), 'secret.json')
     with open(SECRET_FILE_PATH, "r") as f: secrets = json.load(f)
     API_SETUP = secrets.get('envelope', secrets.get('bitget_example'))
@@ -65,12 +62,7 @@ def send_telegram_message(message):
 
 def get_active_strategy():
     try:
-        cfg1 = CONFIG["_HEADING_STEP_1_"]
-        cfg2 = CONFIG["_HEADING_STEP_2_"]
-        cfg3 = CONFIG["_HEADING_STEP_3_"]
-        cfg4 = CONFIG["_HEADING_STEP_4_"]
-        
-        strategy_num_str = str(CONFIG.get("active_strategy_number")) # Sicherstellen, dass es ein String ist für den map-Zugriff
+        strategy_num_str = str(CONFIG.get("active_strategy_number"))
         strategy_name, signal_func = STRATEGY_MAPPING[int(strategy_num_str)]
         
         strategy_params = CONFIG["strategies"][strategy_name]
@@ -84,18 +76,35 @@ def get_active_strategy():
         logger.critical(f"Allgemeiner Fehler beim Lesen der config.json: {e}"); sys.exit(1)
 
 
-def open_position(side, signal_candle, strategy_name, strategy_params, global_params, risk_params):
+def open_position(side, signal_candle, strategy_name, strategy_params, global_params, risk_params, fixed_risk_usd=None):
     try:
         symbol = global_params['symbol']
         state = state_manager.get_state()
         verlust_vortrag = state.get('verlust_vortrag', 0.0)
         risk_per_trade_pct = risk_params['risk_per_trade_pct'] / 100
+        
+        # +++ START DER ÄNDERUNG +++
+        margin_mode = global_params['margin_mode']
+        technical_leverage = 25  # Fester technischer Hebel
+        
+        # Erstelle ein Dictionary mit den Parametern, die jeder Order mitgegeben werden
+        order_params = {
+            'leverage': technical_leverage,
+            'marginMode': margin_mode
+        }
+        logger.info(f"Order-Parameter vorbereitet: {order_params}")
+        # +++ ENDE DER ÄNDERUNG +++
 
         balance = bitget.fetch_balance().get('USDT', {}).get('total', 0.0)
         current_price = bitget.fetch_ticker(symbol)['last']
         sl_price = signal_candle['sl_price']
         
-        risk_amount_usd = balance * risk_per_trade_pct
+        if fixed_risk_usd is not None:
+            risk_amount_usd = fixed_risk_usd
+            logger.info(f"TESTMODUS: Verwende festes Risiko von {risk_amount_usd:.2f} USDT.")
+        else:
+            risk_amount_usd = balance * risk_per_trade_pct
+
         stop_loss_distance_pct = abs(current_price - sl_price) / current_price if current_price > 0 else 0
         if stop_loss_distance_pct == 0:
             logger.error("Stop-Loss Distanz ist Null. Trade wird übersprungen."); return
@@ -111,16 +120,25 @@ def open_position(side, signal_candle, strategy_name, strategy_params, global_pa
             else (current_price - standard_profit_per_unit - verlust_vortrag_per_unit)
 
         logger.info(f"Öffne {side.upper()}-Position für {symbol}...")
-        bitget.place_market_order(symbol, 'buy' if side == 'long' else 'sell', amount)
-        bitget.place_limit_order(symbol, 'sell' if side == 'long' else 'buy', amount, final_tp_price, reduce=True)
+        # +++ START DER ÄNDERUNG +++
+        # Gib die order_params an jede Order-Funktion weiter
+        bitget.place_market_order(symbol, 'buy' if side == 'long' else 'sell', amount, params=order_params)
+        bitget.place_limit_order(symbol, 'sell' if side == 'long' else 'buy', amount, final_tp_price, reduce=True, params=order_params)
+        # Für die SL-Order sind die Params nicht nötig, da sie auf die offene Position wirkt
         sl_order = bitget.place_trigger_market_order(symbol, 'sell' if side == 'long' else 'buy', amount, sl_price)
+        # +++ ENDE DER ÄNDERUNG +++
         
         state_manager.set_state(status="in_trade", last_side=side, stop_loss_order_id=sl_order['id'], entry_price=current_price, risk_amount_usd=risk_amount_usd)
 
-        msg = (f"✅ *Neue Position (Titanbot)*\n"
+        msg_prefix = "✅ *Neue Position (Titanbot)*"
+        if fixed_risk_usd is not None:
+            msg_prefix = "🔬 *TEST-POSITION (Titanbot)*"
+
+        msg = (f"{msg_prefix}\n"
                f"Strategie: *{strategy_name.replace('_', ' ').title()}*\n"
                f"Symbol: *{symbol}*\n"
                f"Seite: *{side.upper()}* @ {current_price:.4f}\n"
+               f"Technischer Hebel: *{technical_leverage}x*\n"
                f"Effektiver Hebel: *{effective_leverage:.2f}x*\n"
                f"Take-Profit: {final_tp_price:.4f}\n"
                f"Stop-Loss: {sl_price:.4f} (Risiko: {risk_amount_usd:.2f} USDT)")
@@ -128,6 +146,7 @@ def open_position(side, signal_candle, strategy_name, strategy_params, global_pa
 
     except Exception as e:
         logger.error(f"Fehler bei Positionseröffnung: {e}", exc_info=True); send_telegram_message(f"❌ Fehler bei Positionseröffnung: {e}"); state_manager.reset_trade_state()
+
 
 def manage_position(global_params):
     try:
@@ -160,8 +179,43 @@ def manage_position(global_params):
     except Exception as e:
         logger.error(f"Fehler im Positions-Management: {e}", exc_info=True); send_telegram_message(f"❌ Fehler im Positions-Management: {e}")
 
+
 if __name__ == "__main__":
     strategy_name, signal_func, strategy_params, global_params, risk_params = get_active_strategy()
+    
+    test_mode_config = CONFIG.get("test_mode", {})
+    if test_mode_config.get("enabled", False):
+        logger.warning(">>> ACHTUNG: TESTMODUS AKTIV <<<")
+        
+        test_risk = test_mode_config.get("test_risk_usd", 1.0)
+        test_side = test_mode_config.get("side", "long")
+        symbol = global_params['symbol']
+
+        logger.info(f"Führe einen Test-Trade für {symbol} aus: Seite={test_side}, Risiko={test_risk} USDT")
+        
+        # +++ START DER ÄNDERUNG +++
+        # Die alten set_leverage Aufrufe werden hier nicht mehr benötigt,
+        # da die Parameter direkt in open_position übergeben werden.
+        # bitget.set_margin_mode(...)
+        # bitget.set_leverage(...)
+        # +++ ENDE DER ÄNDERUNG +++
+
+        current_price = bitget.fetch_ticker(symbol)['last']
+        risk_distance_pct = 0.02 
+        
+        if test_side == 'long':
+            sl = current_price * (1 - risk_distance_pct)
+            tp = current_price * (1 + risk_distance_pct * 1.5)
+        else: # short
+            sl = current_price * (1 + risk_distance_pct)
+            tp = current_price * (1 - risk_distance_pct * 1.5)
+            
+        dummy_signal_candle = {'sl_price': sl, 'tp_price': tp}
+
+        open_position('long' if test_side == 'long' else 'short', dummy_signal_candle, "TEST_MODE", strategy_params, global_params, risk_params, fixed_risk_usd=test_risk)
+        
+        logger.warning(">>> TESTMODUS BEENDET. Setze 'enabled' in config.json zurück auf 'false'. <<<")
+        sys.exit(0)
     
     logger.info(f">>> Starte Titanbot-Lauf für {global_params['symbol']} mit Strategie '{strategy_name}' <<<")
     
@@ -171,10 +225,12 @@ if __name__ == "__main__":
         state = state_manager.get_state()
         
         if not is_position_open:
-            # +++ HEBEL WIRD AUTOMATISCH GESETZT +++
-            logger.info("Keine Position offen. Setze Hebel auf 25x als technische Obergrenze.")
-            bitget.set_margin_mode(global_params['symbol'], global_params['margin_mode'])
-            bitget.set_leverage(global_params['symbol'], 25) # Setzt ein hohes Tempolimit
+            # +++ START DER ÄNDERUNG +++
+            # Die alten, unzuverlässigen set_leverage/set_margin_mode Aufrufe werden entfernt.
+            # logger.info("Keine Position offen. Setze Hebel auf 25x als technische Obergrenze.")
+            # bitget.set_margin_mode(global_params['symbol'], global_params['margin_mode'])
+            # bitget.set_leverage(global_params['symbol'], 25)
+            # +++ ENDE DER ÄNDERUNG +++
             
             if state['status'] != 'ok_to_trade':
                 logger.warning("Bot-Status war 'in_trade', aber keine Position gefunden. Setze zurück.")
