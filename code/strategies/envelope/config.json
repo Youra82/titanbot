@@ -28,5 +28,12 @@
     "_info_step_4_": "Diese Einstellung bestimmt, wie viel % des Gesamtkapitals pro Trade riskiert wird.",
     "risk_management": {
         "risk_per_trade_pct": 1.5
-    }
+    },
+    "_HEADING_STEP_5_": "------------------- 5. LIVE-TEST MODUS -------------------",
+    "_info_step_5_": "Wenn 'enabled' auf true steht, wird der Bot beim nächsten Lauf einen einzelnen Test-Trade mit dem angegebenen Betrag ausführen und sich dann beenden. WICHTIG: Danach wieder auf false setzen!",
+    "test_mode": {
+      "enabled": false,
+      "test_risk_usd": 1.0,
+      "side": "long"
+    },
 }
