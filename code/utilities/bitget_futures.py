@@ -27,9 +27,10 @@ class BitgetFutures():
 
     def set_margin_mode(self, symbol: str, margin_mode: str):
         try:
+            # Ignoriere den Fehler, wenn der Modus bereits korrekt eingestellt ist
+            # Diese Funktion ist unzuverlässig, wird aber zur Sicherheit beibehalten
             return self.session.set_margin_mode(margin_mode, symbol)
         except Exception as e:
-            # Ignoriere den Fehler, wenn der Modus bereits korrekt eingestellt ist
             if 'Margin mode is the same' in str(e):
                 pass
             else:
@@ -37,14 +38,14 @@ class BitgetFutures():
 
     def set_leverage(self, symbol: str, leverage: int, margin_mode: str = 'isolated'):
         try:
+            # Ignoriere den Fehler, wenn der Hebel bereits korrekt eingestellt ist
+            # Diese Funktion ist unzuverlässig, wird aber zur Sicherheit beibehalten
             if margin_mode == 'isolated':
-                # Bei 'isolated' muss der Hebel für Long und Short getrennt gesetzt werden
                 self.session.set_leverage(leverage, symbol, {'holdSide': 'long'})
                 self.session.set_leverage(leverage, symbol, {'holdSide': 'short'})
             else: # cross
                 self.session.set_leverage(leverage, symbol)
         except Exception as e:
-            # Ignoriere den Fehler, wenn der Hebel bereits korrekt eingestellt ist
             if 'Leverage is the same' in str(e):
                 pass
             else:
@@ -133,20 +134,31 @@ class BitgetFutures():
         except Exception as e:
             self._handle_exception(f"fetch_historical_ohlcv für {symbol}", e)
 
-    def place_market_order(self, symbol: str, side: str, amount: float, reduce: bool = False) -> Dict[str, Any]:
+    # +++ START DER ÄNDERUNG +++
+    def place_market_order(self, symbol: str, side: str, amount: float, reduce: bool = False, params: dict = None) -> Dict[str, Any]:
         try:
-            return self.session.create_order(symbol, 'market', side, amount, params={'reduceOnly': reduce})
+            order_params = {'reduceOnly': reduce}
+            if params:
+                order_params.update(params)
+            return self.session.create_order(symbol, 'market', side, amount, params=order_params)
         except Exception as e:
             self._handle_exception(f"place_market_order ({side}, {amount}) für {symbol}", e)
 
-    def place_limit_order(self, symbol: str, side: str, amount: float, price: float, reduce: bool = False) -> Dict[str, Any]:
+    def place_limit_order(self, symbol: str, side: str, amount: float, price: float, reduce: bool = False, params: dict = None) -> Dict[str, Any]:
         try:
-            return self.session.create_order(symbol, 'limit', side, amount, price, params={'reduceOnly': reduce})
+            order_params = {'reduceOnly': reduce}
+            if params:
+                order_params.update(params)
+            return self.session.create_order(symbol, 'limit', side, amount, price, params=order_params)
         except Exception as e:
             self._handle_exception(f"place_limit_order ({side}, {amount}, {price}) für {symbol}", e)
             
-    def place_trigger_market_order(self, symbol: str, side: str, amount: float, trigger_price: float, reduce: bool = False) -> Dict[str, Any]:
+    def place_trigger_market_order(self, symbol: str, side: str, amount: float, trigger_price: float, reduce: bool = False, params: dict = None) -> Dict[str, Any]:
         try:
-            return self.session.create_order(symbol, 'market', side, amount, params={'stopPrice': trigger_price, 'reduceOnly': reduce})
+            order_params = {'stopPrice': trigger_price, 'reduceOnly': reduce}
+            if params:
+                order_params.update(params)
+            return self.session.create_order(symbol, 'market', side, amount, params=order_params)
         except Exception as e:
             self._handle_exception(f"place_trigger_market_order bei {trigger_price} für {symbol}", e)
+    # +++ ENDE DER ÄNDERUNG +++
