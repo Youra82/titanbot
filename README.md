@@ -21,7 +21,7 @@ Backtest & Optimizer benutzen
 > ./monitor_bot.sh optimize
 
 Cache vom Optimizer löschen:
-> ./monitor_bot.sh clear-cache
+> bash monitor_bot.sh clear-cache
 
 Abfrage der letzten Trading-Entscheidungen:
 
