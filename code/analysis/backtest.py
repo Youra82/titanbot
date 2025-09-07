@@ -2,17 +2,16 @@
 
 import os
 import sys
-import json
 import pandas as pd
 import numpy as np
 import warnings
 from datetime import timedelta
+import json
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utilities.bitget_futures import BitgetFutures
-from utilities.strategy_logic import calculate_envelope_indicators
+from utilities.strategy_logic import calculate_smc_indicators
 
 def load_data(symbol, timeframe, start_date_str, end_date_str):
     cache_dir = os.path.join(os.path.dirname(__file__), '..', 'analysis', 'historical_data')
@@ -26,6 +25,7 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
         if data.index.min() <= required_start and data.index.max() >= pd.to_datetime(end_date_str, utc=True):
             return data.loc[start_date_str:end_date_str]
     try:
+        from utilities.bitget_futures import BitgetFutures
         project_root = os.path.join(os.path.dirname(__file__), '..', '..')
         key_path = os.path.abspath(os.path.join(project_root, 'secret.json'))
         with open(key_path, "r") as f: secrets = json.load(f)
@@ -41,97 +41,73 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
     except Exception as e:
         print(f"Fehler beim Daten-Download für {timeframe}: {e}"); return pd.DataFrame()
 
-def run_envelope_backtest(data, params):
-    base_leverage = params.get('base_leverage', 10.0)
-    target_atr_pct = params.get('target_atr_pct', 1.5)
-    max_leverage = params.get('max_leverage', 50.0)
-    
-    balance_fraction = params.get('balance_fraction', 100) / 100
-    stop_loss_pct = params.get('stop_loss_pct', 0.4) / 100
-    envelopes = params.get('envelopes_pct', [])
+def run_smc_backtest(data, params):
+    risk_reward_ratio = params.get('risk_reward_ratio', 2.0)
+    risk_per_trade_pct = params.get('risk_per_trade_pct', 1.0) / 100
     fee_pct = 0.05 / 100
-
     start_capital = params.get('start_capital', 1000)
+    data = calculate_smc_indicators(data.copy(), params)
+    
     current_capital = start_capital
     trades_count, wins_count = 0, 0
     trade_log = []
-    
     peak_capital = start_capital
     max_drawdown_pct = 0.0
-    
-    open_positions = []
-    
+    position = None
+
     for i in range(1, len(data)):
-        current_candle = data.iloc[i]
-        
-        if open_positions:
-            avg_entry_price = np.mean([p['entry_price'] for p in open_positions])
-            total_amount = sum([p['amount'] for p in open_positions])
-            side = open_positions[0]['side']
-            avg_leverage = np.mean([p['leverage'] for p in open_positions])
+        current = data.iloc[i]
+        prev = data.iloc[i-1]
 
-            sl_price = avg_entry_price * (1 - stop_loss_pct) if side == 'long' else avg_entry_price * (1 + stop_loss_pct)
-            tp_price = current_candle['average']
-            exit_price = None
-            reason = None
-
-            if (side == 'long' and current_candle['low'] <= sl_price) or (side == 'short' and current_candle['high'] >= sl_price):
-                exit_price = sl_price
-                reason = "Stop-Loss"
-
-            if not exit_price and ((side == 'long' and current_candle['high'] >= tp_price) or (side == 'short' and current_candle['low'] <= tp_price)):
-                exit_price = tp_price
-                reason = "Take-Profit"
-
-            if exit_price is not None:
-                pnl = (exit_price - avg_entry_price) * total_amount if side == 'long' else (avg_entry_price - exit_price) * total_amount
-                entry_value = avg_entry_price * total_amount
-                exit_value = exit_price * total_amount
-                total_fees = (entry_value * fee_pct) + (exit_value * fee_pct)
-                pnl -= total_fees
-                
-                current_capital += pnl
+        if position:
+            exit_price, reason = None, None
+            if position['side'] == 'long':
+                if current['low'] <= position['stop_loss']: exit_price, reason = position['stop_loss'], "Stop-Loss"
+                elif current['high'] >= position['take_profit']: exit_price, reason = position['take_profit'], "Take-Profit"
+            elif position['side'] == 'short':
+                if current['high'] >= position['stop_loss']: exit_price, reason = position['stop_loss'], "Stop-Loss"
+                elif current['low'] <= position['take_profit']: exit_price, reason = position['take_profit'], "Take-Profit"
+            
+            if exit_price:
+                pnl_pct = (exit_price / position['entry_price'] - 1) if position['side'] == 'long' else (1 - exit_price / position['entry_price'])
+                pnl_usd = position['size_usd'] * pnl_pct
+                total_fees = (position['size_usd'] * fee_pct) * 2
+                current_capital += pnl_usd - total_fees
                 trades_count += 1
-                if reason == "Take-Profit": wins_count += 1
+                if pnl_usd > 0: wins_count += 1
                 
                 trade_log.append({
-                    "timestamp": str(current_candle.name), "side": side, "entry": avg_entry_price, 
-                    "exit": exit_price, "pnl": pnl, "balance": current_capital, "reason": reason, 
-                    "leverage": avg_leverage, "stop_loss_price": sl_price, "take_profit_price": tp_price
+                    "timestamp": str(current.name), "side": position['side'], "entry": position['entry_price'],
+                    "exit": exit_price, "pnl": pnl_usd - total_fees, "balance": current_capital, "reason": reason
                 })
-                open_positions = []
-
-            if not open_positions:
-                if current_capital <= 0: current_capital = 0
+                position = None
                 peak_capital = max(peak_capital, current_capital)
                 drawdown = (peak_capital - current_capital) / peak_capital if peak_capital > 0 else 0
                 max_drawdown_pct = max(max_drawdown_pct, drawdown)
-                if current_capital == 0: break
-                continue
+                if current_capital <= 0: break
 
-        if not open_positions:
-            current_atr_pct = current_candle['atr_pct']
-            leverage = base_leverage
-            if pd.notna(current_atr_pct) and current_atr_pct > 0:
-                leverage = base_leverage * (target_atr_pct / current_atr_pct)
-            
-            leverage = int(round(max(1.0, min(leverage, max_leverage))))
+        if not position and not np.isnan(prev['bos_level']) and not np.isnan(prev['ob_high']):
+            entry_price, stop_loss, side = None, None, None
+            if prev['trend'] == 1 and current['low'] <= prev['ob_high'] and current['high'] > prev['ob_high']:
+                entry_price, stop_loss, side = prev['ob_high'], prev['ob_low'], 'long'
+            elif prev['trend'] == -1 and current['high'] >= prev['ob_low'] and current['low'] < prev['ob_low']:
+                entry_price, stop_loss, side = prev['ob_low'], prev['ob_high'], 'short'
 
-            for j, e_pct in enumerate(envelopes):
-                band_low = current_candle[f'band_low_{j+1}']
-                if current_candle['low'] <= band_low:
-                    amount = (current_capital * balance_fraction / len(envelopes)) * leverage / band_low
-                    open_positions.append({'side': 'long', 'entry_price': band_low, 'amount': amount, 'leverage': leverage})
-
-            if not open_positions:
-                for j, e_pct in enumerate(envelopes):
-                    band_high = current_candle[f'band_high_{j+1}']
-                    if current_candle['high'] >= band_high:
-                        amount = (current_capital * balance_fraction / len(envelopes)) * leverage / band_high
-                        open_positions.append({'side': 'short', 'entry_price': band_high, 'amount': amount, 'leverage': leverage})
-
+            if entry_price and stop_loss and abs(entry_price - stop_loss) > 0:
+                sl_distance_pct = abs(entry_price - stop_loss) / entry_price
+                if sl_distance_pct == 0: continue
+                
+                size_usd = (current_capital * risk_per_trade_pct) / sl_distance_pct
+                tp_distance = abs(entry_price - stop_loss) * risk_reward_ratio
+                take_profit = entry_price + tp_distance if side == 'long' else entry_price - tp_distance
+                
+                position = {
+                    'side': side, 'entry_price': entry_price, 'stop_loss': stop_loss,
+                    'take_profit': take_profit, 'size_usd': size_usd
+                }
+    
     win_rate = (wins_count / trades_count * 100) if trades_count > 0 else 0
-    final_pnl_pct = ((current_capital / start_capital) - 1) * 100
+    final_pnl_pct = ((current_capital - start_capital) / start_capital) * 100
     
     return {
         "total_pnl_pct": final_pnl_pct, "trades_count": trades_count,
