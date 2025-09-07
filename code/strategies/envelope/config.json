@@ -1,22 +1,18 @@
 {
     "market": {
-        "symbol": "XRP/USDT:USDT",
-        "timeframe": "4h"
+        "symbol": "BTC/USDT:USDT",
+        "timeframe": "1h"
     },
     "strategy": {
-        "average_type": "WMA",
-        "average_period": 5,
-        "envelopes_pct": [
-            3.05
-        ]
+        "swing_period": 15,
+        "atr_period": 14
     },
     "risk": {
         "margin_mode": "isolated",
-        "balance_fraction_pct": 2,
-        "stop_loss_pct": 0.55,
-        "base_leverage": 7,
-        "max_leverage": 50,
-        "target_atr_pct": 2.24
+        "balance_fraction_pct": 10,
+        "risk_per_trade_pct": 1.0,
+        "risk_reward_ratio": 2.0,
+        "leverage": 10
     },
     "behavior": {
         "use_longs": true,
