@@ -62,7 +62,7 @@ Dieses Skript aktualisiert den Server, installiert Python-Abhängigkeiten und ri
 
 Bash
 
->cd LiveTradingBots
+>cd titanbot
 
 >chmod +x install.sh
 
