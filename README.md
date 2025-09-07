@@ -55,7 +55,7 @@ Lade den Code von GitHub auf deinen Server.
 
 Bash
 
->git clone https://github.com/Youra82/LiveTradingBots.git
+>git clone https://github.com/Youra82/titanbot.git
 
 Installations-Skript ausführen
 Dieses Skript aktualisiert den Server, installiert Python-Abhängigkeiten und richtet die virtuelle Umgebung ein.
@@ -103,12 +103,12 @@ Füge die folgende Zeile am Ende der Datei ein:
 
 Code-Snippet
 
->*/5 * * * * flock -n /home/ubuntu/LiveTradingBots/bot.lock bash /home/ubuntu/LiveTradingBots/code/run_envelope.sh >> /home/ubuntu/LiveTradingBots/logs/cron.log 2>&1
+>*/5 * * * * flock -n /home/ubuntu/titanbot/bot.lock bash /home/ubuntu/titanbot/code/run_envelope.sh >> /home/ubuntu/titanbot/logs/cron.log 2>&1
 
 Speichere und schließe die Datei. Der Bot ist nun live.
 
 Bot-Verwaltung & Analyse
-Diese Befehle werden im Hauptverzeichnis /home/ubuntu/LiveTradingBots ausgeführt.
+Diese Befehle werden im Hauptverzeichnis /home/ubuntu/titanbot ausgeführt.
 
 Bot-Code aktualisieren
 Dieses Skript lädt die neueste Version des Codes von GitHub herunter, ohne deine secret.json zu überschreiben.
