@@ -2,48 +2,66 @@
 
 import pandas as pd
 import ta
+import numpy as np
+from scipy.signal import find_peaks
 
-def calculate_envelope_indicators(data, params):
-    """
-    Berechnet den gleitenden Durchschnitt, die Envelopes und den ATR-Indikator
-    und fügt sie als neue Spalten zu den Daten hinzu.
-    """
-    avg_type = params.get('average_type', 'DCM')
-    avg_period = int(params.get('average_period', 5))
-    envelopes = params.get('envelopes_pct', [])
-    atr_period = params.get('atr_period', 14)
+def calculate_smc_indicators(data, params):
+    swing_period = int(params.get('swing_period', 10))
+    atr_period = int(params.get('atr_period', 14))
 
-    # 1. Alle Indikator-Berechnungen durchführen
-    if avg_type == 'DCM':
-        average = ta.volatility.DonchianChannel(data['high'], data['low'], data['close'], window=avg_period).donchian_channel_mband()
-    elif avg_type == 'SMA':
-        average = ta.trend.sma_indicator(data['close'], window=avg_period)
-    elif avg_type == 'WMA':
-        average = ta.trend.wma_indicator(data['close'], window=avg_period)
-    else:
-        raise ValueError(f"Der Durchschnittstyp {avg_type} wird nicht unterstützt")
+    data['atr'] = ta.volatility.AverageTrueRange(data['high'], data['low'], data['close'], window=atr_period).average_true_range()
 
-    atr = ta.volatility.AverageTrueRange(data['high'], data['low'], data['close'], window=atr_period).average_true_range()
-    atr_pct = (atr / data['close']) * 100
-
-    # 2. Einen neuen, leeren DataFrame für die Indikatoren erstellen
-    indicators = pd.DataFrame(index=data.index)
-
-    # 3. Dem neuen DataFrame die berechneten Spalten zuweisen
-    indicators['average'] = average
-    indicators['atr'] = atr
-    indicators['atr_pct'] = atr_pct
+    high_peaks_indices, _ = find_peaks(data['high'], distance=swing_period, prominence=data['atr'].mean() * 0.5)
+    low_peaks_indices, _ = find_peaks(-data['low'], distance=swing_period, prominence=data['atr'].mean() * 0.5)
     
-    for i, e_pct in enumerate(envelopes):
-        e = e_pct / 100
-        indicators[f'band_high_{i + 1}'] = average * (1 + e)
-        indicators[f'band_low_{i + 1}'] = average * (1 - e)
+    data['swing_high_price'] = np.nan
+    data.iloc[high_peaks_indices, data.columns.get_loc('swing_high_price')] = data.iloc[high_peaks_indices]['high']
+    data['swing_low_price'] = np.nan
+    data.iloc[low_peaks_indices, data.columns.get_loc('swing_low_price')] = data.iloc[low_peaks_indices]['low']
 
-    # <<< VERBESSERUNG 1 (Strategie): Trend-Filter-Indikator berechnen >>>
-    trend_filter_params = params.get('trend_filter', {})
-    if trend_filter_params.get('enabled', False):
-        tf_period = trend_filter_params.get('period', 200)
-        indicators['trend_sma'] = ta.trend.sma_indicator(data['close'], window=tf_period)
-    
-    # 4. Den Original-DataFrame mit dem Indikatoren-DataFrame verbinden
-    return data.join(indicators)
+    data['swing_high_price'].ffill(inplace=True)
+    data['swing_low_price'].ffill(inplace=True)
+
+    data['trend'] = 0
+    data['bos_level'] = np.nan
+    data['ob_high'] = np.nan
+    data['ob_low'] = np.nan
+
+    last_swing_high = data.iloc[0]['swing_high_price']
+    last_swing_low = data.iloc[0]['swing_low_price']
+
+    for i in range(1, len(data)):
+        current_high = data.iloc[i]['high']
+        current_low = data.iloc[i]['low']
+        
+        if data.iloc[i]['swing_high_price'] != data.iloc[i-1]['swing_high_price']:
+            last_swing_high = data.iloc[i]['swing_high_price']
+        if data.iloc[i]['swing_low_price'] != data.iloc[i-1]['swing_low_price']:
+            last_swing_low = data.iloc[i]['swing_low_price']
+
+        prev_trend = data.iloc[i-1]['trend']
+
+        if current_high > last_swing_high:
+            data.iat[i, data.columns.get_loc('trend')] = 1
+            data.iat[i, data.columns.get_loc('bos_level')] = last_swing_high
+            relevant_range_start_iloc = data.index.get_loc(data[data['low'] == last_swing_low].index[-1])
+            lookback_data = data.iloc[relevant_range_start_iloc:i]
+            down_candles = lookback_data[lookback_data['close'] < lookback_data['open']]
+            if not down_candles.empty:
+                ob = down_candles.iloc[-1]
+                data.iat[i, data.columns.get_loc('ob_high')] = ob['high']
+                data.iat[i, data.columns.get_loc('ob_low')] = ob['low']
+        elif current_low < last_swing_low:
+            data.iat[i, data.columns.get_loc('trend')] = -1
+            data.iat[i, data.columns.get_loc('bos_level')] = last_swing_low
+            relevant_range_start_iloc = data.index.get_loc(data[data['high'] == last_swing_high].index[-1])
+            lookback_data = data.iloc[relevant_range_start_iloc:i]
+            up_candles = lookback_data[lookback_data['close'] > lookback_data['open']]
+            if not up_candles.empty:
+                ob = up_candles.iloc[-1]
+                data.iat[i, data.columns.get_loc('ob_high')] = ob['high']
+                data.iat[i, data.columns.get_loc('ob_low')] = ob['low']
+        else:
+            data.iat[i, data.columns.get_loc('trend')] = prev_trend
+            
+    return data
