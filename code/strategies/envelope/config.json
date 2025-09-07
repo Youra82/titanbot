@@ -1,0 +1,25 @@
+{
+    "market": {
+        "symbol": "XRP/USDT:USDT",
+        "timeframe": "4h"
+    },
+    "strategy": {
+        "average_type": "WMA",
+        "average_period": 5,
+        "envelopes_pct": [
+            3.05
+        ]
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "balance_fraction_pct": 2,
+        "stop_loss_pct": 0.55,
+        "base_leverage": 7,
+        "max_leverage": 50,
+        "target_atr_pct": 2.24
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    }
+}
