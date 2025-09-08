@@ -14,7 +14,6 @@ def calculate_smc_indicators(data, params):
     high_peaks_indices, _ = find_peaks(data['high'], distance=swing_period, prominence=data['atr'].mean() * 0.5)
     low_peaks_indices, _ = find_peaks(-data['low'], distance=swing_period, prominence=data['atr'].mean() * 0.5)
     
-    # --- KORREKTUR 1: Wir speichern nicht nur den Preis, sondern auch die Position (iloc) ---
     data['swing_high_price'] = np.nan
     data.iloc[high_peaks_indices, data.columns.get_loc('swing_high_price')] = data.iloc[high_peaks_indices]['high']
     data['swing_low_price'] = np.nan
@@ -25,7 +24,6 @@ def calculate_smc_indicators(data, params):
     data['swing_low_idx'] = np.nan
     data.iloc[low_peaks_indices, data.columns.get_loc('swing_low_idx')] = low_peaks_indices
 
-    # Wir füllen die Werte vorwärts, damit wir an jeder Kerze den letzten bekannten Swing-Punkt haben
     data.ffill(inplace=True)
 
     data['trend'] = 0
@@ -37,7 +35,6 @@ def calculate_smc_indicators(data, params):
         current_high = data.iloc[i]['high']
         current_low = data.iloc[i]['low']
         
-        # Lese den letzten bekannten Swing-Punkt für die aktuelle Kerze
         last_swing_high = data.iloc[i]['swing_high_price']
         last_swing_low = data.iloc[i]['swing_low_price']
         prev_trend = data.iloc[i-1]['trend']
@@ -47,8 +44,12 @@ def calculate_smc_indicators(data, params):
             data.iat[i, data.columns.get_loc('trend')] = 1
             data.iat[i, data.columns.get_loc('bos_level')] = last_swing_high
             
-            # --- KORREKTUR 2: Wir verwenden den gespeicherten Index direkt, anstatt zu suchen ---
-            relevant_range_start_iloc = int(data.iloc[i]['swing_low_idx'])
+            # --- KORREKTUR: Sicherheits-Check, ob der Swing-Punkt existiert (nicht NaN ist) ---
+            start_idx = data.iloc[i]['swing_low_idx']
+            if pd.isna(start_idx):
+                continue # Überspringe, wenn der Swing Low Index noch nicht definiert ist
+            
+            relevant_range_start_iloc = int(start_idx)
             lookback_data = data.iloc[relevant_range_start_iloc:i]
             down_candles = lookback_data[lookback_data['close'] < lookback_data['open']]
             
@@ -62,8 +63,12 @@ def calculate_smc_indicators(data, params):
             data.iat[i, data.columns.get_loc('trend')] = -1
             data.iat[i, data.columns.get_loc('bos_level')] = last_swing_low
 
-            # --- KORREKTUR 2: Wir verwenden den gespeicherten Index direkt, anstatt zu suchen ---
-            relevant_range_start_iloc = int(data.iloc[i]['swing_high_idx'])
+            # --- KORREKTUR: Sicherheits-Check, ob der Swing-Punkt existiert (nicht NaN ist) ---
+            start_idx = data.iloc[i]['swing_high_idx']
+            if pd.isna(start_idx):
+                continue # Überspringe, wenn der Swing High Index noch nicht definiert ist
+
+            relevant_range_start_iloc = int(start_idx)
             lookback_data = data.iloc[relevant_range_start_iloc:i]
             up_candles = lookback_data[lookback_data['close'] > lookback_data['open']]
 
