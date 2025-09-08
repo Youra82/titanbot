@@ -21,8 +21,14 @@ from analysis.backtest import load_data, run_smc_backtest
 HISTORICAL_DATA, START_CAPITAL, MINIMUM_TRADES = None, 1000.0, 10
 
 class TqdmCallback(Callback):
-    def __init__(self, pbar): self.pbar = pbar
-    def notify(self, algorithm): self.pbar.update(1)
+    def __init__(self, pbar):
+        # --- KORREKTUR: Diese Zeile ist entscheidend ---
+        super().__init__()
+        # ----------------------------------------------
+        self.pbar = pbar
+        
+    def notify(self, algorithm):
+        self.pbar.update(1)
 
 def format_time(seconds):
     if seconds < 60: return f"{seconds:.1f} Sekunden"
@@ -70,10 +76,23 @@ def main(n_procs, n_gen_default):
             global HISTORICAL_DATA
             HISTORICAL_DATA = load_data(symbol, timeframe, start_date, end_date)
             if HISTORICAL_DATA.empty: continue
+
+            print("\nFühre kurzen Benchmark zur Zeitschätzung durch...")
+            pop_size = 100
+            problem_for_benchmark = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max)
+            sample_individual = np.random.rand(1, 3) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
+            start_b = time.time()
+            problem_for_benchmark._evaluate(sample_individual, out={})
+            end_b = time.time()
+            time_per_eval = end_b - start_b
+            
+            total_evals = pop_size * n_gen
+            estimated_time = (total_evals * time_per_eval) / n_procs
+            print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
             
             with Pool(n_procs) as pool:
                 problem = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max, parallelization=StarmapParallelization(pool.starmap))
-                algorithm = NSGA2(pop_size=100)
+                algorithm = NSGA2(pop_size=pop_size)
                 termination = get_termination("n_gen", n_gen)
                 with tqdm(total=n_gen, desc=f"Optimiere {symbol} ({timeframe})") as pbar:
                     res = minimize(problem, algorithm, termination, seed=1, callback=TqdmCallback(pbar), verbose=False)
