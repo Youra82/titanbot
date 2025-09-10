@@ -86,13 +86,21 @@ def main(n_procs, n_gen_default, resume):
     algorithm = None
     if resume and os.path.exists(CHECKPOINT_FILE):
         print("\nLade gespeicherten Fortschritt aus Checkpoint-Datei...")
-        with open(CHECKPOINT_FILE, 'rb') as f: algorithm = pickle.load(f)
-        with open(INPUTS_FILE, 'r') as f: inputs = json.load(f)
-        symbol_input, timeframe_input, start_date, end_date = inputs['symbol'], inputs['timeframe'], inputs['start_date'], inputs['end_date']
-        n_gen, START_CAPITAL, MINIMUM_TRADES = inputs['n_gen'], inputs['start_capital'], inputs['minimum_trades']
-        leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
-        print("Optimierung wird fortgesetzt.")
-    else:
+        try:
+            with open(CHECKPOINT_FILE, 'rb') as f: algorithm = pickle.load(f)
+            with open(INPUTS_FILE, 'r') as f: inputs = json.load(f)
+            symbol_input, timeframe_input, start_date, end_date = inputs['symbol'], inputs['timeframe'], inputs['start_date'], inputs['end_date']
+            n_gen, START_CAPITAL, MINIMUM_TRADES = inputs['n_gen'], inputs['start_capital'], inputs['minimum_trades']
+            leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
+            print("Optimierung wird fortgesetzt.")
+        except (EOFError, FileNotFoundError) as e:
+            print(f"Fehler beim Laden des Checkpoints ({e}). Starte eine neue Optimierung.")
+            resume = False
+            algorithm = None
+            if os.path.exists(CHECKPOINT_FILE): os.remove(CHECKPOINT_FILE)
+            if os.path.exists(INPUTS_FILE): os.remove(INPUTS_FILE)
+
+    if not resume:
         symbol_input = input("Handelspaar(e) eingeben (z.B. BTC ETH): ")
         timeframe_input = input("Zeitfenster eingeben (z.B. 1h 4h): ")
         start_date = input("Startdatum eingeben (JJJJ-MM-TT): ")
@@ -146,12 +154,12 @@ def main(n_procs, n_gen_default, resume):
                     
                     callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
                     
-                    # --- KORREKTUR: Wir weisen den Callback dem geladenen Algorithmus wieder zu ---
-                    if resume and algorithm is not None:
+                    # Diese Zeile behebt den "NoneType"-Fehler beim Fortsetzen
+                    if algorithm is not None:
                         algorithm.callback = callback
-                    # --------------------------------------------------------------------------
                     
-                    res = minimize(problem, algorithm, termination, seed=1, callback=callback, verbose=False)
+                    # Der Callback wird jetzt direkt über das algorithm-Objekt gehandhabt
+                    res = minimize(problem, algorithm, termination, seed=1, verbose=False)
 
             valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
             if not valid_indices: continue
