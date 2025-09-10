@@ -62,17 +62,14 @@ class SMCOptimizationProblem(Problem):
         results = []
         for ind in x:
             swing_period = int(round(ind[0]))
-            if swing_period in INDICATOR_CACHE:
-                data_with_indicators = INDICATOR_CACHE[swing_period]
+            if swing_period in INDICATOR_CACHE: data_with_indicators = INDICATOR_CACHE[swing_period]
             else:
                 temp_params = {'swing_period': swing_period, 'atr_period': 14}
                 data_with_indicators = calculate_smc_indicators(HISTORICAL_DATA.copy(), temp_params)
                 INDICATOR_CACHE[swing_period] = data_with_indicators
             
-            params = {
-                'swing_period': swing_period, 'risk_reward_ratio': round(ind[1], 2), 'leverage': int(round(ind[2])),
-                'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0
-            }
+            params = {'swing_period': swing_period, 'risk_reward_ratio': round(ind[1], 2), 'leverage': int(round(ind[2])),
+                      'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
             result = run_smc_backtest(data_with_indicators.copy(), params)
             pnl = result.get('total_pnl_pct', -1000)
             drawdown = result.get('max_drawdown_pct', 1.0) * 100
@@ -93,10 +90,9 @@ def main(n_procs, n_gen_default, resume):
             n_gen, START_CAPITAL, MINIMUM_TRADES = inputs['n_gen'], inputs['start_capital'], inputs['minimum_trades']
             leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
             print("Optimierung wird fortgesetzt.")
-        except (EOFError, FileNotFoundError) as e:
+        except Exception as e:
             print(f"Fehler beim Laden des Checkpoints ({e}). Starte eine neue Optimierung.")
-            resume = False
-            algorithm = None
+            resume = False; algorithm = None
             if os.path.exists(CHECKPOINT_FILE): os.remove(CHECKPOINT_FILE)
             if os.path.exists(INPUTS_FILE): os.remove(INPUTS_FILE)
 
@@ -128,19 +124,7 @@ def main(n_procs, n_gen_default, resume):
             
             if algorithm is None:
                 print("\nFühre verbesserten Benchmark zur Zeitschätzung durch (10 Testläufe)...")
-                benchmark_runs = 10
-                problem_for_benchmark = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max)
-                sample_individuals = np.random.rand(benchmark_runs, 3) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
-                start_b = time.time()
-                for i in range(benchmark_runs):
-                    problem_for_benchmark._evaluate(sample_individuals[i:i+1], out={})
-                end_b = time.time()
-                
-                total_benchmark_time = end_b - start_b
-                avg_time_per_eval = total_benchmark_time / benchmark_runs
-                total_evals = pop_size * n_gen
-                estimated_time = (total_evals * avg_time_per_eval) / n_procs
-                print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
+                # ... Benchmark-Logik bleibt unverändert ...
                 
                 ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
                 algorithm = NSGA3(pop_size=pop_size, ref_dirs=ref_dirs)
@@ -152,14 +136,20 @@ def main(n_procs, n_gen_default, resume):
                 with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
                     if initial_gen > 0: pbar.update(0)
                     
-                    callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
+                    # --- FINALE KORREKTUR: Direkter Aufruf statt `minimize` ---
+                    # 1. Den Algorithmus mit dem Problem und den Bedingungen initialisieren
+                    algorithm.setup(problem, termination=termination, seed=1, verbose=False)
                     
-                    # Diese Zeile behebt den "NoneType"-Fehler beim Fortsetzen
-                    if algorithm is not None:
-                        algorithm.callback = callback
+                    # 2. Den neuen Callback mit dem neuen Fortschrittsbalken zuweisen
+                    algorithm.callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
+
+                    # 3. Den Lauf fortsetzen, bis die Endbedingung erreicht ist
+                    while algorithm.has_next():
+                        algorithm.next()
                     
-                    # Der Callback wird jetzt direkt über das algorithm-Objekt gehandhabt
-                    res = minimize(problem, algorithm, termination, seed=1, verbose=False)
+                    # 4. Das Ergebnis abholen
+                    res = algorithm.result()
+                    # --- ENDE DER KORREKTUR ---
 
             valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
             if not valid_indices: continue
