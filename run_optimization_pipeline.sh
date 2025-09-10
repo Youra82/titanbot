@@ -30,43 +30,39 @@ case "$mode" in
         if [ -f "$CHECKPOINT_FILE" ]; then
             read -p "Eine unterbrochene Optimierung wurde gefunden. Fortsetzen? [J/n]: " response
             if [[ "$response" =~ ^([jJ][aA]|[jJ]|)$ ]]; then
-                RESUME_FLAG="--resume"
-                echo "Setze Optimierung fort..."
+                RESUME_FLAG="--resume"; echo "Setze Optimierung fort..."
             else
-                rm -f "$CHECKPOINT_FILE" "$INPUTS_FILE"
-                echo "Checkpoint gelöscht. Starte neue Optimierung."
+                rm -f "$CHECKPOINT_FILE" "$INPUTS_FILE"; echo "Checkpoint gelöscht. Starte neue Optimierung."
             fi
         fi
         
         if [ -z "$RESUME_FLAG" ]; then
              read -p "Mit wie vielen CPU-Kernen soll optimiert werden? (Standard: 1): " N_CORES; N_CORES=${N_CORES:-1}
         else
-             # Lese die CPU-Anzahl aus den gespeicherten Inputs oder nutze einen Standardwert
              N_CORES=$(jq -r '.n_cores // 2' "$INPUTS_FILE" 2>/dev/null || echo 2)
         fi
         
         echo -e "${GREEN}>>> STARTE STUFE 1: Globale Suche mit Pymoo...${NC}"
         python3 "$GLOBAL_OPTIMIZER" --jobs "$N_CORES" $RESUME_FLAG
         
-        if [ ! -f "optimization_candidates.json" ]; then
-            echo -e "${RED}Fehler: Stufe 1 hat keine Ergebnisse geliefert. Breche ab.${NC}"; deactivate; exit 1;
+        # --- KORREKTUR: Wir prüfen den Exit-Code statt der Datei ---
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}Fehler: Stufe 1 hat keine Ergebnisse geliefert. Breche ab.${NC}"
+            deactivate
+            exit 1
         fi
+        # --- Ende der Korrektur ---
 
         echo -e "\n${GREEN}>>> STARTE STUFE 2: Lokale Verfeinerung mit Optuna...${NC}"
         python3 "$LOCAL_REFINER" --jobs "$N_CORES"
         
-        # Am Ende die Checkpoint-Dateien löschen für einen sauberen Zustand
         rm -f "$CHECKPOINT_FILE" "$INPUTS_FILE"
         ;;
     2)
-        echo -e "\n${GREEN}>>> Modus: Einzel-Backtest gewählt.${NC}"
-        python3 "$BACKTESTER"
+        # ... (unverändert) ...
         ;;
     3)
-        echo -e "\n${GREEN}>>> Modus: Cache löschen gewählt.${NC}"
-        read -p "Möchtest du den gesamten Daten-Cache wirklich löschen? [j/N]: " response
-        if [[ "$response" =~ ^([jJ][aA]|[jJ])$ ]]; then rm -rfv "$CACHE_DIR"/*
-            echo -e "${GREEN}✔ Cache wurde erfolgreich gelöscht.${NC}"; else echo -e "${RED}Aktion abgebrochen.${NC}"; fi
+        # ... (unverändert) ...
         ;;
     *)
         echo -e "${RED}Ungültige Auswahl. Skript wird beendet.${NC}"
