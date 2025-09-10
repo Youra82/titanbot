@@ -26,7 +26,6 @@ INDICATOR_CACHE = {}
 CHECKPOINT_FILE = "pymoo_checkpoint.pkl"
 INPUTS_FILE = "optim_inputs.json"
 
-# --- KORREKTUR: Die beiden Callback-Klassen werden zu einer zusammengefasst ---
 class CombinedCallback(Callback):
     def __init__(self, pbar, every_n_gen_checkpoint=5):
         super().__init__()
@@ -39,9 +38,20 @@ class CombinedCallback(Callback):
 
         # 2. Logik zum Speichern des Checkpoints
         if algorithm.n_gen > 0 and algorithm.n_gen % self.every_n_gen_checkpoint == 0:
+            
+            # --- KORREKTUR: Wir entfernen den problematischen Teil vor dem Speichern ---
+            # Wir merken uns den Callback (der den pbar enthält)
+            callback_ref = algorithm.callback
+            # Wir entfernen ihn temporär vom Algorithmus-Objekt
+            algorithm.callback = None
+            
+            # Jetzt speichern wir das "saubere" Algorithmus-Objekt
             with open(CHECKPOINT_FILE, 'wb') as f:
                 pickle.dump(algorithm, f)
-# --- Ende der Korrektur ---
+            
+            # Und hängen den Callback direkt danach wieder an, damit alles weiterläuft
+            algorithm.callback = callback_ref
+            # --- Ende der Korrektur ---
 
 def format_time(seconds):
     if seconds < 60: return f"{seconds:.1f} Sekunden"
@@ -141,7 +151,6 @@ def main(n_procs, n_gen_default, resume):
                 initial_gen = algorithm.n_gen if algorithm.n_gen else 0
                 with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
                     if initial_gen > 0: pbar.update(0)
-                    # --- KORREKTUR: Wir übergeben jetzt nur noch ein einziges Callback-Objekt ---
                     callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
                     res = minimize(problem, algorithm, termination, seed=1, callback=callback, verbose=False)
 
