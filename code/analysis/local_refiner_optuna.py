@@ -9,10 +9,14 @@ import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from analysis.backtest import run_smc_backtest
-from analysis.global_optimizer_pymoo import load_data
+from analysis.global_optimizer_pymoo import load_data, format_time
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 HISTORICAL_DATA, START_CAPITAL, BASE_PARAMS = None, 1000.0, {}
+
+# Name der Datenbank-Datei für die Speicherung des Fortschritts von Stufe 2
+DB_FILE = "optuna_studies.db"
+STORAGE_URL = f"sqlite:///{DB_FILE}"
 
 def objective(trial):
     base_swing = BASE_PARAMS.get('swing_period', 15)
@@ -34,29 +38,60 @@ def objective(trial):
 def main(n_jobs, n_trials):
     print("\n--- [Stufe 2/2] Lokale Verfeinerung (TitanBot) mit Optuna ---")
     input_file = os.path.join(os.path.dirname(__file__), 'optimization_candidates.json')
-    if not os.path.exists(input_file): print(f"Fehler: '{input_file}' nicht gefunden."); return
+    if not os.path.exists(input_file):
+        print(f"Fehler: '{input_file}' nicht gefunden. Stufe 1 muss zuerst laufen."); return
 
     with open(input_file, 'r') as f: candidates = json.load(f)
-    print(f"Lade {len(candidates)} Kandidaten zur Verfeinerung...")
+    print(f"Lade {len(candidates)} Kandidaten zur Verfeinerung... Fortschritt wird in '{DB_FILE}' gespeichert.")
+    
+    # Lade eine Zusammenfassung der bereits abgeschlossenen Studien aus der DB
+    try:
+        all_studies = optuna.get_all_study_summaries(storage=STORAGE_URL)
+        completed_study_names = {study.study_name for study in all_studies if study.n_trials >= n_trials}
+    except Exception:
+        completed_study_names = set()
     
     best_overall_trial, best_overall_score, best_overall_info = None, -float('inf'), {}
 
     for i, candidate in enumerate(candidates):
-        print(f"\n===== Verfeinere Kandidat {i+1}/{len(candidates)} für {candidate['symbol']} ({candidate['timeframe']}) =====")
-        global HISTORICAL_DATA, BASE_PARAMS, START_CAPITAL
-        HISTORICAL_DATA = load_data(candidate['symbol'], candidate['timeframe'], candidate['start_date'], candidate['end_date'])
-        BASE_PARAMS, START_CAPITAL = candidate['params'], candidate['start_capital']
-        if HISTORICAL_DATA.empty: continue
-            
-        study = optuna.create_study(direction="maximize")
-        study.optimize(objective, n_trials=n_trials, n_jobs=n_jobs, show_progress_bar=True)
+        # Eindeutiger Name für jede Studie, um sie wiederzufinden
+        study_name = f"candidate-{i}-{candidate['symbol'].replace('/', '')}-{candidate['timeframe']}"
         
-        if study.best_value > best_overall_score:
+        print(f"\n===== Verfeinere Kandidat {i+1}/{len(candidates)} für {candidate['symbol']} ({candidate['timeframe']}) =====")
+        
+        # Prüfe, ob diese Studie bereits vollständig abgeschlossen ist
+        if study_name in completed_study_names:
+            print("Diese Studie wurde bereits abgeschlossen. Lade Ergebnisse aus der Datenbank...")
+            study = optuna.load_study(study_name=study_name, storage=STORAGE_URL)
+        else:
+            global HISTORICAL_DATA, BASE_PARAMS, START_CAPITAL
+            HISTORICAL_DATA = load_data(candidate['symbol'], candidate['timeframe'], candidate['start_date'], candidate['end_date'])
+            BASE_PARAMS, START_CAPITAL = candidate['params'], candidate['start_capital']
+            if HISTORICAL_DATA.empty: continue
+            
+            # Optuna wird angewiesen, die DB zu nutzen und eine Studie zu laden/fortzusetzen, falls sie existiert
+            study = optuna.create_study(
+                storage=STORAGE_URL,
+                study_name=study_name,
+                direction="maximize",
+                load_if_exists=True # Das ist der Schlüssel zum Fortsetzen!
+            )
+            
+            # Führe nur die noch fehlenden Trials aus
+            completed_trials = len(study.trials)
+            remaining_trials = n_trials - completed_trials
+            if remaining_trials > 0:
+                 print(f"{completed_trials} von {n_trials} Durchläufen bereits abgeschlossen. Setze fort...")
+                 study.optimize(objective, n_trials=remaining_trials, n_jobs=n_jobs, show_progress_bar=True)
+            else:
+                 print("Alle Durchläufe für diese Studie sind bereits abgeschlossen.")
+
+        if study.best_trial and study.best_value > best_overall_score:
             best_overall_score, best_overall_trial, best_overall_info = study.best_value, study.best_trial, candidate
 
     if best_overall_trial:
         print("\n\n" + "="*80 + "\n    +++ FINALES BESTES ERGEBNIS FÜR TITANBOT +++\n" + "="*80)
-        final_params = {**BASE_PARAMS, **best_overall_trial.params, 'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
+        final_params = {**best_overall_info['params'], **best_overall_trial.params, 'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
         final_data = load_data(best_overall_info['symbol'], best_overall_info['timeframe'], best_overall_info['start_date'], best_overall_info['end_date'])
         final_result = run_smc_backtest(final_data.copy(), final_params)
 
@@ -88,7 +123,7 @@ def main(n_jobs, n_trials):
                          "behavior": {"use_longs": True, "use_shorts": True}}
         print(json.dumps(config_output, indent=4) + "\n" + "="*80)
     else:
-        print("Kein gültiges Ergebnis nach der Verfeinerung gefunden.")
+        print("Kein gültiges Ergebnis nach der Verfeinerung gefunden. Möglicherweise waren alle Kandidaten bereits in der Datenbank.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Stufe 2: Lokale Parameter-Verfeinerung mit Optuna.")
