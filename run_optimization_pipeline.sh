@@ -5,7 +5,8 @@ VENV_PATH="$SCRIPT_DIR/code/.venv/bin/activate"
 GLOBAL_OPTIMIZER="$SCRIPT_DIR/code/analysis/global_optimizer_pymoo.py"
 LOCAL_REFINER="$SCRIPT_DIR/code/analysis/local_refiner_optuna.py"
 BACKTESTER="$SCRIPT_DIR/code/analysis/run_backtest.py"
-CANDIDATES_FILE="$SCRIPT_DIR/code/analysis/optimization_candidates.json"
+CHECKPOINT_FILE="pymoo_checkpoint.pkl"
+INPUTS_FILE="optim_inputs.json"
 CACHE_DIR="$SCRIPT_DIR/code/analysis/historical_data"
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; RED='\033[0;31m'; NC='\033[0m'
 
@@ -24,13 +25,38 @@ read -p "Auswahl (1-3): " mode
 case "$mode" in
     1)
         echo -e "\n${GREEN}>>> Modus: Optimierungs-Pipeline für TitanBot gewählt.${NC}"
-        read -p "Mit wie vielen CPU-Kernen soll optimiert werden? (Standard: 1): " N_CORES; N_CORES=${N_CORES:-1}
+        
+        RESUME_FLAG=""
+        if [ -f "$CHECKPOINT_FILE" ]; then
+            read -p "Eine unterbrochene Optimierung wurde gefunden. Fortsetzen? [J/n]: " response
+            if [[ "$response" =~ ^([jJ][aA]|[jJ]|)$ ]]; then
+                RESUME_FLAG="--resume"
+                echo "Setze Optimierung fort..."
+            else
+                rm -f "$CHECKPOINT_FILE" "$INPUTS_FILE"
+                echo "Checkpoint gelöscht. Starte neue Optimierung."
+            fi
+        fi
+        
+        if [ -z "$RESUME_FLAG" ]; then
+             read -p "Mit wie vielen CPU-Kernen soll optimiert werden? (Standard: 1): " N_CORES; N_CORES=${N_CORES:-1}
+        else
+             # Lese die CPU-Anzahl aus den gespeicherten Inputs oder nutze einen Standardwert
+             N_CORES=$(jq -r '.n_cores // 2' "$INPUTS_FILE" 2>/dev/null || echo 2)
+        fi
+        
         echo -e "${GREEN}>>> STARTE STUFE 1: Globale Suche mit Pymoo...${NC}"
-        python3 "$GLOBAL_OPTIMIZER" --jobs "$N_CORES"
-        if [ ! -f "$CANDIDATES_FILE" ]; then
-            echo -e "${RED}Fehler: Stufe 1 hat keine Ergebnisse geliefert. Breche ab.${NC}"; deactivate; exit 1; fi
+        python3 "$GLOBAL_OPTIMIZER" --jobs "$N_CORES" $RESUME_FLAG
+        
+        if [ ! -f "optimization_candidates.json" ]; then
+            echo -e "${RED}Fehler: Stufe 1 hat keine Ergebnisse geliefert. Breche ab.${NC}"; deactivate; exit 1;
+        fi
+
         echo -e "\n${GREEN}>>> STARTE STUFE 2: Lokale Verfeinerung mit Optuna...${NC}"
         python3 "$LOCAL_REFINER" --jobs "$N_CORES"
+        
+        # Am Ende die Checkpoint-Dateien löschen für einen sauberen Zustand
+        rm -f "$CHECKPOINT_FILE" "$INPUTS_FILE"
         ;;
     2)
         echo -e "\n${GREEN}>>> Modus: Einzel-Backtest gewählt.${NC}"
