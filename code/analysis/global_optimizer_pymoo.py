@@ -33,25 +33,29 @@ class CombinedCallback(Callback):
         self.every_n_gen_checkpoint = every_n_gen_checkpoint
 
     def notify(self, algorithm):
-        # 1. Logik für den Fortschrittsbalken
         self.pbar.update(1)
 
-        # 2. Logik zum Speichern des Checkpoints
         if algorithm.n_gen > 0 and algorithm.n_gen % self.every_n_gen_checkpoint == 0:
+            # --- KORREKTUR: Sicherer Speichervorgang ---
+            tmp_checkpoint_file = CHECKPOINT_FILE + ".tmp"
             
-            # --- KORREKTUR: Wir entfernen den problematischen Teil vor dem Speichern ---
-            # Wir merken uns den Callback (der den pbar enthält)
+            # 1. Callback temporär entfernen, um Pickle-Fehler zu vermeiden
             callback_ref = algorithm.callback
-            # Wir entfernen ihn temporär vom Algorithmus-Objekt
             algorithm.callback = None
             
-            # Jetzt speichern wir das "saubere" Algorithmus-Objekt
-            with open(CHECKPOINT_FILE, 'wb') as f:
-                pickle.dump(algorithm, f)
-            
-            # Und hängen den Callback direkt danach wieder an, damit alles weiterläuft
-            algorithm.callback = callback_ref
+            try:
+                # 2. In eine temporäre Datei schreiben
+                with open(tmp_checkpoint_file, 'wb') as f:
+                    pickle.dump(algorithm, f)
+                
+                # 3. Wenn erfolgreich, die temporäre Datei zur finalen Datei umbenennen (atomar)
+                os.rename(tmp_checkpoint_file, CHECKPOINT_FILE)
+
+            finally:
+                # 4. Callback auf jeden Fall wieder anhängen
+                algorithm.callback = callback_ref
             # --- Ende der Korrektur ---
+
 
 def format_time(seconds):
     if seconds < 60: return f"{seconds:.1f} Sekunden"
