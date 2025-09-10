@@ -84,10 +84,8 @@ def main(n_procs, n_gen_default, resume):
     algorithm = None
     if resume and os.path.exists(CHECKPOINT_FILE):
         print("\nLade gespeicherten Fortschritt aus Checkpoint-Datei...")
-        with open(CHECKPOINT_FILE, 'rb') as f:
-            algorithm = pickle.load(f)
-        with open(INPUTS_FILE, 'r') as f:
-            inputs = json.load(f)
+        with open(CHECKPOINT_FILE, 'rb') as f: algorithm = pickle.load(f)
+        with open(INPUTS_FILE, 'r') as f: inputs = json.load(f)
         symbol_input, timeframe_input, start_date, end_date = inputs['symbol'], inputs['timeframe'], inputs['start_date'], inputs['end_date']
         n_gen, START_CAPITAL, MINIMUM_TRADES = inputs['n_gen'], inputs['start_capital'], inputs['minimum_trades']
         leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
@@ -102,12 +100,10 @@ def main(n_procs, n_gen_default, resume):
         MINIMUM_TRADES = int(input("Mindestanzahl an Trades (z.B. 20): "))
         leverage_min = int(input("Minimaler Hebel für die Suche (z.B. 5): "))
         leverage_max = int(input("Maximaler Hebel für die Suche (z.B. 50): "))
-        
         inputs_to_save = {'symbol': symbol_input, 'timeframe': timeframe_input, 'start_date': start_date, 'end_date': end_date,
                           'n_gen': n_gen, 'start_capital': START_CAPITAL, 'minimum_trades': MINIMUM_TRADES,
                           'leverage_min': leverage_min, 'leverage_max': leverage_max}
-        with open(INPUTS_FILE, 'w') as f:
-            json.dump(inputs_to_save, f)
+        with open(INPUTS_FILE, 'w') as f: json.dump(inputs_to_save, f)
 
     all_champions = []
     for symbol_short in symbol_input.split():
@@ -121,18 +117,27 @@ def main(n_procs, n_gen_default, resume):
             pop_size = 100
             
             if algorithm is None:
-                print("\nFühre kurzen Benchmark zur Zeitschätzung durch...")
+                # --- START: VERBESSERTER BENCHMARK ---
+                print("\nFühre verbesserten Benchmark zur Zeitschätzung durch (10 Testläufe)...")
+                benchmark_runs = 10
                 problem_for_benchmark = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max)
-                sample_individual = np.random.rand(1, 3) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
-                start_b = time.time()
-                problem_for_benchmark._evaluate(sample_individual, out={})
-                end_b = time.time()
-                time_per_eval = end_b - start_b
-                total_evals = pop_size * (n_gen)
-                estimated_time = (total_evals * time_per_eval) / n_procs
-                print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
                 
-                # --- KORREKTUR: Tippfehler behoben ("das-dennis" statt "das-neill") ---
+                # Erstelle 10 zufällige Individuen zum Testen
+                sample_individuals = np.random.rand(benchmark_runs, 3) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
+                
+                start_b = time.time()
+                for i in range(benchmark_runs):
+                    problem_for_benchmark._evaluate(sample_individuals[i:i+1], out={})
+                end_b = time.time()
+                
+                total_benchmark_time = end_b - start_b
+                avg_time_per_eval = total_benchmark_time / benchmark_runs
+
+                total_evals = pop_size * n_gen
+                estimated_time = (total_evals * avg_time_per_eval) / n_procs
+                print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
+                # --- ENDE: VERBESSERTER BENCHMARK ---
+                
                 ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
                 algorithm = NSGA3(pop_size=pop_size, ref_dirs=ref_dirs)
 
