@@ -26,22 +26,22 @@ INDICATOR_CACHE = {}
 CHECKPOINT_FILE = "pymoo_checkpoint.pkl"
 INPUTS_FILE = "optim_inputs.json"
 
-class TqdmCallback(Callback):
-    def __init__(self, pbar):
+# --- KORREKTUR: Die beiden Callback-Klassen werden zu einer zusammengefasst ---
+class CombinedCallback(Callback):
+    def __init__(self, pbar, every_n_gen_checkpoint=5):
         super().__init__()
         self.pbar = pbar
+        self.every_n_gen_checkpoint = every_n_gen_checkpoint
+
     def notify(self, algorithm):
+        # 1. Logik für den Fortschrittsbalken
         self.pbar.update(1)
 
-class CheckpointCallback(Callback):
-    def __init__(self, every_n_gen=5):
-        super().__init__()
-        self.every_n_gen = every_n_gen
-
-    def notify(self, algorithm):
-        if algorithm.n_gen > 0 and algorithm.n_gen % self.every_n_gen == 0:
+        # 2. Logik zum Speichern des Checkpoints
+        if algorithm.n_gen > 0 and algorithm.n_gen % self.every_n_gen_checkpoint == 0:
             with open(CHECKPOINT_FILE, 'wb') as f:
                 pickle.dump(algorithm, f)
+# --- Ende der Korrektur ---
 
 def format_time(seconds):
     if seconds < 60: return f"{seconds:.1f} Sekunden"
@@ -117,14 +117,10 @@ def main(n_procs, n_gen_default, resume):
             pop_size = 100
             
             if algorithm is None:
-                # --- START: VERBESSERTER BENCHMARK ---
                 print("\nFühre verbesserten Benchmark zur Zeitschätzung durch (10 Testläufe)...")
                 benchmark_runs = 10
                 problem_for_benchmark = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max)
-                
-                # Erstelle 10 zufällige Individuen zum Testen
                 sample_individuals = np.random.rand(benchmark_runs, 3) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
-                
                 start_b = time.time()
                 for i in range(benchmark_runs):
                     problem_for_benchmark._evaluate(sample_individuals[i:i+1], out={})
@@ -132,11 +128,9 @@ def main(n_procs, n_gen_default, resume):
                 
                 total_benchmark_time = end_b - start_b
                 avg_time_per_eval = total_benchmark_time / benchmark_runs
-
                 total_evals = pop_size * n_gen
                 estimated_time = (total_evals * avg_time_per_eval) / n_procs
                 print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
-                # --- ENDE: VERBESSERTER BENCHMARK ---
                 
                 ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
                 algorithm = NSGA3(pop_size=pop_size, ref_dirs=ref_dirs)
@@ -147,8 +141,9 @@ def main(n_procs, n_gen_default, resume):
                 initial_gen = algorithm.n_gen if algorithm.n_gen else 0
                 with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
                     if initial_gen > 0: pbar.update(0)
-                    callbacks = [TqdmCallback(pbar), CheckpointCallback(every_n_gen=5)]
-                    res = minimize(problem, algorithm, termination, seed=1, callback=callbacks, verbose=False)
+                    # --- KORREKTUR: Wir übergeben jetzt nur noch ein einziges Callback-Objekt ---
+                    callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
+                    res = minimize(problem, algorithm, termination, seed=1, callback=callback, verbose=False)
 
             valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
             if not valid_indices: continue
