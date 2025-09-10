@@ -10,23 +10,24 @@ from multiprocessing import Pool
 from tqdm import tqdm
 
 from pymoo.core.problem import StarmapParallelization, Problem
-from pymoo.algorithms.moo.nsga2 import NSGA2
+# NEU: NSGA3 wird importiert
+from pymoo.algorithms.moo.nsga3 import NSGA3
+from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.optimize import minimize
 from pymoo.termination import get_termination
 from pymoo.core.callback import Callback
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from analysis.backtest import load_data, run_smc_backtest
+from utilities.strategy_logic import calculate_smc_indicators
 
 HISTORICAL_DATA, START_CAPITAL, MINIMUM_TRADES = None, 1000.0, 10
+INDICATOR_CACHE = {}
 
 class TqdmCallback(Callback):
     def __init__(self, pbar):
-        # --- KORREKTUR: Diese Zeile ist entscheidend ---
         super().__init__()
-        # ----------------------------------------------
         self.pbar = pbar
-        
     def notify(self, algorithm):
         self.pbar.update(1)
 
@@ -46,9 +47,21 @@ class SMCOptimizationProblem(Problem):
     def _evaluate(self, x, out, *args, **kwargs):
         results = []
         for ind in x:
-            params = {'swing_period': int(round(ind[0])), 'risk_reward_ratio': round(ind[1], 2), 'leverage': int(round(ind[2])),
-                      'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
-            result = run_smc_backtest(HISTORICAL_DATA.copy(), params)
+            swing_period = int(round(ind[0]))
+            if swing_period in INDICATOR_CACHE:
+                data_with_indicators = INDICATOR_CACHE[swing_period]
+            else:
+                temp_params = {'swing_period': swing_period, 'atr_period': 14}
+                data_with_indicators = calculate_smc_indicators(HISTORICAL_DATA.copy(), temp_params)
+                INDICATOR_CACHE[swing_period] = data_with_indicators
+            
+            params = {
+                'swing_period': swing_period,
+                'risk_reward_ratio': round(ind[1], 2),
+                'leverage': int(round(ind[2])),
+                'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0
+            }
+            result = run_smc_backtest(data_with_indicators.copy(), params)
             pnl = result.get('total_pnl_pct', -1000)
             drawdown = result.get('max_drawdown_pct', 1.0) * 100
             if result['trades_count'] < MINIMUM_TRADES: pnl = -1000
@@ -63,7 +76,7 @@ def main(n_procs, n_gen_default):
     end_date = input("Enddatum eingeben (JJJJ-MM-TT): ")
     n_gen = int(input(f"Anzahl der Generationen (Standard: {n_gen_default}): ") or n_gen_default)
     
-    global START_CAPITAL, MINIMUM_TRADES
+    global START_CAPITAL, MINIMUM_TRADES, INDICATOR_CACHE
     START_CAPITAL = float(input("Startkapital in USDT (z.B. 1000): "))
     MINIMUM_TRADES = int(input("Mindestanzahl an Trades (z.B. 20): "))
     leverage_min = int(input("Minimaler Hebel für die Suche (z.B. 5): "))
@@ -73,6 +86,7 @@ def main(n_procs, n_gen_default):
     for symbol_short in symbol_input.split():
         for timeframe in timeframe_input.split():
             symbol = f"{symbol_short.upper()}/USDT:USDT"
+            INDICATOR_CACHE = {} # Cache für jedes neue Paar leeren
             global HISTORICAL_DATA
             HISTORICAL_DATA = load_data(symbol, timeframe, start_date, end_date)
             if HISTORICAL_DATA.empty: continue
@@ -92,7 +106,13 @@ def main(n_procs, n_gen_default):
             
             with Pool(n_procs) as pool:
                 problem = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max, parallelization=StarmapParallelization(pool.starmap))
-                algorithm = NSGA2(pop_size=pop_size)
+                
+                # --- HIER IST DIE ÄNDERUNG ---
+                # Wir verwenden jetzt NSGA3 anstelle von NSGA2
+                ref_dirs = get_reference_directions("das-neill", 2, n_partitions=99)
+                algorithm = NSGA3(pop_size=100, ref_dirs=ref_dirs)
+                # -----------------------------
+
                 termination = get_termination("n_gen", n_gen)
                 with tqdm(total=n_gen, desc=f"Optimiere {symbol} ({timeframe})") as pbar:
                     res = minimize(problem, algorithm, termination, seed=1, callback=TqdmCallback(pbar), verbose=False)
