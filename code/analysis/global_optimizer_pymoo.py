@@ -132,20 +132,19 @@ def main(n_procs, n_gen_default, resume):
                 estimated_time = (total_evals * time_per_eval) / n_procs
                 print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
                 
-                ref_dirs = get_reference_directions("das-neill", 2, n_partitions=99)
+                # --- KORREKTUR: Tippfehler behoben ("das-dennis" statt "das-neill") ---
+                ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
                 algorithm = NSGA3(pop_size=pop_size, ref_dirs=ref_dirs)
 
-            problem = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max, parallelization=StarmapParallelization(pool.starmap))
-            termination = get_termination("n_gen", n_gen)
-            initial_gen = algorithm.n_gen if algorithm.n_gen else 0
+            with Pool(n_procs) as pool:
+                problem = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max, parallelization=StarmapParallelization(pool.starmap))
+                termination = get_termination("n_gen", n_gen)
+                initial_gen = algorithm.n_gen if algorithm.n_gen else 0
+                with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
+                    if initial_gen > 0: pbar.update(0)
+                    callbacks = [TqdmCallback(pbar), CheckpointCallback(every_n_gen=5)]
+                    res = minimize(problem, algorithm, termination, seed=1, callback=callbacks, verbose=False)
 
-            with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
-                if initial_gen > 0:
-                     pbar.update(0)
-                callbacks = [TqdmCallback(pbar), CheckpointCallback(every_n_gen=5)]
-                res = minimize(problem, algorithm, termination, seed=1, callback=callbacks, verbose=False)
-
-            # ... Rest der Logik zum Sammeln der Ergebnisse ...
             valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
             if not valid_indices: continue
             best_indices = sorted(valid_indices, key=lambda i: res.F[i][0])[:5]
@@ -156,8 +155,6 @@ def main(n_procs, n_gen_default, resume):
                     'start_capital': START_CAPITAL, 'pnl': -res.F[i][0], 'drawdown': res.F[i][1],
                     'params': {'swing_period': int(round(p[0])), 'risk_reward_ratio': round(p[1], 2), 'leverage': int(round(p[2]))}
                 })
-            
-            # Reset algorithm for next symbol/timeframe if any
             algorithm = None
 
     if not all_champions: print("\nKeine vielversprechenden Kandidaten gefunden."); return
