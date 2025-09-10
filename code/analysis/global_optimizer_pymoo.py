@@ -83,10 +83,6 @@ class SMCOptimizationProblem(Problem):
 def main(n_procs, n_gen_default, resume):
     print("\n--- [Stufe 1/2] Globale Suche (TitanBot) mit Pymoo ---")
     
-    # --- KORREKTUR: Initialisiere die Liste am Anfang der Funktion ---
-    all_champions = []
-    # -------------------------------------------------------------
-    
     algorithm = None
     if resume and os.path.exists(CHECKPOINT_FILE):
         print("\nLade gespeicherten Fortschritt aus Checkpoint-Datei...")
@@ -111,6 +107,7 @@ def main(n_procs, n_gen_default, resume):
                           'leverage_min': leverage_min, 'leverage_max': leverage_max}
         with open(INPUTS_FILE, 'w') as f: json.dump(inputs_to_save, f)
 
+    all_champions = []
     for symbol_short in symbol_input.split():
         for tf in timeframe_input.split():
             symbol_full = f"{symbol_short.upper()}/USDT:USDT"
@@ -146,7 +143,14 @@ def main(n_procs, n_gen_default, resume):
                 initial_gen = algorithm.n_gen if algorithm.n_gen else 0
                 with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
                     if initial_gen > 0: pbar.update(0)
+                    
                     callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
+                    
+                    # --- KORREKTUR: Wir weisen den Callback dem geladenen Algorithmus wieder zu ---
+                    if resume and algorithm is not None:
+                        algorithm.callback = callback
+                    # --------------------------------------------------------------------------
+                    
                     res = minimize(problem, algorithm, termination, seed=1, callback=callback, verbose=False)
 
             valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
