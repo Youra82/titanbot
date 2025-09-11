@@ -13,7 +13,6 @@ from tqdm import tqdm
 from pymoo.core.problem import StarmapParallelization, Problem
 from pymoo.algorithms.moo.nsga3 import NSGA3
 from pymoo.util.ref_dirs import get_reference_directions
-from pymoo.optimize import minimize
 from pymoo.termination import get_termination
 from pymoo.core.callback import Callback
 
@@ -137,25 +136,15 @@ def main(n_procs, n_gen_default, resume):
         if HISTORICAL_DATA.empty: continue
         
         if algorithm is None:
-            # --- START: REALISTISCHER BENCHMARK ---
             print("\nFühre realistischen Benchmark durch (simuliert eine ganze Generation)...")
             problem_for_benchmark = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max)
-            
-            # Erstelle eine ganze Population von 100 Kandidaten zum Testen
             sample_individuals = np.random.rand(pop_size, 5) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
-            
             start_b = time.time()
-            # Führe die Auswertung für die gesamte Test-Population durch
             problem_for_benchmark._evaluate(sample_individuals, out={})
             end_b = time.time()
-            
-            # Die gemessene Zeit ist jetzt die Zeit für eine komplette Generation
             time_per_generation = end_b - start_b
-            
-            # Schätze die Gesamtzeit
             estimated_time = (time_per_generation * n_gen) / n_procs
             print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
-            # --- ENDE: REALISTISCHER BENCHMARK ---
             
             ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
             algorithm = NSGA3(pop_size=pop_size, ref_dirs=ref_dirs)
@@ -166,10 +155,17 @@ def main(n_procs, n_gen_default, resume):
             initial_gen = algorithm.n_gen if algorithm.n_gen else 0
             with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
                 if initial_gen > 0: pbar.update(0)
+                
+                # --- FINALE KORREKTUR ---
+                algorithm.setup(problem, seed=1, verbose=False)
+                algorithm.termination = termination
                 algorithm.callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
+
                 while algorithm.has_next():
                     algorithm.next()
+                
                 res = algorithm.result()
+                # --- ENDE DER KORREKTUR ---
 
         valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
         if valid_indices:
