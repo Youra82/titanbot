@@ -20,7 +20,7 @@ class BitgetFutures():
             if demo_mode:
                 self.session.set_sandbox_mode(True)
         self.markets = self.session.load_markets()
-    
+     
     def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
         try:
             return self.session.fetch_ticker(symbol)
@@ -31,8 +31,8 @@ class BitgetFutures():
         try:
             return self.markets[symbol]['limits']['amount']['min']
         except Exception as e:
-            raise Exception(f"Failed to fetch minimum amount tradable: {e}")    
-        
+            raise Exception(f"Failed to fetch minimum amount tradable: {e}")     
+         
     def amount_to_precision(self, symbol: str, amount: float) -> str:
         try:
             return self.session.amount_to_precision(symbol, amount)
@@ -58,15 +58,13 @@ class BitgetFutures():
             return self.session.fetch_open_orders(symbol)
         except Exception as e:
             raise Exception(f"Failed to fetch open orders: {e}")
-            
-    # <<< NEUE FUNKTION START >>>
+             
     def fetch_my_trades(self, symbol: str, limit: int = 20) -> List[Dict[str, Any]]:
         """Holt die letzten geschlossenen Trades für ein Symbol."""
         try:
             return self.session.fetch_my_trades(symbol, limit=limit)
         except Exception as e:
             raise Exception(f"Failed to fetch my trades for {symbol}: {e}")
-    # <<< NEUE FUNKTION ENDE >>>
 
     def fetch_open_trigger_orders(self, symbol: str) -> List[Dict[str, Any]]:
         try:
@@ -88,7 +86,7 @@ class BitgetFutures():
 
     def fetch_open_positions(self, symbol: str) -> List[Dict[str, Any]]:
         try:
-            positions = self.session.fetch_positions([symbol], params={'productType': 'USDT-FUTURES', 'marginCoin': 'USDT'})
+            positions = self.session.fetch_positions([symbol])
             real_positions = [p for p in positions if p.get('contracts') and float(p['contracts']) > 0]
             return real_positions
         except Exception as e:
@@ -96,7 +94,7 @@ class BitgetFutures():
 
     def set_margin_mode(self, symbol: str, margin_mode: str = 'isolated') -> None:
         try:
-            self.session.set_margin_mode(margin_mode, symbol, params={'productType': 'USDT-FUTURES', 'marginCoin': 'USDT'})
+            self.session.set_margin_mode(margin_mode, symbol)
             logger.info(f"Margin-Modus für {symbol} auf '{margin_mode}' gesetzt.")
         except Exception as e:
             if 'repeat submit' in str(e):
@@ -121,15 +119,10 @@ class BitgetFutures():
     def get_market_info(self, symbol: str) -> Dict[str, Any]:
         if symbol not in self.markets:
             self.markets = self.session.load_markets(True)
-        
         market = self.markets.get(symbol)
         if not market:
             raise Exception(f"Markt-Informationen für {symbol} konnten nicht geladen werden.")
-        
-        return {
-            'min_amount': market['limits']['amount']['min'],
-            'amount_precision': market['precision']['amount']
-        }
+        return {'min_amount': market['limits']['amount']['min'], 'amount_precision': market['precision']['amount']}
 
     def fetch_recent_ohlcv(self, symbol: str, timeframe: str, limit: int = 1000) -> pd.DataFrame:
         try:
@@ -138,7 +131,6 @@ class BitgetFutures():
             all_ohlcv = self.session.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
         except Exception as e:
             raise Exception(f"Failed to fetch OHLCV data for {symbol} in timeframe {timeframe}: {e}")
-
         df = pd.DataFrame(all_ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
         df.set_index('timestamp', inplace=True)
@@ -159,7 +151,6 @@ class BitgetFutures():
                 start_ts = last_timestamp + self.session.parse_timeframe(timeframe) * 1000
             except Exception as e:
                 raise Exception(f"Failed to fetch historical OHLCV data for {symbol}: {e}")
-        
         if not all_ohlcv: return pd.DataFrame()
         df = pd.DataFrame(all_ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
@@ -167,19 +158,13 @@ class BitgetFutures():
         df = df[~df.index.duplicated(keep='first')]
         df.sort_index(inplace=True)
         return df
-    
+     
     def place_limit_order(self, symbol: str, side: str, amount: float, price: float, leverage: int, margin_mode: str, reduce: bool = False) -> Dict[str, Any]:
         try:
-            params = {
-                'reduceOnly': reduce,
-                'marginMode': margin_mode,
-                'leverage': leverage,
-            }
+            params = {'reduceOnly': reduce}
             amount_str = self.session.amount_to_precision(symbol, amount)
             price_str = self.session.price_to_precision(symbol, price)
-            
-            response = self.session.create_order(symbol, 'limit', side, float(amount_str), float(price_str), params=params)
-            return response
+            return self.session.create_order(symbol, 'limit', side, float(amount_str), float(price_str), params=params)
         except Exception as e:
             raise Exception(f"Failed to place limit order of {amount} {symbol} at price {price}: {e}")
 
@@ -187,11 +172,37 @@ class BitgetFutures():
         try:
             amount_str = self.session.amount_to_precision(symbol, amount)
             trigger_price_str = self.session.price_to_precision(symbol, trigger_price)
-            params = {
-                'reduceOnly': reduce,
-                'stopPrice': trigger_price_str,
-            }
+            params = { 'reduceOnly': reduce, 'stopPrice': trigger_price_str }
             return self.session.create_order(symbol, 'market', side, float(amount_str), price=None, params=params)
         except Exception as err:
             raise err
 
+    def place_trailing_stop_order(self, symbol: str, side: str, amount: float, callback_rate: float, activation_price: float, reduce: bool = True) -> Dict[str, Any]:
+        """Platziert eine Trailing-Stop-Order auf Bitget."""
+        try:
+            amount_str = self.session.amount_to_precision(symbol, amount)
+            callback_rate_str = str(callback_rate / 100)
+            activation_price_str = self.session.price_to_precision(symbol, activation_price)
+            params = {
+                'planType': 'track_plan',
+                'triggerPrice': activation_price_str,
+                'callbackRate': callback_rate_str,
+                'reduceOnly': reduce,
+            }
+            return self.session.create_order(symbol, 'market', side, float(amount_str), price=None, params=params)
+        except Exception as e:
+            raise Exception(f"Fehler beim Platzieren der Trailing-Stop-Order für {symbol}: {e}")
+
+    def cancel_all_orders(self, symbol: str) -> None:
+        """Storniert alle offenen Limit-Orders für ein Symbol."""
+        try:
+            self.session.cancel_all_orders(symbol)
+        except Exception as e:
+            logger.warning(f"Konnte nicht alle Limit-Orders stornieren (möglicherweise waren keine offen): {e}")
+    
+    def cancel_all_trigger_orders(self, symbol: str) -> None:
+        """Storniert alle offenen Trigger-Orders (TP/SL) für ein Symbol."""
+        try:
+            self.session.cancel_all_orders(symbol, params={'stop': True})
+        except Exception as e:
+            logger.warning(f"Konnte nicht alle Trigger-Orders stornieren (möglicherweise waren keine offen): {e}")
