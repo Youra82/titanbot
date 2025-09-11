@@ -85,20 +85,24 @@ def main(n_procs, n_gen_default, resume):
     
     if resume and os.path.exists(PIPELINE_STATE_FILE):
         print("\nLade gespeicherten Fortschritt der Pipeline...")
-        with open(PIPELINE_STATE_FILE, 'r') as f:
-            state = json.load(f)
+        try:
+            with open(PIPELINE_STATE_FILE, 'r') as f: state = json.load(f)
             all_champions, completed_tasks = state.get('champions', []), state.get('completed_tasks', [])
-        print(f"{len(completed_tasks)} Aufgabe(n) bereits abgeschlossen.")
-        
-        if os.path.exists(PYMOO_CHECKPOINT_FILE):
-             with open(PYMOO_CHECKPOINT_FILE, 'rb') as f: algorithm = pickle.load(f)
+            print(f"{len(completed_tasks)} Aufgabe(n) bereits abgeschlossen.")
+            if os.path.exists(PYMOO_CHECKPOINT_FILE):
+                 with open(PYMOO_CHECKPOINT_FILE, 'rb') as f: algorithm = pickle.load(f)
+            with open(INPUTS_FILE, 'r') as f: inputs = json.load(f)
+            symbol_input, timeframe_input, start_date, end_date = inputs['symbol'], inputs['timeframe'], inputs['start_date'], inputs['end_date']
+            n_gen, START_CAPITAL, MINIMUM_TRADES = inputs['n_gen'], inputs['start_capital'], inputs['minimum_trades']
+            leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
+        except Exception as e:
+            print(f"Fehler beim Laden des Checkpoints ({e}). Starte eine neue Optimierung.")
+            resume = False; algorithm = None
+            if os.path.exists(PYMOO_CHECKPOINT_FILE): os.remove(PYMOO_CHECKPOINT_FILE)
+            if os.path.exists(PIPELINE_STATE_FILE): os.remove(PIPELINE_STATE_FILE)
+            if os.path.exists(INPUTS_FILE): os.remove(INPUTS_FILE)
 
-        with open(INPUTS_FILE, 'r') as f: inputs = json.load(f)
-        symbol_input, timeframe_input, start_date, end_date = inputs['symbol'], inputs['timeframe'], inputs['start_date'], inputs['end_date']
-        n_gen, START_CAPITAL, MINIMUM_TRADES = inputs['n_gen'], inputs['start_capital'], inputs['minimum_trades']
-        leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
-        
-    else:
+    if not resume:
         symbol_input = input("Handelspaar(e) eingeben (z.B. BTC ETH): ")
         timeframe_input = input("Zeitfenster eingeben (z.B. 1h 4h): ")
         start_date = input("Startdatum eingeben (JJJJ-MM-TT): ")
@@ -154,10 +158,20 @@ def main(n_procs, n_gen_default, resume):
             initial_gen = algorithm.n_gen if algorithm.n_gen else 0
             with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
                 if initial_gen > 0: pbar.update(0)
+                
+                # --- FINALE KORREKTUR ---
+                # 1. Initialisiere den Algorithmus mit dem Problem
+                algorithm.setup(problem, seed=1, verbose=False)
+                # 2. Weise die Endbedingung und den Callback direkt zu
+                algorithm.termination = termination
                 algorithm.callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
+
+                # 3. Starte die Schleife
                 while algorithm.has_next():
                     algorithm.next()
+                
                 res = algorithm.result()
+                # --- ENDE DER KORREKTUR ---
 
         valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
         if valid_indices:
