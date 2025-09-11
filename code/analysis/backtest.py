@@ -7,14 +7,15 @@ import numpy as np
 import warnings
 from datetime import timedelta
 import json
+import logging
 
 warnings.filterwarnings("ignore", category=FutureWarning)
+logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utilities.strategy_logic import calculate_smc_indicators
 
 def load_data(symbol, timeframe, start_date_str, end_date_str):
-    # Diese Funktion bleibt unverändert
     cache_dir = os.path.join(os.path.dirname(__file__), '..', 'analysis', 'historical_data')
     os.makedirs(cache_dir, exist_ok=True)
     symbol_filename = symbol.replace('/', '-').replace(':', '-')
@@ -42,15 +43,12 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
     except Exception as e:
         print(f"Fehler beim Daten-Download für {timeframe}: {e}"); return pd.DataFrame()
 
-# --- START: Überarbeitete Backtest-Funktion mit Trailing Stop ---
 def run_smc_backtest(data, params):
-    # Lade alle Parameter
     risk_reward_ratio = params.get('risk_reward_ratio', 3.0)
     risk_per_trade_pct = params.get('risk_per_trade_pct', 1.0) / 100
     fee_pct = 0.05 / 100
     start_capital = params.get('start_capital', 1000)
     
-    # Neue Parameter für den Trailing Stop
     activation_rr = params.get('trailing_stop_activation_rr', 2.0)
     callback_rate = params.get('trailing_stop_callback_rate_pct', 1.0) / 100
 
@@ -70,30 +68,23 @@ def run_smc_backtest(data, params):
         if position:
             exit_price, reason = None, None
             
-            # Management für eine Long-Position
             if position['side'] == 'long':
-                # Stop-Loss-Prüfung (immer aktiv)
                 if current['low'] <= position['stop_loss']:
                     exit_price, reason = position['stop_loss'], "Stop-Loss"
                 
-                # Wenn Trailing Stop noch NICHT aktiv ist
                 elif not position['trailing_active']:
                     if current['high'] >= position['take_profit']:
                         exit_price, reason = position['take_profit'], "Take-Profit"
-                    # Prüfung, ob Trailing Stop aktiviert werden soll
                     elif current['high'] >= position['activation_price']:
                         position['trailing_active'] = True
                         position['peak_price'] = current['high']
-                        logger.debug(f"Trailing Stop für Long aktiviert bei {current.name}")
                 
-                # Wenn Trailing Stop AKTIV ist
                 if position['trailing_active']:
                     position['peak_price'] = max(position['peak_price'], current['high'])
                     trailing_sl_price = position['peak_price'] * (1 - callback_rate)
                     if current['low'] <= trailing_sl_price:
                         exit_price, reason = trailing_sl_price, "Trailing Stop"
 
-            # Management für eine Short-Position
             elif position['side'] == 'short':
                 if current['high'] >= position['stop_loss']:
                     exit_price, reason = position['stop_loss'], "Stop-Loss"
@@ -104,7 +95,6 @@ def run_smc_backtest(data, params):
                     elif current['low'] <= position['activation_price']:
                         position['trailing_active'] = True
                         position['peak_price'] = current['low']
-                        logger.debug(f"Trailing Stop für Short aktiviert bei {current.name}")
 
                 if position['trailing_active']:
                     position['peak_price'] = min(position['peak_price'], current['low'])
@@ -112,7 +102,6 @@ def run_smc_backtest(data, params):
                     if current['high'] >= trailing_sl_price:
                         exit_price, reason = trailing_sl_price, "Trailing Stop"
             
-            # Trade schließen, falls ein Exit-Grund gefunden wurde
             if exit_price:
                 pnl_pct = (exit_price / position['entry_price'] - 1) if position['side'] == 'long' else (1 - exit_price / position['entry_price'])
                 pnl_usd = position['size_usd'] * pnl_pct
@@ -132,7 +121,6 @@ def run_smc_backtest(data, params):
                 max_drawdown_pct = max(max_drawdown_pct, drawdown)
                 if current_capital <= 0: break
 
-        # Logik zur Eröffnung neuer Positionen (bleibt unverändert)
         if not position and not np.isnan(prev['bos_level']) and not np.isnan(prev['ob_high']):
             entry_price, stop_loss, side = None, None, None
             if prev['trend'] == 1 and current['low'] <= prev['ob_high'] and current['high'] > prev['ob_high']:
@@ -163,4 +151,3 @@ def run_smc_backtest(data, params):
         "win_rate": win_rate, "params": params, "end_capital": current_capital,
         "max_drawdown_pct": max_drawdown_pct, "trade_log": trade_log
     }
-# --- ENDE: Überarbeitete Backtest-Funktion ---
