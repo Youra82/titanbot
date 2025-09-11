@@ -7,7 +7,7 @@ import os
 import sys
 import argparse
 import pickle
-from multiprocessing import Pool
+from multiprocessing import Pool, freeze_support
 from tqdm import tqdm
 
 from pymoo.core.problem import StarmapParallelization, Problem
@@ -62,7 +62,8 @@ class SMCOptimizationProblem(Problem):
         results = []
         for ind in x:
             swing_period = int(round(ind[0]))
-            if swing_period in INDICATOR_CACHE: data_with_indicators = INDICATOR_CACHE[swing_period]
+            if swing_period in INDICATOR_CACHE:
+                data_with_indicators = INDICATOR_CACHE[swing_period]
             else:
                 temp_params = {'swing_period': swing_period, 'atr_period': 14}
                 data_with_indicators = calculate_smc_indicators(HISTORICAL_DATA.copy(), temp_params)
@@ -88,18 +89,25 @@ def main(n_procs, n_gen_default, resume):
     if resume and os.path.exists(PIPELINE_STATE_FILE):
         print("\nLade gespeicherten Fortschritt der Pipeline...")
         try:
-            with open(PIPELINE_STATE_FILE, 'r') as f: state = json.load(f)
-            all_champions, completed_tasks = state.get('champions', []), state.get('completed_tasks', [])
+            with open(PIPELINE_STATE_FILE, 'r') as f:
+                state = json.load(f)
+                all_champions = state.get('champions', [])
+                completed_tasks = state.get('completed_tasks', [])
             print(f"{len(completed_tasks)} Aufgabe(n) bereits abgeschlossen.")
+            
             if os.path.exists(PYMOO_CHECKPOINT_FILE):
-                 with open(PYMOO_CHECKPOINT_FILE, 'rb') as f: algorithm = pickle.load(f)
-            with open(INPUTS_FILE, 'r') as f: inputs = json.load(f)
+                 with open(PYMOO_CHECKPOINT_FILE, 'rb') as f:
+                     algorithm = pickle.load(f)
+
+            with open(INPUTS_FILE, 'r') as f:
+                inputs = json.load(f)
             symbol_input, timeframe_input, start_date, end_date = inputs['symbol'], inputs['timeframe'], inputs['start_date'], inputs['end_date']
             n_gen, START_CAPITAL, MINIMUM_TRADES = inputs['n_gen'], inputs['start_capital'], inputs['minimum_trades']
             leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
         except Exception as e:
             print(f"Fehler beim Laden des Checkpoints ({e}). Starte eine neue Optimierung.")
-            resume = False; algorithm = None
+            resume = False
+            algorithm = None
             if os.path.exists(PYMOO_CHECKPOINT_FILE): os.remove(PYMOO_CHECKPOINT_FILE)
             if os.path.exists(PIPELINE_STATE_FILE): os.remove(PIPELINE_STATE_FILE)
             if os.path.exists(INPUTS_FILE): os.remove(INPUTS_FILE)
@@ -114,10 +122,13 @@ def main(n_procs, n_gen_default, resume):
         MINIMUM_TRADES = int(input("Mindestanzahl an Trades (z.B. 20): "))
         leverage_min = int(input("Minimaler Hebel für die Suche (z.B. 5): "))
         leverage_max = int(input("Maximaler Hebel für die Suche (z.B. 50): "))
-        inputs_to_save = {'symbol': symbol_input, 'timeframe': timeframe_input, 'start_date': start_date, 'end_date': end_date,
-                          'n_gen': n_gen, 'start_capital': START_CAPITAL, 'minimum_trades': MINIMUM_TRADES,
-                          'leverage_min': leverage_min, 'leverage_max': leverage_max}
-        with open(INPUTS_FILE, 'w') as f: json.dump(inputs_to_save, f)
+        inputs_to_save = {
+            'symbol': symbol_input, 'timeframe': timeframe_input, 'start_date': start_date, 'end_date': end_date,
+            'n_gen': n_gen, 'start_capital': START_CAPITAL, 'minimum_trades': MINIMUM_TRADES,
+            'leverage_min': leverage_min, 'leverage_max': leverage_max
+        }
+        with open(INPUTS_FILE, 'w') as f:
+            json.dump(inputs_to_save, f)
 
     tasks = [f"{s.upper()}_{tf}" for s in symbol_input.split() for tf in timeframe_input.split()]
     pop_size = 100
@@ -133,18 +144,23 @@ def main(n_procs, n_gen_default, resume):
         global INDICATOR_CACHE, HISTORICAL_DATA
         INDICATOR_CACHE = {}
         HISTORICAL_DATA = load_data(symbol_full, tf, start_date, end_date)
-        if HISTORICAL_DATA.empty: continue
+        if HISTORICAL_DATA.empty:
+            continue
         
         if algorithm is None:
-            print("\nFühre realistischen Benchmark durch (simuliert eine ganze Generation)...")
-            problem_for_benchmark = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max)
-            sample_individuals = np.random.rand(pop_size, 5) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
-            start_b = time.time()
-            problem_for_benchmark._evaluate(sample_individuals, out={})
-            end_b = time.time()
-            time_per_generation = end_b - start_b
-            estimated_time = (time_per_generation * n_gen) / n_procs
-            print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
+            print("\nFühre realistischen Benchmark durch (simuliert eine parallele Generation)...")
+            with Pool(n_procs) as pool:
+                problem_for_benchmark = SMCOptimizationProblem(
+                    leverage_min=leverage_min, leverage_max=leverage_max, 
+                    parallelization=StarmapParallelization(pool.starmap)
+                )
+                sample_individuals = np.random.rand(pop_size, 5) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
+                start_b = time.time()
+                problem_for_benchmark.evaluate(sample_individuals)
+                end_b = time.time()
+                time_per_generation = end_b - start_b
+                estimated_time = time_per_generation * n_gen
+                print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
             
             ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
             algorithm = NSGA3(pop_size=pop_size, ref_dirs=ref_dirs)
@@ -152,20 +168,16 @@ def main(n_procs, n_gen_default, resume):
         with Pool(n_procs) as pool:
             problem = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max, parallelization=StarmapParallelization(pool.starmap))
             termination = get_termination("n_gen", n_gen)
+            algorithm.setup(problem, termination=termination, seed=1, verbose=False)
             initial_gen = algorithm.n_gen if algorithm.n_gen else 0
+            
             with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
-                if initial_gen > 0: pbar.update(0)
-                
-                # --- FINALE KORREKTUR ---
-                algorithm.setup(problem, seed=1, verbose=False)
-                algorithm.termination = termination
+                if initial_gen > 0:
+                    pbar.update(0)
                 algorithm.callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
-
                 while algorithm.has_next():
                     algorithm.next()
-                
                 res = algorithm.result()
-                # --- ENDE DER KORREKTUR ---
 
         valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
         if valid_indices:
@@ -201,6 +213,7 @@ def main(n_procs, n_gen_default, resume):
     sys.exit(0)
 
 if __name__ == "__main__":
+    freeze_support()
     parser = argparse.ArgumentParser(description="Stufe 1: Globale Parameter-Optimierung mit Pymoo.")
     parser.add_argument('--jobs', type=int, default=1, help='Anzahl der CPU-Kerne.')
     parser.add_argument('--gen', type=int, default=50, help='Standard-Anzahl der Generationen.')
