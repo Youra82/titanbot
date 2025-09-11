@@ -4,15 +4,17 @@
         "timeframe": "1h"
     },
     "strategy": {
-        "swing_period": 15,
+        "swing_period": 19,
         "atr_period": 14
     },
     "risk": {
         "margin_mode": "isolated",
         "balance_fraction_pct": 10,
         "risk_per_trade_pct": 1.0,
-        "risk_reward_ratio": 2.0,
-        "leverage": 10
+        "risk_reward_ratio": 3.0,
+        "leverage": 28,
+        "trailing_stop_activation_rr": 2.0,
+        "trailing_stop_callback_rate_pct": 1.0
     },
     "behavior": {
         "use_longs": true,
