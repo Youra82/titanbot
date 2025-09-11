@@ -55,9 +55,9 @@ def format_time(seconds):
 
 class SMCOptimizationProblem(Problem):
     def __init__(self, leverage_min=5, leverage_max=50, **kwargs):
-        lower_bounds = [5, 1.0, leverage_min]
-        upper_bounds = [50, 5.0, leverage_max]
-        super().__init__(n_var=3, n_obj=2, n_constr=0, xl=lower_bounds, xu=upper_bounds, **kwargs)
+        lower_bounds = [5, 1.0, leverage_min, 1.0, 0.5]
+        upper_bounds = [50, 5.0, leverage_max, 5.0, 5.0]
+        super().__init__(n_var=5, n_obj=2, n_constr=0, xl=lower_bounds, xu=upper_bounds, **kwargs)
 
     def _evaluate(self, x, out, *args, **kwargs):
         results = []
@@ -69,8 +69,11 @@ class SMCOptimizationProblem(Problem):
                 data_with_indicators = calculate_smc_indicators(HISTORICAL_DATA.copy(), temp_params)
                 INDICATOR_CACHE[swing_period] = data_with_indicators
             
-            params = {'swing_period': swing_period, 'risk_reward_ratio': round(ind[1], 2), 'leverage': int(round(ind[2])),
-                      'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
+            params = {
+                'swing_period': swing_period, 'risk_reward_ratio': round(ind[1], 2), 'leverage': int(round(ind[2])),
+                'trailing_stop_activation_rr': round(ind[3], 2), 'trailing_stop_callback_rate_pct': round(ind[4], 2),
+                'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0
+            }
             result = run_smc_backtest(data_with_indicators.copy(), params)
             pnl = result.get('total_pnl_pct', -1000)
             drawdown = result.get('max_drawdown_pct', 1.0) * 100
@@ -118,6 +121,7 @@ def main(n_procs, n_gen_default, resume):
         with open(INPUTS_FILE, 'w') as f: json.dump(inputs_to_save, f)
 
     tasks = [f"{s.upper()}_{tf}" for s in symbol_input.split() for tf in timeframe_input.split()]
+    pop_size = 100
     
     for task in tasks:
         symbol_short, tf = task.split('_')
@@ -132,22 +136,26 @@ def main(n_procs, n_gen_default, resume):
         HISTORICAL_DATA = load_data(symbol_full, tf, start_date, end_date)
         if HISTORICAL_DATA.empty: continue
         
-        pop_size = 100
-        
         if algorithm is None:
-            print("\nFühre verbesserten Benchmark zur Zeitschätzung durch (10 Testläufe)...")
-            benchmark_runs = 10
+            # --- START: REALISTISCHER BENCHMARK ---
+            print("\nFühre realistischen Benchmark durch (simuliert eine ganze Generation)...")
             problem_for_benchmark = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max)
-            sample_individuals = np.random.rand(benchmark_runs, 3) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
+            
+            # Erstelle eine ganze Population von 100 Kandidaten zum Testen
+            sample_individuals = np.random.rand(pop_size, 5) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
+            
             start_b = time.time()
-            for i in range(benchmark_runs):
-                problem_for_benchmark._evaluate(sample_individuals[i:i+1], out={})
+            # Führe die Auswertung für die gesamte Test-Population durch
+            problem_for_benchmark._evaluate(sample_individuals, out={})
             end_b = time.time()
-            total_benchmark_time = end_b - start_b
-            avg_time_per_eval = total_benchmark_time / benchmark_runs
-            total_evals = pop_size * n_gen
-            estimated_time = (total_evals * avg_time_per_eval) / n_procs
+            
+            # Die gemessene Zeit ist jetzt die Zeit für eine komplette Generation
+            time_per_generation = end_b - start_b
+            
+            # Schätze die Gesamtzeit
+            estimated_time = (time_per_generation * n_gen) / n_procs
             print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
+            # --- ENDE: REALISTISCHER BENCHMARK ---
             
             ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
             algorithm = NSGA3(pop_size=pop_size, ref_dirs=ref_dirs)
@@ -158,20 +166,10 @@ def main(n_procs, n_gen_default, resume):
             initial_gen = algorithm.n_gen if algorithm.n_gen else 0
             with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
                 if initial_gen > 0: pbar.update(0)
-                
-                # --- FINALE KORREKTUR ---
-                # 1. Initialisiere den Algorithmus mit dem Problem
-                algorithm.setup(problem, seed=1, verbose=False)
-                # 2. Weise die Endbedingung und den Callback direkt zu
-                algorithm.termination = termination
                 algorithm.callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
-
-                # 3. Starte die Schleife
                 while algorithm.has_next():
                     algorithm.next()
-                
                 res = algorithm.result()
-                # --- ENDE DER KORREKTUR ---
 
         valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
         if valid_indices:
@@ -181,7 +179,10 @@ def main(n_procs, n_gen_default, resume):
                 all_champions.append({
                     'symbol': symbol_full, 'timeframe': tf, 'start_date': start_date, 'end_date': end_date,
                     'start_capital': START_CAPITAL, 'pnl': -res.F[i][0], 'drawdown': res.F[i][1],
-                    'params': {'swing_period': int(round(p[0])), 'risk_reward_ratio': round(p[1], 2), 'leverage': int(round(p[2]))}
+                    'params': {
+                        'swing_period': int(round(p[0])), 'risk_reward_ratio': round(p[1], 2), 'leverage': int(round(p[2])),
+                        'trailing_stop_activation_rr': round(p[3], 2), 'trailing_stop_callback_rate_pct': round(p[4], 2)
+                    }
                 })
         
         completed_tasks.append(task)
