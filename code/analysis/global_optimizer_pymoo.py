@@ -63,17 +63,14 @@ class SMCOptimizationProblem(Problem):
         results = []
         for ind in x:
             swing_period = int(round(ind[0]))
-            if swing_period in INDICATOR_CACHE:
-                data_with_indicators = INDICATOR_CACHE[swing_period]
+            if swing_period in INDICATOR_CACHE: data_with_indicators = INDICATOR_CACHE[swing_period]
             else:
                 temp_params = {'swing_period': swing_period, 'atr_period': 14}
                 data_with_indicators = calculate_smc_indicators(HISTORICAL_DATA.copy(), temp_params)
                 INDICATOR_CACHE[swing_period] = data_with_indicators
             
-            params = {
-                'swing_period': swing_period, 'risk_reward_ratio': round(ind[1], 2), 'leverage': int(round(ind[2])),
-                'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0
-            }
+            params = {'swing_period': swing_period, 'risk_reward_ratio': round(ind[1], 2), 'leverage': int(round(ind[2])),
+                      'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
             result = run_smc_backtest(data_with_indicators.copy(), params)
             pnl = result.get('total_pnl_pct', -1000)
             drawdown = result.get('max_drawdown_pct', 1.0) * 100
@@ -90,8 +87,7 @@ def main(n_procs, n_gen_default, resume):
         print("\nLade gespeicherten Fortschritt der Pipeline...")
         with open(PIPELINE_STATE_FILE, 'r') as f:
             state = json.load(f)
-            all_champions = state.get('champions', [])
-            completed_tasks = state.get('completed_tasks', [])
+            all_champions, completed_tasks = state.get('champions', []), state.get('completed_tasks', [])
         print(f"{len(completed_tasks)} Aufgabe(n) bereits abgeschlossen.")
         
         if os.path.exists(PYMOO_CHECKPOINT_FILE):
@@ -132,9 +128,10 @@ def main(n_procs, n_gen_default, resume):
         HISTORICAL_DATA = load_data(symbol_full, tf, start_date, end_date)
         if HISTORICAL_DATA.empty: continue
         
+        pop_size = 100
+        
         if algorithm is None:
             print("\nFühre verbesserten Benchmark zur Zeitschätzung durch (10 Testläufe)...")
-            pop_size = 100
             benchmark_runs = 10
             problem_for_benchmark = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max)
             sample_individuals = np.random.rand(benchmark_runs, 3) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
@@ -157,9 +154,16 @@ def main(n_procs, n_gen_default, resume):
             initial_gen = algorithm.n_gen if algorithm.n_gen else 0
             with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
                 if initial_gen > 0: pbar.update(0)
-                callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
-                algorithm.callback = callback
-                res = minimize(problem, algorithm, termination, seed=1, verbose=False)
+                
+                # --- FINALE KORREKTUR: Direkter Aufruf statt `minimize` ---
+                algorithm.setup(problem, termination=termination, seed=1, verbose=False)
+                algorithm.callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
+
+                while algorithm.has_next():
+                    algorithm.next()
+                
+                res = algorithm.result()
+                # --- ENDE DER KORREKTUR ---
 
         valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
         if valid_indices:
