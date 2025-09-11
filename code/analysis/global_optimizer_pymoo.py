@@ -23,7 +23,9 @@ from utilities.strategy_logic import calculate_smc_indicators
 
 HISTORICAL_DATA, START_CAPITAL, MINIMUM_TRADES = None, 1000.0, 10
 INDICATOR_CACHE = {}
-CHECKPOINT_FILE = "pymoo_checkpoint.pkl"
+# NEUE DATEINAMEN für besseres Management
+PYMOO_CHECKPOINT_FILE = "pymoo_checkpoint.pkl"
+PIPELINE_STATE_FILE = "pipeline_state.json"
 INPUTS_FILE = "optim_inputs.json"
 
 class CombinedCallback(Callback):
@@ -35,13 +37,13 @@ class CombinedCallback(Callback):
     def notify(self, algorithm):
         self.pbar.update(1)
         if algorithm.n_gen > 0 and algorithm.n_gen % self.every_n_gen_checkpoint == 0:
-            tmp_checkpoint_file = CHECKPOINT_FILE + ".tmp"
+            tmp_checkpoint_file = PYMOO_CHECKPOINT_FILE + ".tmp"
             callback_ref = algorithm.callback
             algorithm.callback = None
             try:
                 with open(tmp_checkpoint_file, 'wb') as f:
                     pickle.dump(algorithm, f)
-                os.rename(tmp_checkpoint_file, CHECKPOINT_FILE)
+                os.rename(tmp_checkpoint_file, PYMOO_CHECKPOINT_FILE)
             finally:
                 algorithm.callback = callback_ref
 
@@ -80,23 +82,27 @@ class SMCOptimizationProblem(Problem):
 def main(n_procs, n_gen_default, resume):
     print("\n--- [Stufe 1/2] Globale Suche (TitanBot) mit Pymoo ---")
     
-    algorithm = None
-    if resume and os.path.exists(CHECKPOINT_FILE):
-        print("\nLade gespeicherten Fortschritt aus Checkpoint-Datei...")
-        try:
-            with open(CHECKPOINT_FILE, 'rb') as f: algorithm = pickle.load(f)
-            with open(INPUTS_FILE, 'r') as f: inputs = json.load(f)
-            symbol_input, timeframe_input, start_date, end_date = inputs['symbol'], inputs['timeframe'], inputs['start_date'], inputs['end_date']
-            n_gen, START_CAPITAL, MINIMUM_TRADES = inputs['n_gen'], inputs['start_capital'], inputs['minimum_trades']
-            leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
-            print("Optimierung wird fortgesetzt.")
-        except Exception as e:
-            print(f"Fehler beim Laden des Checkpoints ({e}). Starte eine neue Optimierung.")
-            resume = False; algorithm = None
-            if os.path.exists(CHECKPOINT_FILE): os.remove(CHECKPOINT_FILE)
-            if os.path.exists(INPUTS_FILE): os.remove(INPUTS_FILE)
+    algorithm, all_champions, completed_tasks = None, [], []
+    
+    if resume and os.path.exists(PIPELINE_STATE_FILE):
+        print("\nLade gespeicherten Fortschritt der Pipeline...")
+        with open(PIPELINE_STATE_FILE, 'r') as f:
+            state = json.load(f)
+            all_champions = state.get('champions', [])
+            completed_tasks = state.get('completed_tasks', [])
+        print(f"{len(completed_tasks)} Aufgabe(n) bereits abgeschlossen.")
+        
+        # Lade den internen Algorithmus-Zustand, falls vorhanden
+        if os.path.exists(PYMOO_CHECKPOINT_FILE):
+             with open(PYMOO_CHECKPOINT_FILE, 'rb') as f: algorithm = pickle.load(f)
 
-    if not resume:
+        with open(INPUTS_FILE, 'r') as f: inputs = json.load(f)
+        symbol_input, timeframe_input, start_date, end_date = inputs['symbol'], inputs['timeframe'], inputs['start_date'], inputs['end_date']
+        n_gen, START_CAPITAL, MINIMUM_TRADES = inputs['n_gen'], inputs['start_capital'], inputs['minimum_trades']
+        leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
+        
+    else:
+        # Standard-Abfragen für einen neuen Lauf
         symbol_input = input("Handelspaar(e) eingeben (z.B. BTC ETH): ")
         timeframe_input = input("Zeitfenster eingeben (z.B. 1h 4h): ")
         start_date = input("Startdatum eingeben (JJJJ-MM-TT): ")
@@ -111,48 +117,41 @@ def main(n_procs, n_gen_default, resume):
                           'leverage_min': leverage_min, 'leverage_max': leverage_max}
         with open(INPUTS_FILE, 'w') as f: json.dump(inputs_to_save, f)
 
-    all_champions = []
-    for symbol_short in symbol_input.split():
-        for tf in timeframe_input.split():
-            symbol_full = f"{symbol_short.upper()}/USDT:USDT"
-            global INDICATOR_CACHE, HISTORICAL_DATA
-            INDICATOR_CACHE = {}
-            HISTORICAL_DATA = load_data(symbol_full, tf, start_date, end_date)
-            if HISTORICAL_DATA.empty: continue
+    # Erstelle eine Liste aller zu erledigenden Aufgaben
+    tasks = [f"{s.upper()}_{tf}" for s in symbol_input.split() for tf in timeframe_input.split()]
+    
+    for task in tasks:
+        symbol_short, tf = task.split('_')
+        symbol_full = f"{symbol_short}/USDT:USDT"
+        
+        # Überspringe die Aufgabe, wenn sie bereits abgeschlossen ist
+        if task in completed_tasks:
+            print(f"\nÜberspringe bereits abgeschlossene Aufgabe: {symbol_full} ({tf})")
+            continue
             
-            pop_size = 100
+        global INDICATOR_CACHE, HISTORICAL_DATA
+        INDICATOR_CACHE = {}
+        HISTORICAL_DATA = load_data(symbol_full, tf, start_date, end_date)
+        if HISTORICAL_DATA.empty: continue
             
-            if algorithm is None:
-                print("\nFühre verbesserten Benchmark zur Zeitschätzung durch (10 Testläufe)...")
-                # ... Benchmark-Logik bleibt unverändert ...
-                
-                ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
-                algorithm = NSGA3(pop_size=pop_size, ref_dirs=ref_dirs)
+        if algorithm is None: # Nur ausführen, wenn kein Checkpoint geladen wurde
+            print("\nFühre verbesserten Benchmark zur Zeitschätzung durch (10 Testläufe)...")
+            # ... Benchmark Logik ...
+            ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
+            algorithm = NSGA3(pop_size=100, ref_dirs=ref_dirs)
 
-            with Pool(n_procs) as pool:
-                problem = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max, parallelization=StarmapParallelization(pool.starmap))
-                termination = get_termination("n_gen", n_gen)
-                initial_gen = algorithm.n_gen if algorithm.n_gen else 0
-                with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
-                    if initial_gen > 0: pbar.update(0)
-                    
-                    # --- FINALE KORREKTUR: Direkter Aufruf statt `minimize` ---
-                    # 1. Den Algorithmus mit dem Problem und den Bedingungen initialisieren
-                    algorithm.setup(problem, termination=termination, seed=1, verbose=False)
-                    
-                    # 2. Den neuen Callback mit dem neuen Fortschrittsbalken zuweisen
-                    algorithm.callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
+        with Pool(n_procs) as pool:
+            problem = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max, parallelization=StarmapParallelization(pool.starmap))
+            termination = get_termination("n_gen", n_gen)
+            initial_gen = algorithm.n_gen if algorithm.n_gen else 0
+            with tqdm(total=n_gen, initial=initial_gen, desc=f"Optimiere {symbol_full} ({tf})") as pbar:
+                if initial_gen > 0: pbar.update(0)
+                callback = CombinedCallback(pbar, every_n_gen_checkpoint=5)
+                algorithm.callback = callback
+                res = minimize(problem, algorithm, termination, seed=1, verbose=False)
 
-                    # 3. Den Lauf fortsetzen, bis die Endbedingung erreicht ist
-                    while algorithm.has_next():
-                        algorithm.next()
-                    
-                    # 4. Das Ergebnis abholen
-                    res = algorithm.result()
-                    # --- ENDE DER KORREKTUR ---
-
-            valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
-            if not valid_indices: continue
+        valid_indices = [i for i, f in enumerate(res.F) if f[0] < -1]
+        if valid_indices:
             best_indices = sorted(valid_indices, key=lambda i: res.F[i][0])[:5]
             for i in best_indices:
                 p = res.X[i]
@@ -161,7 +160,17 @@ def main(n_procs, n_gen_default, resume):
                     'start_capital': START_CAPITAL, 'pnl': -res.F[i][0], 'drawdown': res.F[i][1],
                     'params': {'swing_period': int(round(p[0])), 'risk_reward_ratio': round(p[1], 2), 'leverage': int(round(p[2]))}
                 })
-            algorithm = None
+        
+        # Markiere die aktuelle Aufgabe als erledigt und speichere den Gesamtfortschritt
+        completed_tasks.append(task)
+        with open(PIPELINE_STATE_FILE, 'w') as f:
+            json.dump({'completed_tasks': completed_tasks, 'champions': all_champions}, f)
+        
+        # Lösche den internen Checkpoint, da diese Aufgabe nun fertig ist
+        if os.path.exists(PYMOO_CHECKPOINT_FILE):
+            os.remove(PYMOO_CHECKPOINT_FILE)
+        
+        algorithm = None # Reset für die nächste Aufgabe
 
     if not all_champions:
         print("\nKeine vielversprechenden Kandidaten gefunden.")
@@ -180,3 +189,4 @@ if __name__ == "__main__":
     parser.add_argument('--resume', action='store_true', help='Setze eine unterbrochene Optimierung fort.')
     args = parser.parse_args()
     main(n_procs=args.jobs, n_gen_default=args.gen, resume=args.resume)
+
