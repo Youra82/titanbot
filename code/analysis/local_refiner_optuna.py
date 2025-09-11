@@ -14,7 +14,6 @@ from analysis.global_optimizer_pymoo import load_data, format_time
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 HISTORICAL_DATA, START_CAPITAL, BASE_PARAMS = None, 1000.0, {}
 
-# Name der Datenbank-Datei für die Speicherung des Fortschritts von Stufe 2
 DB_FILE = "optuna_studies.db"
 STORAGE_URL = f"sqlite:///{DB_FILE}"
 
@@ -44,22 +43,19 @@ def main(n_jobs, n_trials):
     with open(input_file, 'r') as f: candidates = json.load(f)
     print(f"Lade {len(candidates)} Kandidaten zur Verfeinerung... Fortschritt wird in '{DB_FILE}' gespeichert.")
     
-    # Lade eine Zusammenfassung der bereits abgeschlossenen Studien aus der DB
     try:
         all_studies = optuna.get_all_study_summaries(storage=STORAGE_URL)
         completed_study_names = {study.study_name for study in all_studies if study.n_trials >= n_trials}
     except Exception:
         completed_study_names = set()
     
-    best_overall_trial, best_overall_score, best_overall_info = None, -float('inf'), {}
+    # NEU: Wir sammeln alle Ergebnisse in einer Liste
+    all_refined_results = []
 
     for i, candidate in enumerate(candidates):
-        # Eindeutiger Name für jede Studie, um sie wiederzufinden
         study_name = f"candidate-{i}-{candidate['symbol'].replace('/', '')}-{candidate['timeframe']}"
-        
         print(f"\n===== Verfeinere Kandidat {i+1}/{len(candidates)} für {candidate['symbol']} ({candidate['timeframe']}) =====")
         
-        # Prüfe, ob diese Studie bereits vollständig abgeschlossen ist
         if study_name in completed_study_names:
             print("Diese Studie wurde bereits abgeschlossen. Lade Ergebnisse aus der Datenbank...")
             study = optuna.load_study(study_name=study_name, storage=STORAGE_URL)
@@ -69,15 +65,7 @@ def main(n_jobs, n_trials):
             BASE_PARAMS, START_CAPITAL = candidate['params'], candidate['start_capital']
             if HISTORICAL_DATA.empty: continue
             
-            # Optuna wird angewiesen, die DB zu nutzen und eine Studie zu laden/fortzusetzen, falls sie existiert
-            study = optuna.create_study(
-                storage=STORAGE_URL,
-                study_name=study_name,
-                direction="maximize",
-                load_if_exists=True # Das ist der Schlüssel zum Fortsetzen!
-            )
-            
-            # Führe nur die noch fehlenden Trials aus
+            study = optuna.create_study(storage=STORAGE_URL, study_name=study_name, direction="maximize", load_if_exists=True)
             completed_trials = len(study.trials)
             remaining_trials = n_trials - completed_trials
             if remaining_trials > 0:
@@ -86,44 +74,55 @@ def main(n_jobs, n_trials):
             else:
                  print("Alle Durchläufe für diese Studie sind bereits abgeschlossen.")
 
-        if study.best_trial and study.best_value > best_overall_score:
-            best_overall_score, best_overall_trial, best_overall_info = study.best_value, study.best_trial, candidate
+        if study.best_trial:
+            # NEU: Führe den finalen Backtest durch und speichere das Ergebnis
+            final_params = {**candidate['params'], **study.best_trial.params, 'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
+            final_data = load_data(candidate['symbol'], candidate['timeframe'], candidate['start_date'], candidate['end_date'])
+            final_result = run_smc_backtest(final_data.copy(), final_params)
+            
+            # Speichere alle relevanten Infos in einem Dictionary
+            result_dict = {
+                "info": candidate,
+                "score": study.best_value,
+                "params": final_params,
+                "metrics": final_result
+            }
+            all_refined_results.append(result_dict)
 
-    if best_overall_trial:
-        print("\n\n" + "="*80 + "\n    +++ FINALES BESTES ERGEBNIS FÜR TITANBOT +++\n" + "="*80)
-        final_params = {**best_overall_info['params'], **best_overall_trial.params, 'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
-        final_data = load_data(best_overall_info['symbol'], best_overall_info['timeframe'], best_overall_info['start_date'], best_overall_info['end_date'])
-        final_result = run_smc_backtest(final_data.copy(), final_params)
-
-        print(f"  HANDELSCOIN: {best_overall_info['symbol']} | TIMEFRAME: {best_overall_info['timeframe']}")
-        print(f"  PERFORMANCE-SCORE: {best_overall_score:.2f}\n")
-        print("  FINALE PERFORMANCE-METRIKEN:")
-        print(f"    - Gesamtgewinn (PnL): {final_result['total_pnl_pct']:.2f} %")
-        print(f"    - Max. Drawdown:      {final_result['max_drawdown_pct']*100:.2f} %")
-        print(f"    - Anzahl Trades:      {final_result['trades_count']}")
-        print(f"    - Win-Rate:           {final_result['win_rate']:.2f} %")
+    if all_refined_results:
+        # NEU: Sortiere alle gefundenen Ergebnisse nach dem Performance-Score
+        sorted_results = sorted(all_refined_results, key=lambda x: x['score'], reverse=True)
         
-        trade_log_list = final_result.get('trade_log', [])
-        if trade_log_list:
-            print("\n  HANDELS-CHRONIK DES BESTEN KANDIDATEN:")
-            display_list = trade_log_list[:10] + ([None] + trade_log_list[-10:] if len(trade_log_list) > 20 else [])
-            print("  " + "-"*95)
-            print("  {:^28} | {:<7} | {:<13} | {:>17} | {:>18}".format("Datum & Uhrzeit (UTC)", "Seite", "Grund", "Gewinn je Trade", "Neuer Kontostand"))
-            print("  " + "-"*95)
-            for trade in display_list:
-                if trade is None: print("  ...".center(97)); continue
-                print(f"  {trade['timestamp']:<28} | {trade['side'].capitalize():<7} | {trade['reason']:<13} | {f'{trade['pnl']:+.2f} USDT':>17} | {f'{trade['balance']:.2f} USDT':>18}")
-            print("  " + "-"*95)
+        print("\n\n" + "="*80)
+        print("    +++ FINALE TOP-ERGEBNISSE NACH DER OPTIMIERUNG +++")
+        print("="*80)
         
-        print("\n  >>> EINSTELLUNGEN FÜR DEINE 'config.json' <<<")
-        config_output = {"market": {"symbol": best_overall_info['symbol'], "timeframe": best_overall_info['timeframe']},
-                         "strategy": {"swing_period": final_params['swing_period'], "atr_period": 14},
-                         "risk": {"margin_mode": "isolated", "balance_fraction_pct": 10, "risk_per_trade_pct": 1.0,
-                                  "risk_reward_ratio": round(final_params['risk_reward_ratio'], 2), "leverage": final_params['leverage']},
-                         "behavior": {"use_longs": True, "use_shorts": True}}
-        print(json.dumps(config_output, indent=4) + "\n" + "="*80)
+        # Gebe die Top 10 (oder weniger, falls vorhanden) aus
+        for idx, result in enumerate(sorted_results[:10]):
+            info = result['info']
+            score = result['score']
+            metrics = result['metrics']
+            params = result['params']
+            
+            print(f"\n--- [ PLATZ {idx + 1} ] ---")
+            print(f"  HANDELSCOIN: {info['symbol']} | TIMEFRAME: {info['timeframe']}")
+            print(f"  PERFORMANCE-SCORE: {score:.2f}\n")
+            print("  FINALE PERFORMANCE-METRIKEN:")
+            print(f"    - Gesamtgewinn (PnL): {metrics['total_pnl_pct']:.2f} %")
+            print(f"    - Max. Drawdown:      {metrics['max_drawdown_pct']*100:.2f} %")
+            print(f"    - Anzahl Trades:      {metrics['trades_count']}")
+            print(f"    - Win-Rate:           {metrics['win_rate']:.2f} %\n")
+            
+            print("  >>> EINSTELLUNGEN FÜR DEINE 'config.json' <<<")
+            config_output = {"market": {"symbol": info['symbol'], "timeframe": info['timeframe']},
+                             "strategy": {"swing_period": params['swing_period'], "atr_period": 14},
+                             "risk": {"margin_mode": "isolated", "balance_fraction_pct": 10, "risk_per_trade_pct": 1.0,
+                                      "risk_reward_ratio": round(params['risk_reward_ratio'], 2), "leverage": params['leverage']},
+                             "behavior": {"use_longs": True, "use_shorts": True}}
+            print(json.dumps(config_output, indent=4))
+            print("-" * 80)
     else:
-        print("Kein gültiges Ergebnis nach der Verfeinerung gefunden. Möglicherweise waren alle Kandidaten bereits in der Datenbank.")
+        print("Kein gültiges Ergebnis nach der Verfeinerung gefunden.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Stufe 2: Lokale Parameter-Verfeinerung mit Optuna.")
