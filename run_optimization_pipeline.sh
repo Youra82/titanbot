@@ -2,10 +2,10 @@
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 VENV_PATH="$SCRIPT_DIR/code/.venv/bin/activate"
+
 GLOBAL_OPTIMIZER="$SCRIPT_DIR/code/analysis/global_optimizer_pymoo.py"
 LOCAL_REFINER="$SCRIPT_DIR/code/analysis/local_refiner_optuna.py"
 BACKTESTER="$SCRIPT_DIR/code/analysis/run_backtest.py"
-# NEUE DATEINAMEN
 CANDIDATES_FILE="optimization_candidates.json"
 PYMOO_CHECKPOINT_FILE="pymoo_checkpoint.pkl"
 PIPELINE_STATE_FILE="pipeline_state.json"
@@ -20,7 +20,10 @@ if [ -f "$VENV_PATH" ]; then source "$VENV_PATH"; else
 echo -e "${BLUE}======================================================="
 echo "        TitanBot Analyse- & Optimierungs-Werkzeuge"
 echo -e "=======================================================${NC}"
-# ... (Menü bleibt gleich) ...
+echo "Wähle einen Modus:"
+echo "  1) Komplette Optimierungs-Pipeline starten"
+echo "  2) Einzel-Backtest der aktuellen Live-Konfiguration starten"
+echo "  3) Daten-Cache löschen"
 read -p "Auswahl (1-3): " mode
 
 case "$mode" in
@@ -28,11 +31,11 @@ case "$mode" in
         echo -e "\n${GREEN}>>> Modus: Optimierungs-Pipeline für TitanBot gewählt.${NC}"
         
         RESUME_FLAG=""
-        # Prüft jetzt auf die übergeordnete Status-Datei
         if [ -f "$PIPELINE_STATE_FILE" ]; then
             read -p "Eine unterbrochene Optimierung wurde gefunden. Fortsetzen? [J/n]: " response
             if [[ "$response" =~ ^([jJ][aA]|[jJ]|)$ ]]; then
-                RESUME_FLAG="--resume"; echo "Setze Optimierung fort..."
+                RESUME_FLAG="--resume"
+                echo "Setze Optimierung fort..."
             else
                 echo "Checkpoint wird ignoriert. Starte neue Optimierung und lösche ALLE alten Daten..."
                 rm -f "$PYMOO_CHECKPOINT_FILE" "$INPUTS_FILE" "$CANDIDATES_FILE" "$OPTUNA_DB" "$PIPELINE_STATE_FILE"
@@ -58,10 +61,21 @@ case "$mode" in
         echo -e "\n${GREEN}>>> STARTE STUFE 2: Lokale Verfeinerung mit Optuna...${NC}"
         python3 "$LOCAL_REFINER" --jobs "$N_CORES"
         
-        # Am Ende werden alle temporären Dateien aufgeräumt
         rm -f "$PYMOO_CHECKPOINT_FILE" "$INPUTS_FILE" "$PIPELINE_STATE_FILE"
         ;;
-    # ... (Rest des Skripts bleibt unverändert) ...
+    2)
+        echo -e "\n${GREEN}>>> Modus: Einzel-Backtest gewählt.${NC}"
+        python3 "$BACKTESTER"
+        ;;
+    3)
+        echo -e "\n${GREEN}>>> Modus: Cache löschen gewählt.${NC}"
+        read -p "Möchtest du den gesamten Daten-Cache wirklich löschen? [j/N]: " response
+        if [[ "$response" =~ ^([jJ][aA]|[jJ])$ ]]; then rm -rfv "$CACHE_DIR"/*
+            echo -e "${GREEN}✔ Cache wurde erfolgreich gelöscht.${NC}"; else echo -e "${RED}Aktion abgebrochen.${NC}"; fi
+        ;;
+    *)
+        echo -e "${RED}Ungültige Auswahl. Skript wird beendet.${NC}"
+        ;;
 esac
 
 deactivate
