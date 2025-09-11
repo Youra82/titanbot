@@ -44,7 +44,50 @@ def main(n_jobs, n_trials):
     if not os.path.exists(input_file):
         print(f"Fehler: '{input_file}' nicht gefunden. Stufe 1 muss zuerst laufen."); return
 
-    # ... (Der Anfang der main-Funktion bleibt unverändert) ...
+    with open(input_file, 'r') as f: candidates = json.load(f)
+    print(f"Lade {len(candidates)} Kandidaten zur Verfeinerung... Fortschritt wird in '{DB_FILE}' gespeichert.")
+    
+    try:
+        all_studies = optuna.get_all_study_summaries(storage=STORAGE_URL)
+        completed_study_names = {study.study_name for study in all_studies if study.n_trials >= n_trials}
+    except Exception:
+        completed_study_names = set()
+    
+    # KORREKTUR: Die Ergebnisliste wird hier korrekt initialisiert
+    all_refined_results = []
+
+    for i, candidate in enumerate(candidates):
+        study_name = f"candidate-{i}-{candidate['symbol'].replace('/', '')}-{candidate['timeframe']}"
+        print(f"\n===== Verfeinere Kandidat {i+1}/{len(candidates)} für {candidate['symbol']} ({candidate['timeframe']}) =====")
+        
+        if study_name in completed_study_names:
+            print("Diese Studie wurde bereits abgeschlossen. Lade Ergebnisse aus der Datenbank...")
+            study = optuna.load_study(study_name=study_name, storage=STORAGE_URL)
+        else:
+            global HISTORICAL_DATA, BASE_PARAMS, START_CAPITAL
+            HISTORICAL_DATA = load_data(candidate['symbol'], candidate['timeframe'], candidate['start_date'], candidate['end_date'])
+            BASE_PARAMS, START_CAPITAL = candidate['params'], candidate['start_capital']
+            if HISTORICAL_DATA.empty: continue
+            
+            study = optuna.create_study(storage=STORAGE_URL, study_name=study_name, direction="maximize", load_if_exists=True)
+            completed_trials = len(study.trials)
+            remaining_trials = n_trials - completed_trials
+            if remaining_trials > 0:
+                 print(f"{completed_trials} von {n_trials} Durchläufen bereits abgeschlossen. Setze fort...")
+                 study.optimize(objective, n_trials=remaining_trials, n_jobs=n_jobs, show_progress_bar=True)
+            else:
+                 print("Alle Durchläufe für diese Studie sind bereits abgeschlossen.")
+
+        if study.best_trial:
+            final_params = {**candidate['params'], **study.best_trial.params, 'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
+            final_data = load_data(candidate['symbol'], candidate['timeframe'], candidate['start_date'], candidate['end_date'])
+            final_result = run_smc_backtest(final_data.copy(), final_params)
+            
+            result_dict = {
+                "info": candidate, "score": study.best_value,
+                "params": final_params, "metrics": final_result
+            }
+            all_refined_results.append(result_dict)
 
     if all_refined_results:
         sorted_results = sorted(all_refined_results, key=lambda x: x['score'], reverse=True)
@@ -57,7 +100,14 @@ def main(n_jobs, n_trials):
             metrics = result['metrics']
             params = result['params']
             
-            # ... (Die Ausgabe der Metriken bleibt unverändert) ...
+            print(f"\n--- [ PLATZ {idx + 1} ] ---")
+            print(f"  HANDELSCOIN: {info['symbol']} | TIMEFRAME: {info['timeframe']}")
+            print(f"  PERFORMANCE-SCORE: {score:.2f}\n")
+            print("  FINALE PERFORMANCE-METRIKEN:")
+            print(f"    - Gesamtgewinn (PnL): {metrics['total_pnl_pct']:.2f} %")
+            print(f"    - Max. Drawdown:      {metrics['max_drawdown_pct']*100:.2f} %")
+            print(f"    - Anzahl Trades:      {metrics['trades_count']}")
+            print(f"    - Win-Rate:           {metrics['win_rate']:.2f} %\n")
             
             print("  >>> EINSTELLUNGEN FÜR DEINE 'config.json' <<<")
             config_output = {
