@@ -23,7 +23,6 @@ from utilities.strategy_logic import calculate_smc_indicators
 
 HISTORICAL_DATA, START_CAPITAL, MINIMUM_TRADES = None, 1000.0, 10
 INDICATOR_CACHE = {}
-# NEUE DATEINAMEN für besseres Management
 PYMOO_CHECKPOINT_FILE = "pymoo_checkpoint.pkl"
 PIPELINE_STATE_FILE = "pipeline_state.json"
 INPUTS_FILE = "optim_inputs.json"
@@ -64,14 +63,17 @@ class SMCOptimizationProblem(Problem):
         results = []
         for ind in x:
             swing_period = int(round(ind[0]))
-            if swing_period in INDICATOR_CACHE: data_with_indicators = INDICATOR_CACHE[swing_period]
+            if swing_period in INDICATOR_CACHE:
+                data_with_indicators = INDICATOR_CACHE[swing_period]
             else:
                 temp_params = {'swing_period': swing_period, 'atr_period': 14}
                 data_with_indicators = calculate_smc_indicators(HISTORICAL_DATA.copy(), temp_params)
                 INDICATOR_CACHE[swing_period] = data_with_indicators
             
-            params = {'swing_period': swing_period, 'risk_reward_ratio': round(ind[1], 2), 'leverage': int(round(ind[2])),
-                      'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0}
+            params = {
+                'swing_period': swing_period, 'risk_reward_ratio': round(ind[1], 2), 'leverage': int(round(ind[2])),
+                'start_capital': START_CAPITAL, 'risk_per_trade_pct': 1.0
+            }
             result = run_smc_backtest(data_with_indicators.copy(), params)
             pnl = result.get('total_pnl_pct', -1000)
             drawdown = result.get('max_drawdown_pct', 1.0) * 100
@@ -92,7 +94,6 @@ def main(n_procs, n_gen_default, resume):
             completed_tasks = state.get('completed_tasks', [])
         print(f"{len(completed_tasks)} Aufgabe(n) bereits abgeschlossen.")
         
-        # Lade den internen Algorithmus-Zustand, falls vorhanden
         if os.path.exists(PYMOO_CHECKPOINT_FILE):
              with open(PYMOO_CHECKPOINT_FILE, 'rb') as f: algorithm = pickle.load(f)
 
@@ -102,7 +103,6 @@ def main(n_procs, n_gen_default, resume):
         leverage_min, leverage_max = inputs['leverage_min'], inputs['leverage_max']
         
     else:
-        # Standard-Abfragen für einen neuen Lauf
         symbol_input = input("Handelspaar(e) eingeben (z.B. BTC ETH): ")
         timeframe_input = input("Zeitfenster eingeben (z.B. 1h 4h): ")
         start_date = input("Startdatum eingeben (JJJJ-MM-TT): ")
@@ -117,14 +117,12 @@ def main(n_procs, n_gen_default, resume):
                           'leverage_min': leverage_min, 'leverage_max': leverage_max}
         with open(INPUTS_FILE, 'w') as f: json.dump(inputs_to_save, f)
 
-    # Erstelle eine Liste aller zu erledigenden Aufgaben
     tasks = [f"{s.upper()}_{tf}" for s in symbol_input.split() for tf in timeframe_input.split()]
     
     for task in tasks:
         symbol_short, tf = task.split('_')
         symbol_full = f"{symbol_short}/USDT:USDT"
         
-        # Überspringe die Aufgabe, wenn sie bereits abgeschlossen ist
         if task in completed_tasks:
             print(f"\nÜberspringe bereits abgeschlossene Aufgabe: {symbol_full} ({tf})")
             continue
@@ -133,12 +131,25 @@ def main(n_procs, n_gen_default, resume):
         INDICATOR_CACHE = {}
         HISTORICAL_DATA = load_data(symbol_full, tf, start_date, end_date)
         if HISTORICAL_DATA.empty: continue
-            
-        if algorithm is None: # Nur ausführen, wenn kein Checkpoint geladen wurde
+        
+        if algorithm is None:
             print("\nFühre verbesserten Benchmark zur Zeitschätzung durch (10 Testläufe)...")
-            # ... Benchmark Logik ...
+            pop_size = 100
+            benchmark_runs = 10
+            problem_for_benchmark = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max)
+            sample_individuals = np.random.rand(benchmark_runs, 3) * (problem_for_benchmark.xu - problem_for_benchmark.xl) + problem_for_benchmark.xl
+            start_b = time.time()
+            for i in range(benchmark_runs):
+                problem_for_benchmark._evaluate(sample_individuals[i:i+1], out={})
+            end_b = time.time()
+            total_benchmark_time = end_b - start_b
+            avg_time_per_eval = total_benchmark_time / benchmark_runs
+            total_evals = pop_size * n_gen
+            estimated_time = (total_evals * avg_time_per_eval) / n_procs
+            print(f"Geschätzte Gesamtdauer für Stufe 1: {format_time(estimated_time)}")
+            
             ref_dirs = get_reference_directions("das-dennis", 2, n_partitions=99)
-            algorithm = NSGA3(pop_size=100, ref_dirs=ref_dirs)
+            algorithm = NSGA3(pop_size=pop_size, ref_dirs=ref_dirs)
 
         with Pool(n_procs) as pool:
             problem = SMCOptimizationProblem(leverage_min=leverage_min, leverage_max=leverage_max, parallelization=StarmapParallelization(pool.starmap))
@@ -161,16 +172,14 @@ def main(n_procs, n_gen_default, resume):
                     'params': {'swing_period': int(round(p[0])), 'risk_reward_ratio': round(p[1], 2), 'leverage': int(round(p[2]))}
                 })
         
-        # Markiere die aktuelle Aufgabe als erledigt und speichere den Gesamtfortschritt
         completed_tasks.append(task)
         with open(PIPELINE_STATE_FILE, 'w') as f:
             json.dump({'completed_tasks': completed_tasks, 'champions': all_champions}, f)
         
-        # Lösche den internen Checkpoint, da diese Aufgabe nun fertig ist
         if os.path.exists(PYMOO_CHECKPOINT_FILE):
             os.remove(PYMOO_CHECKPOINT_FILE)
         
-        algorithm = None # Reset für die nächste Aufgabe
+        algorithm = None
 
     if not all_champions:
         print("\nKeine vielversprechenden Kandidaten gefunden.")
@@ -189,4 +198,3 @@ if __name__ == "__main__":
     parser.add_argument('--resume', action='store_true', help='Setze eine unterbrochene Optimierung fort.')
     args = parser.parse_args()
     main(n_procs=args.jobs, n_gen_default=args.gen, resume=args.resume)
-
