@@ -7,6 +7,7 @@ import logging
 import traceback
 import sqlite3
 import numpy as np
+import pandas as pd
 
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..', '..', '..')
 sys.path.append(os.path.join(PROJECT_ROOT, 'code'))
@@ -29,7 +30,6 @@ params = load_config()
 SYMBOL = params['market']['symbol']
 
 def get_db_file_path(account_name):
-    # Erstellt einen sicheren Dateinamen aus dem Account-Namen
     safe_account_name = "".join(c for c in account_name if c.isalnum() or c in (' ', '_')).rstrip()
     return os.path.join(os.path.dirname(__file__), f"titan_state_{safe_account_name}_{SYMBOL.replace('/', '-')}.db")
 
@@ -39,6 +39,7 @@ def setup_database(account_name):
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS bot_state (key TEXT PRIMARY KEY, value TEXT)''')
     cursor.execute("INSERT OR IGNORE INTO bot_state (key, value) VALUES (?, ?)", ('last_signal_ts', '0'))
+    cursor.execute("INSERT OR IGNORE INTO bot_state (key, value) VALUES (?, ?)", ('trailing_stop_active', 'False'))
     conn.commit()
     conn.close()
 
@@ -60,7 +61,6 @@ def set_state(account_name, key, value):
     conn.close()
 
 def run_for_account(account, telegram_config):
-    # Nutzt den 'name' aus der Config, oder einen Standardwert, falls nicht vorhanden
     account_name = account.get('name', 'Standard-Account')
     bot_token = telegram_config.get('bot_token')
     chat_id = telegram_config.get('chat_id')
@@ -71,15 +71,67 @@ def run_for_account(account, telegram_config):
     setup_database(account_name)
 
     try:
-        if bitget.fetch_open_positions(SYMBOL):
-            logger.info(f"[{account_name}] Position für {SYMBOL} ist offen. Management durch TitanBot.")
+        position = bitget.fetch_open_positions(SYMBOL)
+        
+        if position:
+            pos = position[0]
+            entry_price = float(pos['entryPrice'])
+            side = pos['side']
+            trailing_stop_active = get_state(account_name, 'trailing_stop_active') == 'True'
+
+            if not trailing_stop_active:
+                activation_rr = params['risk']['trailing_stop_activation_rr']
+                last_signal_ts_str = get_state(account_name, 'last_signal_ts')
+                if last_signal_ts_str == '0':
+                    logger.info(f"[{account_name}] Position offen, aber keine Signal-Info gefunden. Management übersprungen.")
+                    return
+
+                data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
+                data = calculate_smc_indicators(data, params['strategy'])
+                signal_timestamp = pd.to_datetime(int(last_signal_ts_str), unit='s', utc=True)
+                
+                if signal_timestamp not in data.index:
+                    logger.warning(f"[{account_name}] Signal-Timestamp nicht in aktuellen Daten gefunden. Management übersprungen.")
+                    return
+                
+                signal_data = data.loc[signal_timestamp]
+                initial_sl = signal_data['ob_low'] if side == 'long' else signal_data['ob_high']
+                if np.isnan(initial_sl):
+                    logger.warning(f"[{account_name}] Konnte initialen SL nicht rekonstruieren. Management übersprungen.")
+                    return
+
+                risk_distance = abs(entry_price - initial_sl)
+                activation_price = entry_price + (risk_distance * activation_rr) if side == 'long' else entry_price - (risk_distance * activation_rr)
+                current_price = bitget.fetch_ticker(SYMBOL)['last']
+
+                if (side == 'long' and current_price >= activation_price) or (side == 'short' and current_price <= activation_price):
+                    logger.info(f"[{account_name}] Aktivierungspreis ${activation_price:.4f} erreicht. Aktiviere Trailing Stop Loss.")
+                    bitget.cancel_all_trigger_orders(SYMBOL)
+                    
+                    callback_rate = params['risk']['trailing_stop_callback_rate_pct']
+                    contracts = float(pos['contracts'])
+                    close_side = 'sell' if side == 'long' else 'buy'
+                    
+                    bitget.place_trailing_stop_order(SYMBOL, close_side, contracts, callback_rate, current_price)
+                    set_state(account_name, 'trailing_stop_active', 'True')
+                    
+                    message = f"🚀 Trailing Stop für *{account_name}* ({SYMBOL}) aktiviert!\n- Gewinn ist bei >{activation_rr}:1 gesichert."
+                    send_telegram_message(bot_token, chat_id, message)
+            else:
+                logger.info(f"[{account_name}] Trailing Stop ist bereits aktiv. Management durch Bitget.")
             return
+
+        # Wenn keine Position offen ist, resetten wir den Trailing Stop Status für den nächsten Trade
+        if get_state(account_name, 'trailing_stop_active') == 'True':
+            set_state(account_name, 'trailing_stop_active', 'False')
+
         if bitget.fetch_open_orders(SYMBOL):
             logger.info(f"[{account_name}] Warte auf Ausführung der Limit-Order für {SYMBOL}.")
             return
 
         logger.info(f"[{account_name}] Keine Position offen. Suche nach neuen SMC-Einstiegen.")
         bitget.cancel_all_orders(SYMBOL)
+        bitget.cancel_all_trigger_orders(SYMBOL)
         
         data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
         data = calculate_smc_indicators(data, params['strategy'])
@@ -108,11 +160,17 @@ def run_for_account(account, telegram_config):
                     leverage, margin_mode = params['risk']['leverage'], params['risk']['margin_mode']
                     rr = params['risk']['risk_reward_ratio']
                     take_profit_price = entry_price + sl_distance * rr if side == 'buy' else entry_price - sl_distance * rr
+                    close_side = 'sell' if side == 'buy' else 'buy'
 
                     bitget.set_margin_mode(SYMBOL, margin_mode)
                     bitget.set_leverage(SYMBOL, leverage, margin_mode)
                     logger.info(f"[{account_name}] TitanBot Signal! Platziere Limit-Order: {amount:.4f} {SYMBOL.split('/')[0]} @ ${entry_price:.4f}")
+                    
+                    # Entry, TP und SL platzieren
                     bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode)
+                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, reduce=True)
+                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, reduce=True)
+
                     set_state(account_name, 'last_signal_ts', signal_ts)
 
                     message = f"📈 TitanBot Signal für Account *{account_name}* ({SYMBOL}, {side.upper()})\n- Order @ ${entry_price:.4f}\n- SL: ${stop_loss_price:.4f}\n- TP: ${take_profit_price:.4f}"
@@ -134,13 +192,12 @@ def main():
         api_configs = secrets['titan']
         telegram_config = secrets.get('telegram', {})
         
-        # Prüft, ob es sich um eine Liste (Multi-Account) oder ein einzelnes Objekt (Single-Account) handelt
         if isinstance(api_configs, list):
             logger.info(f"Multi-Account-Modus erkannt. Verarbeite {len(api_configs)} Accounts.")
             accounts_to_run = api_configs
         elif isinstance(api_configs, dict):
             logger.info("Single-Account-Modus erkannt.")
-            accounts_to_run = [api_configs] # Verpackt das einzelne Objekt in eine Liste für die Schleife
+            accounts_to_run = [api_configs]
         else:
             logger.critical("Fehler: Der 'titan' Eintrag in secret.json hat ein ungültiges Format.")
             return
@@ -149,7 +206,6 @@ def main():
         logger.critical(f"Fehler beim Laden der API-Schlüssel oder Konfiguration: {e}")
         sys.exit(1)
 
-    # Iteriert durch die Liste der Accounts (egal ob einer oder mehrere)
     for account in accounts_to_run:
         try:
             run_for_account(account, telegram_config)
