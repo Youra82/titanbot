@@ -8,10 +8,15 @@ from typing import Any, Optional, Dict, List
 logger = logging.getLogger(__name__)
 
 class BitgetFutures():
-    def __init__(self, api_setup: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, api_setup: Optional[Dict[str, Any]] = None, demo_mode: bool = False) -> None:
         api_setup = api_setup or {}
         api_setup.setdefault("options", {"defaultType": "swap"})
-        self.session = ccxt.bitget(api_setup)
+        if demo_mode:
+            api_setup["options"]["productType"] = "SUSDT-FUTURES"
+            self.session = ccxt.bitget(api_setup)
+            self.session.set_sandbox_mode(True)
+        else:
+            self.session = ccxt.bitget(api_setup)
         self.markets = self.session.load_markets()
      
     def get_market_info(self, symbol: str) -> Dict[str, Any]:
@@ -31,6 +36,12 @@ class BitgetFutures():
         except Exception as e:
             raise Exception(f"Failed to fetch balance: {e}")
 
+    def fetch_open_orders(self, symbol: str) -> List[Dict[str, Any]]:
+        try:
+            return self.session.fetch_open_orders(symbol)
+        except Exception as e:
+            raise Exception(f"Failed to fetch open orders: {e}")
+
     def fetch_open_positions(self, symbol: str) -> List[Dict[str, Any]]:
         try:
             positions = self.session.fetch_positions([symbol])
@@ -40,7 +51,9 @@ class BitgetFutures():
             
     def fetch_recent_ohlcv(self, symbol: str, timeframe: str, limit: int = 500) -> pd.DataFrame:
         try:
-            ohlcv = self.session.fetch_ohlcv(symbol, timeframe, limit=limit)
+            timeframe_in_ms = self.session.parse_timeframe(timeframe) * 1000
+            since = self.session.milliseconds() - limit * timeframe_in_ms
+            ohlcv = self.session.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
             df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
             df.set_index('timestamp', inplace=True)
@@ -56,17 +69,24 @@ class BitgetFutures():
     
     def cancel_all_trigger_orders(self, symbol: str):
         try:
+            # Bitget uses planType to differentiate trigger orders in some contexts
             self.session.cancel_all_orders(symbol, params={'planType': 'normal_plan'})
             self.session.cancel_all_orders(symbol, params={'planType': 'track_plan'})
         except Exception as e:
             logger.warning(f"Konnte nicht alle Trigger-Orders stornieren: {e}")
+
+    def cancel_order(self, id: str, symbol: str) -> Dict[str, Any]:
+        try:
+            return self.session.cancel_order(id, symbol)
+        except Exception as e:
+            raise Exception(f"Failed to cancel the {symbol} order {id}", e)
 
     def create_market_order(self, symbol: str, side: str, amount: float, params: dict = None) -> Dict[str, Any]:
         try:
             return self.session.create_order(symbol, 'market', side, amount, None, params)
         except Exception as e:
             raise Exception(f"Failed to create market order: {e}")
-
+    
     def place_limit_order(self, symbol: str, side: str, amount: float, price: float, params: dict = None) -> Dict[str, Any]:
         try:
             return self.session.create_order(symbol, 'limit', side, amount, price, params)
