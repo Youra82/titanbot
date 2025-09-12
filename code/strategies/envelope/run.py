@@ -87,7 +87,6 @@ def run_for_account(account, telegram_config):
                     return
 
                 data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
-                data = calculate_smc_indicators(data, params['strategy'])
                 signal_timestamp = pd.to_datetime(int(last_signal_ts_str), unit='s', utc=True)
                 
                 if signal_timestamp not in data.index:
@@ -121,7 +120,6 @@ def run_for_account(account, telegram_config):
                 logger.info(f"[{account_name}] Trailing Stop ist bereits aktiv. Management durch Bitget.")
             return
 
-        # Wenn keine Position offen ist, resetten wir den Trailing Stop Status für den nächsten Trade
         if get_state(account_name, 'trailing_stop_active') == 'True':
             set_state(account_name, 'trailing_stop_active', 'False')
 
@@ -164,13 +162,11 @@ def run_for_account(account, telegram_config):
 
                     bitget.set_margin_mode(SYMBOL, margin_mode)
                     bitget.set_leverage(SYMBOL, leverage, margin_mode)
-                    logger.info(f"[{account_name}] TitanBot Signal! Platziere Limit-Order: {amount:.4f} {SYMBOL.split('/')[0]} @ ${entry_price:.4f}")
                     
-                    # Entry, TP und SL platzieren
                     bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode)
                     bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, reduce=True)
                     bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, reduce=True)
-
+                    logger.info(f"[{account_name}] TitanBot Signal! Entry, TP und SL Orders platziert.")
                     set_state(account_name, 'last_signal_ts', signal_ts)
 
                     message = f"📈 TitanBot Signal für Account *{account_name}* ({SYMBOL}, {side.upper()})\n- Order @ ${entry_price:.4f}\n- SL: ${stop_loss_price:.4f}\n- TP: ${take_profit_price:.4f}"
@@ -189,7 +185,11 @@ def main():
         key_path = os.path.abspath(os.path.join(PROJECT_ROOT, 'secret.json'))
         with open(key_path, "r") as f: secrets = json.load(f)
         
-        api_configs = secrets['titan']
+        api_configs = secrets.get('titan') # .get() ist sicherer als []
+        if not api_configs:
+            logger.critical("Fehler: Kein 'titan' Eintrag in secret.json gefunden.")
+            return
+            
         telegram_config = secrets.get('telegram', {})
         
         if isinstance(api_configs, list):
@@ -207,10 +207,21 @@ def main():
         sys.exit(1)
 
     for account in accounts_to_run:
+        # --- NEU: Sicherheits-Check für jeden Account ---
+        api_key = account.get('apiKey')
+        secret = account.get('secret')
+        password = account.get('password')
+        account_name = account.get('name', 'Unbenannter Account')
+
+        if not api_key or not secret or not password:
+            logger.warning(f"Überspringe Account '{account_name}', da API-Schlüssel, Secret oder Passwort fehlen.")
+            continue # Springe zum nächsten Account in der Schleife
+        # --- Ende des Sicherheits-Checks ---
+        
         try:
             run_for_account(account, telegram_config)
         except Exception as e:
-            logger.error(f"Schwerwiegender Fehler bei der Ausführung für Account {account.get('name', 'Unbekannt')}: {e}", exc_info=True)
+            logger.error(f"Schwerwiegender Fehler bei der Ausführung für Account {account_name}: {e}", exc_info=True)
 
     logger.info(">>> TitanBot-Lauf abgeschlossen <<<\n")
 
