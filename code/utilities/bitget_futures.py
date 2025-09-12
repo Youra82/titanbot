@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 class BitgetFutures():
     def __init__(self, api_setup: Optional[Dict[str, Any]] = None, demo_mode: bool = False) -> None:
         api_setup = api_setup or {}
-        # HIER IST DIE KORREKTUR: 'future' wird zu 'swap' geändert
         api_setup.setdefault("options", {"defaultType": "swap"})
         if demo_mode:
             api_setup["options"]["productType"] = "SUSDT-FUTURES"
@@ -62,6 +61,32 @@ class BitgetFutures():
         except Exception as e:
             raise Exception(f"Failed to fetch ohlcv data for {symbol}: {e}")
 
+    def set_margin_mode(self, symbol: str, margin_mode: str):
+        try:
+            return self.session.set_margin_mode(margin_mode.lower(), symbol)
+        except Exception as e:
+            if 'Margin mode is the same' in str(e):
+                logger.info(f"Margin-Modus für {symbol} ist bereits '{margin_mode}'.")
+            else:
+                raise e
+
+    def set_leverage(self, symbol: str, leverage: float, margin_mode: str):
+        try:
+            params = {}
+            if margin_mode.lower() == 'isolated':
+                params['holdSide'] = 'long'
+                self.session.set_leverage(leverage, symbol, params)
+                params['holdSide'] = 'short'
+                self.session.set_leverage(leverage, symbol, params)
+            else: # cross
+                self.session.set_leverage(leverage, symbol)
+            logger.info(f"Hebel für {symbol} auf {leverage}x gesetzt.")
+        except Exception as e:
+            if 'Leverage not changed' in str(e):
+                logger.info(f"Hebel für {symbol} ist bereits auf {leverage}x gesetzt.")
+            else:
+                raise e
+    
     def cancel_all_orders(self, symbol: str):
         try:
             self.session.cancel_all_orders(symbol)
@@ -74,6 +99,12 @@ class BitgetFutures():
             self.session.cancel_all_orders(symbol, params={'planType': 'track_plan'})
         except Exception as e:
             logger.warning(f"Konnte nicht alle Trigger-Orders stornieren: {e}")
+
+    def cancel_order(self, id: str, symbol: str) -> Dict[str, Any]:
+        try:
+            return self.session.cancel_order(id, symbol)
+        except Exception as e:
+            raise Exception(f"Failed to cancel the {symbol} order {id}", e)
 
     def create_market_order(self, symbol: str, side: str, amount: float, params: dict = None) -> Dict[str, Any]:
         try:
