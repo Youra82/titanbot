@@ -61,6 +61,32 @@ class BitgetFutures():
         except Exception as e:
             raise Exception(f"Failed to fetch ohlcv data for {symbol}: {e}")
 
+    def set_margin_mode(self, symbol: str, margin_mode: str):
+        try:
+            return self.session.set_margin_mode(margin_mode.lower(), symbol)
+        except Exception as e:
+            if 'Margin mode is the same' in str(e):
+                logger.info(f"Margin-Modus für {symbol} ist bereits '{margin_mode}'.")
+            else:
+                raise e
+
+    def set_leverage(self, symbol: str, leverage: float, margin_mode: str):
+        try:
+            params = {}
+            if margin_mode.lower() == 'isolated':
+                params['holdSide'] = 'long'
+                self.session.set_leverage(leverage, symbol, params)
+                params['holdSide'] = 'short'
+                self.session.set_leverage(leverage, symbol, params)
+            else: # cross
+                self.session.set_leverage(leverage, symbol)
+            logger.info(f"Hebel für {symbol} auf {leverage}x gesetzt.")
+        except Exception as e:
+            if 'Leverage not changed' in str(e):
+                logger.info(f"Hebel für {symbol} ist bereits auf {leverage}x gesetzt.")
+            else:
+                raise e
+    
     def cancel_all_orders(self, symbol: str):
         try:
             self.session.cancel_all_orders(symbol)
@@ -100,23 +126,15 @@ class BitgetFutures():
             return self.session.create_order(symbol, 'market', side, amount, None, order_params)
         except Exception as e:
             raise Exception(f"Failed to place trigger market order: {e}")
-            
-    # --- START DER KORREKTUR ---
-    def set_margin_mode(self, symbol: str, margin_mode: str):
-        try:
-            return self.session.set_margin_mode(margin_mode.lower(), symbol)
-        except Exception as e:
-            if 'Margin mode is the same' in str(e):
-                logger.info(f"Margin-Modus für {symbol} ist bereits '{margin_mode}'.")
-            else:
-                raise e
 
-    def set_leverage(self, symbol: str, leverage: float, params: dict = None):
+    def place_trailing_stop_order(self, symbol: str, side: str, amount: float, callback_rate: float, activation_price: float, params: dict = None) -> Dict[str, Any]:
         try:
-            return self.session.set_leverage(leverage, symbol, params)
+            order_params = {
+                'planType': 'track_plan', 'triggerPrice': activation_price,
+                'callbackRate': str(callback_rate / 100),
+            }
+            if params:
+                order_params.update(params)
+            return self.session.create_order(symbol, 'market', side, amount, None, params=order_params)
         except Exception as e:
-            if 'Leverage not changed' in str(e):
-                logger.info(f"Hebel für {symbol} ist bereits auf {leverage}x gesetzt.")
-            else:
-                raise e
-    # --- ENDE DER KORREKTUR ---
+            raise Exception(f"Failed to place trailing stop order: {e}")
