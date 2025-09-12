@@ -21,7 +21,6 @@
         "use_shorts": true
     },
     "debug": {
-        "test_mode": false,
-        "test_order_price_away_pct": 20.0
+        "test_mode": false
     }
 }
