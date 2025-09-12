@@ -74,6 +74,7 @@ def run_for_account(account, telegram_config):
     try:
         if params.get('debug', {}).get('test_mode', False):
             logger.warning(f"[{account_name}] ACHTUNG: TEST-MODUS IST AKTIV!")
+            
             margin_mode = params['risk']['margin_mode']
             leverage = params['risk']['leverage']
             logger.info(f"[{account_name}] Teste set_margin_mode('{margin_mode}')...")
@@ -81,14 +82,23 @@ def run_for_account(account, telegram_config):
             logger.info(f"[{account_name}] Teste set_leverage({leverage})...")
             bitget.set_leverage(SYMBOL, leverage, margin_mode)
 
+            # --- START: Überarbeitete Logik für Test-Order ---
             market_info = bitget.get_market_info(SYMBOL)
-            min_amount = market_info.get('min_amount', 1.0)
+            min_base_amount = market_info.get('min_amount', 1.0)
             current_price = bitget.fetch_ticker(SYMBOL)['last']
+            
+            min_quote_value = 5.1 # Mindestwert in USDT (5.1 als Sicherheits-Puffer)
+            min_amount_for_quote = min_quote_value / current_price
+            
+            # Wähle die größere der beiden Mindestmengen, um beide Bedingungen zu erfüllen
+            test_amount = max(min_base_amount, min_amount_for_quote)
+            
             away_pct = params['debug']['test_order_price_away_pct'] / 100
             test_price = current_price * (1 - away_pct)
+            # --- ENDE: Überarbeitete Logik ---
 
-            logger.info(f"[{account_name}] Teste place_limit_order (Menge: {min_amount}, Preis: ${test_price:.4f})...")
-            order = bitget.place_limit_order(SYMBOL, 'buy', min_amount, test_price, leverage, margin_mode, post_only=True)
+            logger.info(f"[{account_name}] Teste place_limit_order (Menge: {test_amount:.4f}, Preis: ${test_price:.4f})...")
+            order = bitget.place_limit_order(SYMBOL, 'buy', test_amount, test_price, leverage, margin_mode, post_only=True)
             order_id = order['id']
             logger.info(f"[{account_name}] Test-Order {order_id} erfolgreich platziert.")
 
@@ -110,23 +120,14 @@ def run_for_account(account, telegram_config):
             if not trailing_stop_active:
                 activation_rr = params['risk']['trailing_stop_activation_rr']
                 last_signal_ts_str = get_state(account_name, 'last_signal_ts')
-                if last_signal_ts_str == '0':
-                    logger.info(f"[{account_name}] Position offen, aber keine Signal-Info gefunden. Management übersprungen.")
-                    return
-
+                if last_signal_ts_str == '0': return
                 data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
                 data = calculate_smc_indicators(data, params['strategy'])
                 signal_timestamp = pd.to_datetime(int(last_signal_ts_str), unit='s', utc=True)
-                
-                if signal_timestamp not in data.index:
-                    logger.warning(f"[{account_name}] Signal-Timestamp nicht in aktuellen Daten gefunden. Management übersprungen.")
-                    return
-                
+                if signal_timestamp not in data.index: return
                 signal_data = data.loc[signal_timestamp]
                 initial_sl = signal_data['ob_low'] if side == 'long' else signal_data['ob_high']
-                if np.isnan(initial_sl):
-                    logger.warning(f"[{account_name}] Konnte initialen SL nicht rekonstruieren. Management übersprungen.")
-                    return
+                if np.isnan(initial_sl): return
 
                 risk_distance = abs(entry_price - initial_sl)
                 activation_price = entry_price + (risk_distance * activation_rr) if side == 'long' else entry_price - (risk_distance * activation_rr)
@@ -188,7 +189,6 @@ def run_for_account(account, telegram_config):
 
                     bitget.set_margin_mode(SYMBOL, margin_mode)
                     bitget.set_leverage(SYMBOL, leverage, margin_mode)
-                    
                     bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode)
                     bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, reduce=True)
                     bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, reduce=True)
@@ -210,12 +210,10 @@ def main():
     try:
         key_path = os.path.abspath(os.path.join(PROJECT_ROOT, 'secret.json'))
         with open(key_path, "r") as f: secrets = json.load(f)
-        
         api_configs = secrets.get('titan')
         if not api_configs:
             logger.critical("Fehler: Kein 'titan' Eintrag in secret.json gefunden.")
             return
-            
         telegram_config = secrets.get('telegram', {})
         
         if isinstance(api_configs, list):
