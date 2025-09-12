@@ -30,10 +30,10 @@ def load_config():
 params = load_config()
 SYMBOL = params['market']['symbol']
 
-# ... (Datenbank-Funktionen bleiben unverändert) ...
 def get_db_file_path(account_name):
     safe_account_name = "".join(c for c in account_name if c.isalnum() or c in (' ', '_')).rstrip()
     return os.path.join(os.path.dirname(__file__), f"titan_state_{safe_account_name}_{SYMBOL.replace('/', '-')}.db")
+
 def setup_database(account_name):
     db_file = get_db_file_path(account_name)
     conn = sqlite3.connect(db_file)
@@ -43,6 +43,7 @@ def setup_database(account_name):
     cursor.execute("INSERT OR IGNORE INTO bot_state (key, value) VALUES (?, ?)", ('trailing_stop_active', 'False'))
     conn.commit()
     conn.close()
+
 def get_state(account_name, key):
     db_file = get_db_file_path(account_name)
     conn = sqlite3.connect(db_file)
@@ -51,6 +52,7 @@ def get_state(account_name, key):
     result = cursor.fetchone()
     conn.close()
     return result[0] if result else '0'
+
 def set_state(account_name, key, value):
     db_file = get_db_file_path(account_name)
     conn = sqlite3.connect(db_file)
@@ -58,7 +60,6 @@ def set_state(account_name, key, value):
     cursor.execute("REPLACE INTO bot_state (key, value) VALUES (?, ?)", (key, str(value)))
     conn.commit()
     conn.close()
-
 
 def run_for_account(account, telegram_config):
     account_name = account.get('name', 'Standard-Account')
