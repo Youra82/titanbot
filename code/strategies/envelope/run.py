@@ -84,9 +84,10 @@ def run_for_account(account, telegram_config):
 
             market_info = bitget.get_market_info(SYMBOL)
             min_base_amount = market_info.get('min_amount', 1.0)
-            current_price = bitget.fetch_ticker(SYMBOL)['last']
             
             # --- SICHERHEITS-CHECK FÜR DEN PREIS ---
+            ticker = bitget.fetch_ticker(SYMBOL)
+            current_price = ticker.get('last')
             if not current_price or current_price <= 0:
                 logger.error(f"[{account_name}] Ungültiger Preis ({current_price}) vom Ticker erhalten. Test-Modus wird abgebrochen.")
                 return
@@ -212,12 +213,10 @@ def main():
     try:
         key_path = os.path.abspath(os.path.join(PROJECT_ROOT, 'secret.json'))
         with open(key_path, "r") as f: secrets = json.load(f)
-        
         api_configs = secrets.get('titan')
         if not api_configs:
             logger.critical("Fehler: Kein 'titan' Eintrag in secret.json gefunden.")
             return
-            
         telegram_config = secrets.get('telegram', {})
         
         if isinstance(api_configs, list):
