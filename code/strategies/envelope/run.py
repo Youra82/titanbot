@@ -88,8 +88,16 @@ def run_for_account(account, telegram_config):
             min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
             target_cost = min_cost * 1.1 
             
-            logger.info(f"[{account_name}] Platziere Test-Market-BUY-Order im Wert von ~{target_cost:.2f} USDT...")
-            buy_order = bitget.create_market_buy_order_with_cost(SYMBOL, target_cost, params=order_params)
+            ticker = bitget.fetch_ticker(SYMBOL)
+            current_price = ticker.get('last')
+            if not current_price or current_price <= 0:
+                logger.error(f"[{account_name}] Ungültiger Preis ({current_price}) vom Ticker erhalten.")
+                return
+            
+            test_amount = target_cost / current_price
+            
+            logger.info(f"[{account_name}] Platziere Test-Market-BUY-Order (Menge: {test_amount:.4f}, Wert: ~{target_cost:.2f} USDT)...")
+            buy_order = bitget.create_market_order(SYMBOL, 'buy', test_amount, params=order_params)
             logger.info(f"[{account_name}] Test-BUY-Order {buy_order['id']} erfolgreich platziert.")
             
             time.sleep(3) 
@@ -104,7 +112,7 @@ def run_for_account(account, telegram_config):
             else:
                  logger.warning(f"[{account_name}] Konnte Test-Position zum Schließen nicht finden.")
 
-            logger.warning(f"[{account_name}] TEST-MODUS ERFOLGREICH ABGESCHLOSSEN.")
+            logger.warning(f"[{account_name}] TEST-MODUS ERFOLGREICH ABGESCHLOSSEN. Bitte `test_mode` auf `false` setzen.")
             return
 
         position = bitget.fetch_open_positions(SYMBOL)
@@ -118,7 +126,7 @@ def run_for_account(account, telegram_config):
                 activation_rr = params['risk']['trailing_stop_activation_rr']
                 last_signal_ts_str = get_state(account_name, 'last_signal_ts')
                 if last_signal_ts_str == '0': return
-                data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
+                data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'])
                 data = calculate_smc_indicators(data, params['strategy'])
                 signal_timestamp = pd.to_datetime(int(last_signal_ts_str), unit='s', utc=True)
                 if signal_timestamp not in data.index: return
@@ -156,7 +164,7 @@ def run_for_account(account, telegram_config):
         bitget.cancel_all_orders(SYMBOL)
         bitget.cancel_all_trigger_orders(SYMBOL)
         
-        data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
+        data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'])
         data = calculate_smc_indicators(data, params['strategy'])
         latest = data.iloc[-2]
 
