@@ -30,7 +30,6 @@ def load_config():
 params = load_config()
 SYMBOL = params['market']['symbol']
 
-# --- START: Wiederhergestellte Datenbank-Funktionen ---
 def get_db_file_path(account_name):
     safe_account_name = "".join(c for c in account_name if c.isalnum() or c in (' ', '_')).rstrip()
     return os.path.join(os.path.dirname(__file__), f"titan_state_{safe_account_name}_{SYMBOL.replace('/', '-')}.db")
@@ -61,7 +60,6 @@ def set_state(account_name, key, value):
     cursor.execute("REPLACE INTO bot_state (key, value) VALUES (?, ?)", (key, str(value)))
     conn.commit()
     conn.close()
-# --- ENDE: Wiederhergestellte Datenbank-Funktionen ---
 
 def run_for_account(account, telegram_config):
     account_name = account.get('name', 'Standard-Account')
@@ -71,7 +69,7 @@ def run_for_account(account, telegram_config):
     logger.info(f"--- Starte TitanBot Ausführung für Account: {account_name} | Symbol: {SYMBOL} ---")
     
     bitget = BitgetFutures(account)
-    setup_database(account_name) # <-- Dieser Aufruf funktioniert jetzt wieder
+    setup_database(account_name)
 
     try:
         if params.get('debug', {}).get('test_mode', False):
@@ -88,17 +86,9 @@ def run_for_account(account, telegram_config):
 
             market_info = bitget.get_market_info(SYMBOL)
             min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
-            ticker = bitget.fetch_ticker(SYMBOL)
-            current_price = ticker.get('last')
-            
-            if not current_price or current_price <= 0:
-                logger.error(f"[{account_name}] Ungültiger Preis ({current_price}) vom Ticker erhalten. Test-Modus wird abgebrochen.")
-                return
-            
             target_cost = min_cost * 1.1 
-            test_amount = target_cost / current_price
             
-            logger.info(f"[{account_name}] Platziere Test-Market-BUY-Order (Menge: {test_amount:.4f}, Wert: ~{target_cost:.2f} USDT)...")
+            logger.info(f"[{account_name}] Platziere Test-Market-BUY-Order im Wert von ~{target_cost:.2f} USDT...")
             buy_order = bitget.create_market_buy_order_with_cost(SYMBOL, target_cost, params=order_params)
             logger.info(f"[{account_name}] Test-BUY-Order {buy_order['id']} erfolgreich platziert.")
             
@@ -108,12 +98,13 @@ def run_for_account(account, telegram_config):
             if open_pos:
                 contracts_to_close = float(open_pos[0]['contracts'])
                 logger.info(f"[{account_name}] Schließe Test-Position (Menge: {contracts_to_close:.4f})...")
-                sell_order = bitget.create_market_order(SYMBOL, 'sell', contracts_to_close, params={'reduceOnly': True, **order_params})
+                close_params = {'reduceOnly': True, **order_params}
+                sell_order = bitget.create_market_order(SYMBOL, 'sell', contracts_to_close, params=close_params)
                 logger.info(f"[{account_name}] Test-Position mit Order {sell_order['id']} erfolgreich geschlossen.")
             else:
                  logger.warning(f"[{account_name}] Konnte Test-Position zum Schließen nicht finden.")
 
-            logger.warning(f"[{account_name}] TEST-MODUS ERFOLGREICH ABGESCHLOSSEN. Bitte `test_mode` in der config.json auf `false` setzen.")
+            logger.warning(f"[{account_name}] TEST-MODUS ERFOLGREICH ABGESCHLOSSEN.")
             return
 
         position = bitget.fetch_open_positions(SYMBOL)
