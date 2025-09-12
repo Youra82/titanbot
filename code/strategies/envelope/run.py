@@ -82,9 +82,11 @@ def run_for_account(account, telegram_config):
             logger.info(f"[{account_name}] Teste set_leverage({leverage})...")
             bitget.set_leverage(SYMBOL, leverage, margin_mode)
 
-            market_info = bitget.get_market_info(SYMBOL)
-            min_base_amount = market_info.get('min_amount', 1.0)
-            
+            # --- START: FINALE, AUTOMATISCHE LOGIK FÜR TEST-ORDER ---
+            market_info = bitget.markets.get(SYMBOL, {})
+            min_base_amount = market_info.get('limits', {}).get('amount', {}).get('min', 1.0)
+            min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
+
             ticker = bitget.fetch_ticker(SYMBOL)
             current_price = ticker.get('last')
             
@@ -92,12 +94,14 @@ def run_for_account(account, telegram_config):
                 logger.error(f"[{account_name}] Ungültiger Preis ({current_price}) vom Ticker erhalten. Test-Modus wird abgebrochen.")
                 return
 
-            min_quote_value = 5.1
-            min_amount_for_quote = min_quote_value / current_price
+            safe_min_cost = min_cost * 1.1 # 10% Sicherheits-Puffer
+            min_amount_for_quote = safe_min_cost / current_price
+            
             test_amount = max(min_base_amount, min_amount_for_quote)
             
             away_pct = params['debug']['test_order_price_away_pct'] / 100
             test_price = current_price * (1 - away_pct)
+            # --- ENDE: FINALE LOGIK ---
 
             logger.info(f"[{account_name}] Teste place_limit_order (Menge: {test_amount:.4f}, Preis: ${test_price:.4f})...")
             order = bitget.place_limit_order(SYMBOL, 'buy', test_amount, test_price, leverage, margin_mode, post_only=True)
