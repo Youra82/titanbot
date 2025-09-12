@@ -16,6 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utilities.strategy_logic import calculate_smc_indicators
 
 def load_data(symbol, timeframe, start_date_str, end_date_str):
+    # Diese Funktion bleibt unverändert
     cache_dir = os.path.join(os.path.dirname(__file__), '..', 'analysis', 'historical_data')
     os.makedirs(cache_dir, exist_ok=True)
     symbol_filename = symbol.replace('/', '-').replace(':', '-')
@@ -43,14 +44,20 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
     except Exception as e:
         print(f"Fehler beim Daten-Download für {timeframe}: {e}"); return pd.DataFrame()
 
-def run_smc_backtest(data, params):
+# --- KORREKTUR: Die Funktion erhält einen neuen Schalter `use_balance_fraction` ---
+def run_smc_backtest(data, params, use_balance_fraction=False):
     risk_reward_ratio = params.get('risk_reward_ratio', 3.0)
     risk_per_trade_pct = params.get('risk_per_trade_pct', 1.0) / 100
     fee_pct = 0.05 / 100
     start_capital = params.get('start_capital', 1000)
-    
     activation_rr = params.get('trailing_stop_activation_rr', 2.0)
     callback_rate = params.get('trailing_stop_callback_rate_pct', 1.0) / 100
+    
+    # Standardmäßig wird 100% des Kapitals genutzt (für den Optimierer)
+    balance_fraction = 1.0
+    # Nur wenn der Schalter aktiv ist, wird der Wert aus der Config genommen (für den Einzel-Backtest)
+    if use_balance_fraction:
+        balance_fraction = params.get('balance_fraction_pct', 100.0) / 100
 
     data = calculate_smc_indicators(data.copy(), params)
     
@@ -67,50 +74,34 @@ def run_smc_backtest(data, params):
 
         if position:
             exit_price, reason = None, None
-            
             if position['side'] == 'long':
-                if current['low'] <= position['stop_loss']:
-                    exit_price, reason = position['stop_loss'], "Stop-Loss"
-                
+                if current['low'] <= position['stop_loss']: exit_price, reason = position['stop_loss'], "Stop-Loss"
                 elif not position['trailing_active']:
-                    if current['high'] >= position['take_profit']:
-                        exit_price, reason = position['take_profit'], "Take-Profit"
+                    if current['high'] >= position['take_profit']: exit_price, reason = position['take_profit'], "Take-Profit"
                     elif current['high'] >= position['activation_price']:
-                        position['trailing_active'] = True
-                        position['peak_price'] = current['high']
-                
+                        position['trailing_active'] = True; position['peak_price'] = current['high']
                 if position['trailing_active']:
                     position['peak_price'] = max(position['peak_price'], current['high'])
                     trailing_sl_price = position['peak_price'] * (1 - callback_rate)
-                    if current['low'] <= trailing_sl_price:
-                        exit_price, reason = trailing_sl_price, "Trailing Stop"
-
+                    if current['low'] <= trailing_sl_price: exit_price, reason = trailing_sl_price, "Trailing Stop"
             elif position['side'] == 'short':
-                if current['high'] >= position['stop_loss']:
-                    exit_price, reason = position['stop_loss'], "Stop-Loss"
-                
+                if current['high'] >= position['stop_loss']: exit_price, reason = position['stop_loss'], "Stop-Loss"
                 elif not position['trailing_active']:
-                    if current['low'] <= position['take_profit']:
-                        exit_price, reason = position['take_profit'], "Take-Profit"
+                    if current['low'] <= position['take_profit']: exit_price, reason = position['take_profit'], "Take-Profit"
                     elif current['low'] <= position['activation_price']:
-                        position['trailing_active'] = True
-                        position['peak_price'] = current['low']
-
+                        position['trailing_active'] = True; position['peak_price'] = current['low']
                 if position['trailing_active']:
                     position['peak_price'] = min(position['peak_price'], current['low'])
                     trailing_sl_price = position['peak_price'] * (1 + callback_rate)
-                    if current['high'] >= trailing_sl_price:
-                        exit_price, reason = trailing_sl_price, "Trailing Stop"
+                    if current['high'] >= trailing_sl_price: exit_price, reason = trailing_sl_price, "Trailing Stop"
             
             if exit_price:
                 pnl_pct = (exit_price / position['entry_price'] - 1) if position['side'] == 'long' else (1 - exit_price / position['entry_price'])
                 pnl_usd = position['size_usd'] * pnl_pct
                 total_fees = (position['size_usd'] * fee_pct) * 2
-                
                 current_capital += pnl_usd - total_fees
                 trades_count += 1
                 if pnl_usd > 0: wins_count += 1
-                
                 trade_log.append({
                     "timestamp": str(current.name), "side": position['side'], "entry": position['entry_price'],
                     "exit": exit_price, "pnl": pnl_usd - total_fees, "balance": current_capital, "reason": reason
@@ -133,7 +124,10 @@ def run_smc_backtest(data, params):
                 sl_distance_pct = risk_distance / entry_price
                 if sl_distance_pct == 0: continue
                 
-                size_usd = (current_capital * risk_per_trade_pct) / sl_distance_pct
+                capital_base_for_risk = current_capital * balance_fraction
+                risk_amount_usd = capital_base_for_risk * risk_per_trade_pct
+                size_usd = risk_amount_usd / sl_distance_pct
+                
                 take_profit = entry_price + risk_distance * risk_reward_ratio if side == 'long' else entry_price - risk_distance * risk_reward_ratio
                 activation_price = entry_price + risk_distance * activation_rr if side == 'long' else entry_price - risk_distance * activation_rr
                 
