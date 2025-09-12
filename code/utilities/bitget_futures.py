@@ -1,6 +1,5 @@
 import ccxt
 import logging
-import time
 
 logger = logging.getLogger("titan_bot")
 
@@ -12,16 +11,16 @@ class BitgetFutures:
             "password": account_config["password"],
             "enableRateLimit": True,
             "options": {
-                "defaultType": "swap",   # USDT-M Futures
+                "defaultType": "swap",  # USDT-M Futures
             }
         })
+        self.exchange.load_markets()
 
     # =====================================================
     # Margin Mode
     # =====================================================
     def set_margin_mode(self, symbol, margin_mode):
         try:
-            # Beide Richtungen explizit setzen
             self.exchange.set_margin_mode(margin_mode, symbol, params={"holdSide": "long"})
             self.exchange.set_margin_mode(margin_mode, symbol, params={"holdSide": "short"})
             logger.info(f"Margin-Modus für {symbol} auf '{margin_mode}' (long & short) gesetzt.")
@@ -31,9 +30,8 @@ class BitgetFutures:
     # =====================================================
     # Leverage
     # =====================================================
-    def set_leverage(self, symbol, leverage, margin_mode):
+    def set_leverage(self, symbol, leverage):
         try:
-            # Beide Richtungen explizit setzen
             self.exchange.set_leverage(leverage, symbol, params={"holdSide": "long"})
             self.exchange.set_leverage(leverage, symbol, params={"holdSide": "short"})
             logger.info(f"Leverage für {symbol} auf {leverage}x (long & short) gesetzt.")
@@ -59,27 +57,17 @@ class BitgetFutures:
         return self.exchange.fetch_open_orders(symbol)
 
     # =====================================================
-    # Order Management
+    # Orders
     # =====================================================
     def cancel_all_orders(self, symbol):
         try:
             self.exchange.cancel_all_orders(symbol)
             logger.info(f"Alle offenen Orders für {symbol} wurden gelöscht.")
         except Exception as e:
-            logger.error(f"Fehler beim Löschen der Orders für {symbol}: {e}")
+            logger.warning(f"Konnte keine Orders für {symbol} löschen: {e}")
 
-    def cancel_all_trigger_orders(self, symbol):
-        try:
-            # Bitget-spezifisch: Alle Plan Orders löschen
-            self.exchange.private_mix_post_plan_cancelallorders({"symbol": symbol.replace("/", "")})
-            logger.info(f"Alle offenen Trigger-Orders (SL/TP) für {symbol} wurden gelöscht.")
-        except Exception as e:
-            logger.error(f"Fehler beim Löschen der Trigger-Orders für {symbol}: {e}")
-
-    # =====================================================
     # Entry-Order
-    # =====================================================
-    def place_limit_order(self, symbol, side, amount, price, leverage, margin_mode):
+    def place_limit_order(self, symbol, side, amount, price):
         try:
             order = self.exchange.create_order(
                 symbol=symbol,
@@ -95,53 +83,42 @@ class BitgetFutures:
             logger.error(f"Fehler beim Platzieren der Limit-Order für {symbol}: {e}")
 
     # =====================================================
-    # Trigger Orders (TP/SL)
+    # Stop / Take Profit Orders (SL/TP)
     # =====================================================
-    def place_trigger_market_order(self, symbol, side, amount, trigger_price, reduce=True):
+    def place_stop_loss_order(self, symbol, side, amount, stop_price):
         """
-        Legt eine Trigger-Order (Plan Order) bei Bitget an
+        Stop-Loss Order platzieren
         """
         try:
-            market = self.exchange.market(symbol)
-            payload = {
-                "symbol": market["id"],  # z.B. "XRPUSDT"
-                "marginCoin": "USDT",
-                "size": str(amount),
-                "side": side,
-                "orderType": "market",
-                "reduceOnly": reduce,
-                "triggerType": "fill_price",
-                "triggerPrice": str(trigger_price),
-                "executePrice": "0",  # 0 = Market
-                "planType": "normal_plan",
-            }
-            response = self.exchange.private_mix_post_plan_placeplanorder(payload)
-            logger.info(f"Trigger-Order gesetzt: {side.upper()} {amount} @ Trigger={trigger_price}")
-            return response
+            close_side = "sell" if side == "buy" else "buy"
+            order = self.exchange.create_order(
+                symbol=symbol,
+                type="stop",  # ccxt stop order
+                side=close_side,
+                amount=amount,
+                price=None,
+                params={"stopPrice": stop_price, "reduceOnly": True}
+            )
+            logger.info(f"Stop-Loss gesetzt: {close_side.upper()} {amount} @ {stop_price}")
+            return order
         except Exception as e:
-            logger.error(f"Fehler beim Platzieren der Trigger-Order für {symbol}: {e}")
+            logger.error(f"Fehler beim Platzieren der Stop-Loss-Order für {symbol}: {e}")
 
-    # =====================================================
-    # Trailing Stop
-    # =====================================================
-    def place_trailing_stop_order(self, symbol, side, amount, callback_rate, trigger_price):
+    def place_take_profit_order(self, symbol, side, amount, take_price):
+        """
+        Take-Profit Order platzieren
+        """
         try:
-            market = self.exchange.market(symbol)
-            payload = {
-                "symbol": market["id"],
-                "marginCoin": "USDT",
-                "size": str(amount),
-                "side": side,
-                "orderType": "market",
-                "triggerType": "fill_price",
-                "triggerPrice": str(trigger_price),
-                "executePrice": "0",
-                "planType": "track_plan",
-                "callbackRatio": str(callback_rate),
-                "reduceOnly": True
-            }
-            response = self.exchange.private_mix_post_plan_placeplanorder(payload)
-            logger.info(f"Trailing Stop gesetzt: {side.upper()} {amount} @ Trigger={trigger_price} mit Callback={callback_rate}%")
-            return response
+            close_side = "sell" if side == "buy" else "buy"
+            order = self.exchange.create_order(
+                symbol=symbol,
+                type="takeProfit",  # ccxt takeProfit order
+                side=close_side,
+                amount=amount,
+                price=None,
+                params={"stopPrice": take_price, "reduceOnly": True}
+            )
+            logger.info(f"Take-Profit gesetzt: {close_side.upper()} {amount} @ {take_price}")
+            return order
         except Exception as e:
-            logger.error(f"Fehler beim Platzieren des Trailing Stops für {symbol}: {e}")
+            logger.error(f"Fehler beim Platzieren der Take-Profit-Order für {symbol}: {e}")
