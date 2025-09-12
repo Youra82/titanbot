@@ -60,7 +60,6 @@ class BitgetFutures():
             raise Exception(f"Failed to fetch open orders: {e}")
              
     def fetch_my_trades(self, symbol: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """Holt die letzten geschlossenen Trades für ein Symbol."""
         try:
             return self.session.fetch_my_trades(symbol, limit=limit)
         except Exception as e:
@@ -159,9 +158,12 @@ class BitgetFutures():
         df.sort_index(inplace=True)
         return df
      
-    def place_limit_order(self, symbol: str, side: str, amount: float, price: float, leverage: int, margin_mode: str, reduce: bool = False) -> Dict[str, Any]:
+    def place_limit_order(self, symbol: str, side: str, amount: float, price: float, leverage: int, margin_mode: str, reduce: bool = False, post_only: bool = False) -> Dict[str, Any]:
         try:
-            params = {'reduceOnly': reduce}
+            params = {
+                'reduceOnly': reduce,
+                'postOnly': post_only
+            }
             amount_str = self.session.amount_to_precision(symbol, amount)
             price_str = self.session.price_to_precision(symbol, price)
             return self.session.create_order(symbol, 'limit', side, float(amount_str), float(price_str), params=params)
@@ -178,7 +180,6 @@ class BitgetFutures():
             raise err
 
     def place_trailing_stop_order(self, symbol: str, side: str, amount: float, callback_rate: float, activation_price: float, reduce: bool = True) -> Dict[str, Any]:
-        """Platziert eine Trailing-Stop-Order auf Bitget."""
         try:
             amount_str = self.session.amount_to_precision(symbol, amount)
             callback_rate_str = str(callback_rate / 100)
@@ -194,14 +195,12 @@ class BitgetFutures():
             raise Exception(f"Fehler beim Platzieren der Trailing-Stop-Order für {symbol}: {e}")
 
     def cancel_all_orders(self, symbol: str) -> None:
-        """Storniert alle offenen Limit-Orders für ein Symbol."""
         try:
             self.session.cancel_all_orders(symbol)
         except Exception as e:
             logger.warning(f"Konnte nicht alle Limit-Orders stornieren (möglicherweise waren keine offen): {e}")
     
     def cancel_all_trigger_orders(self, symbol: str) -> None:
-        """Storniert alle offenen Trigger-Orders (TP/SL) für ein Symbol."""
         try:
             self.session.cancel_all_orders(symbol, params={'stop': True})
         except Exception as e:
