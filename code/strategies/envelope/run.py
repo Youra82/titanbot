@@ -87,17 +87,16 @@ def run_for_account(account, telegram_config):
 
             logger.info(f"[{account_name}] Setze Hebel auf {leverage}x...")
             bitget.set_leverage(SYMBOL, leverage, margin_mode)
-
+            
             market_info = bitget.get_market_info(SYMBOL)
             min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
-            target_cost = min_cost * 1.1 
+            target_cost = min_cost * 1.1
             
             ticker = bitget.fetch_ticker(SYMBOL)
             current_price = ticker.get('last')
             if not current_price or current_price <= 0:
                 logger.error(f"Ungültiger Preis für Benchmark erhalten: {current_price}")
                 return
-
             amount = target_cost / current_price
             
             logger.info(f"[{account_name}] Platziere Test-Market-BUY-Order (Menge: {amount:.4f}, Wert: ~{target_cost:.2f} USDT)...")
