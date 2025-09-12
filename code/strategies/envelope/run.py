@@ -71,91 +71,88 @@ def run_for_account(account, telegram_config):
     account_name = account.get('name', 'Standard-Account')
     bot_token = telegram_config.get('bot_token')
     chat_id = telegram_config.get('chat_id')
-    
+
     logger.info(f"--- Starte TitanBot Ausführung für Account: {account_name} | Symbol: {SYMBOL} ---")
-    
+
     bitget = BitgetFutures(account)
     setup_database(account_name)
 
     try:
-        test_mode = params.get('debug', {}).get('test_mode', False)
+        # ======================
+        # TESTMODUS: Sofort-Trade
+        # ======================
+        if params.get('debug', {}).get('test_mode', False):
+            logger.warning(f"[{account_name}] ACHTUNG: TEST-MODUS IST AKTIV!")
 
-        # --- Load recent data and calculate indicators ---
-        data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
-        data = calculate_smc_indicators(data, params['strategy'])
-        latest = data.iloc[-1]
-
-        if test_mode:
-            logger.warning(f"[{account_name}] TEST-MODUS AKTIV: Sofortiger Trade wird simuliert.")
-
-            forced_value = params.get('debug', {}).get('force_test_order_value_usdt', 10.0)
-            if not forced_value or forced_value <= 0:
-                logger.error(f"[{account_name}] 'force_test_order_value_usdt' ist ungültig. Test abgebrochen.")
-                return
-
-            current_price = bitget.fetch_ticker(SYMBOL).get('last')
-            if not current_price or current_price <= 0:
-                logger.error(f"[{account_name}] Ungültiger Tickerpreis. Test abgebrochen.")
-                return
-
-            # --- Bestimme Side anhand Trend der letzten Kerze ---
-            side = 'buy' if latest['trend'] >= 0 else 'sell'
-            entry_price = current_price
-            sl_distance = latest['atr'] if not np.isnan(latest['atr']) else current_price * 0.01
-            stop_loss_price = entry_price - sl_distance if side == 'buy' else entry_price + sl_distance
-            rr = params['risk']['risk_reward_ratio']
-            take_profit_price = entry_price + sl_distance * rr if side == 'buy' else entry_price - sl_distance * rr
-
-            # Menge berechnen anhand forced_value
-            amount = forced_value / entry_price
-
-            leverage = params['risk']['leverage']
             margin_mode = params['risk']['margin_mode']
-
+            leverage = params['risk']['leverage']
+            logger.info(f"[{account_name}] Setze Margin-Mode='{margin_mode}'...")
             bitget.set_margin_mode(SYMBOL, margin_mode)
+            logger.info(f"[{account_name}] Setze Leverage={leverage}...")
             bitget.set_leverage(SYMBOL, leverage, margin_mode)
 
-            logger.info(f"[{account_name}] Platzierung Test-Orders: {side.upper()} Entry={entry_price:.4f}, SL={stop_loss_price:.4f}, TP={take_profit_price:.4f}, Menge={amount:.4f}")
-            
-            order = bitget.place_limit_order(
-                SYMBOL,
-                side,
-                amount,
-                entry_price,
-                params={'leverage': leverage, 'marginMode': margin_mode, 'postOnly': True}
-            )
+            ticker = bitget.fetch_ticker(SYMBOL)
+            current_price = ticker.get('last')
+            if not current_price or current_price <= 0:
+                logger.error(f"[{account_name}] Ungültiger Preis ({current_price}) vom Ticker erhalten. Test-Modus wird abgebrochen.")
+                return
 
-            close_side = 'sell' if side == 'buy' else 'buy'
-            bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, {'reduce': True})
-            bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, {'reduce': True})
+            # Ordermenge berechnen (wie normale Logik, aber ohne Signal)
+            balance = bitget.fetch_balance().get('USDT', {}).get('free', 0) * (params['risk']['balance_fraction_pct'] / 100)
+            risk_per_trade_usd = balance * (params['risk']['risk_per_trade_pct'] / 100)
 
-            message = f"📊 TEST-SIGNAL für Account *{account_name}* ({SYMBOL}, {side.upper()})\n" \
-                      f"- Entry: ${entry_price:.4f}\n- SL: ${stop_loss_price:.4f}\n- TP: ${take_profit_price:.4f}\n- Menge: {amount:.4f}"
+            sl_distance = current_price * 0.01  # 1% Stop-Loss Abstand
+            if sl_distance == 0:
+                logger.warning(f"[{account_name}] SL-Distanz ist 0, Test-Trade abgebrochen.")
+                return
+            amount = risk_per_trade_usd / sl_distance
+
+            side = 'buy'  # für Test: immer Long
+            entry_price = current_price
+            stop_loss_price = entry_price * 0.99
+            take_profit_price = entry_price * 1.03
+            close_side = 'sell'
+
+            # Orders platzieren
+            bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode)
+            bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, reduce=True)
+            bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, reduce=True)
+
+            logger.info(f"[{account_name}] TEST-TRADE platziert: Entry={entry_price:.4f}, SL={stop_loss_price:.4f}, TP={take_profit_price:.4f}")
+            message = f"🧪 Test-Trade für *{account_name}* ({SYMBOL})\n- Entry: {entry_price:.4f}\n- SL: {stop_loss_price:.4f}\n- TP: {take_profit_price:.4f}"
             send_telegram_message(bot_token, chat_id, message)
-
-            logger.warning(f"[{account_name}] TEST-TRADE abgeschlossen.")
             return
 
-        # --- Live-Modus Logik ---
+        # ======================
+        # Normalmodus: mit Signalen
+        # ======================
         position = bitget.fetch_open_positions(SYMBOL)
+
         if position:
             pos = position[0]
             entry_price = float(pos['entryPrice'])
             side = pos['side']
             trailing_stop_active = get_state(account_name, 'trailing_stop_active') == 'True'
+
             if not trailing_stop_active:
                 activation_rr = params['risk']['trailing_stop_activation_rr']
                 last_signal_ts_str = get_state(account_name, 'last_signal_ts')
-                if last_signal_ts_str == '0': return
+                if last_signal_ts_str == '0':
+                    return
+                data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
+                data = calculate_smc_indicators(data, params['strategy'])
                 signal_timestamp = pd.to_datetime(int(last_signal_ts_str), unit='s', utc=True)
-                if signal_timestamp not in data.index: return
+                if signal_timestamp not in data.index:
+                    return
                 signal_data = data.loc[signal_timestamp]
                 initial_sl = signal_data['ob_low'] if side == 'long' else signal_data['ob_high']
-                if np.isnan(initial_sl): return
+                if np.isnan(initial_sl):
+                    return
 
                 risk_distance = abs(entry_price - initial_sl)
                 activation_price = entry_price + (risk_distance * activation_rr) if side == 'long' else entry_price - (risk_distance * activation_rr)
                 current_price = bitget.fetch_ticker(SYMBOL)['last']
+
                 if (side == 'long' and current_price >= activation_price) or (side == 'short' and current_price <= activation_price):
                     logger.info(f"[{account_name}] Aktivierungspreis ${activation_price:.4f} erreicht. Aktiviere Trailing Stop Loss.")
                     bitget.cancel_all_trigger_orders(SYMBOL)
@@ -170,7 +167,6 @@ def run_for_account(account, telegram_config):
                 logger.info(f"[{account_name}] Trailing Stop ist bereits aktiv. Management durch Bitget.")
             return
 
-        # Keine Position offen, prüfe neue Signale
         if get_state(account_name, 'trailing_stop_active') == 'True':
             set_state(account_name, 'trailing_stop_active', 'False')
 
@@ -182,38 +178,42 @@ def run_for_account(account, telegram_config):
         bitget.cancel_all_orders(SYMBOL)
         bitget.cancel_all_trigger_orders(SYMBOL)
 
-        latest_signal = data.iloc[-2]
-        if not np.isnan(latest_signal['bos_level']) and not np.isnan(latest_signal['ob_high']):
-            signal_ts = int(latest_signal.name.timestamp())
+        data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
+        data = calculate_smc_indicators(data, params['strategy'])
+        latest = data.iloc[-2]
+
+        if not np.isnan(latest['bos_level']) and not np.isnan(latest['ob_high']):
+            signal_ts = int(latest.name.timestamp())
             last_signal_ts = int(get_state(account_name, 'last_signal_ts'))
 
             if signal_ts > last_signal_ts:
                 entry_price, stop_loss_price, side = None, None, None
-                if latest_signal['trend'] == 1 and params['behavior']['use_longs'] and latest_signal['low'] > latest_signal['ob_high']:
-                    entry_price, stop_loss_price, side = latest_signal['ob_high'], latest_signal['ob_low'], 'buy'
-                elif latest_signal['trend'] == -1 and params['behavior']['use_shorts']:
-                    entry_price, stop_loss_price, side = latest_signal['ob_low'], latest_signal['ob_high'], 'sell'
-                
+                if latest['trend'] == 1 and params['behavior']['use_longs'] and latest['low'] > latest['ob_high']:
+                    entry_price, stop_loss_price, side = latest['ob_high'], latest['ob_low'], 'buy'
+                elif latest['trend'] == -1 and params['behavior']['use_shorts'] and latest['high'] < latest['ob_low']:
+                    entry_price, stop_loss_price, side = latest['ob_low'], latest['ob_high'], 'sell'
+
                 if side:
                     risk_per_trade_pct = params['risk']['risk_per_trade_pct'] / 100
                     balance = bitget.fetch_balance().get('USDT', {}).get('free', 0) * (params['risk']['balance_fraction_pct'] / 100)
                     risk_per_trade_usd = balance * risk_per_trade_pct
                     sl_distance = abs(entry_price - stop_loss_price)
                     if sl_distance == 0:
-                        logger.warning(f"[{account_name}] SL-Distanz ist 0, Trade übersprungen."); return
-                    amount = risk_per_trade_usd / sl_distance
+                        logger.warning(f"[{account_name}] SL-Distanz ist 0, Trade übersprungen.")
+                        return
 
-                    leverage = params['risk']['leverage']
-                    margin_mode = params['risk']['margin_mode']
+                    amount = risk_per_trade_usd / sl_distance
+                    leverage, margin_mode = params['risk']['leverage'], params['risk']['margin_mode']
                     rr = params['risk']['risk_reward_ratio']
                     take_profit_price = entry_price + sl_distance * rr if side == 'buy' else entry_price - sl_distance * rr
                     close_side = 'sell' if side == 'buy' else 'buy'
 
                     bitget.set_margin_mode(SYMBOL, margin_mode)
                     bitget.set_leverage(SYMBOL, leverage, margin_mode)
-                    bitget.place_limit_order(SYMBOL, side, amount, entry_price, params={'leverage': leverage, 'marginMode': margin_mode, 'postOnly': True})
-                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, {'reduce': True})
-                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, {'reduce': True})
+                    bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode)
+                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, reduce=True)
+                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, reduce=True)
+                    logger.info(f"[{account_name}] TitanBot Signal! Entry, TP und SL Orders platziert.")
                     set_state(account_name, 'last_signal_ts', signal_ts)
 
                     message = f"📈 TitanBot Signal für Account *{account_name}* ({SYMBOL}, {side.upper()})\n- Order @ ${entry_price:.4f}\n- SL: ${stop_loss_price:.4f}\n- TP: ${take_profit_price:.4f}"
@@ -223,7 +223,7 @@ def run_for_account(account, telegram_config):
         logger.error(f"[{account_name}] Ein unerwarteter Fehler ist aufgetreten: {e}", exc_info=True)
         error_message = f"🚨 KRITISCHER FEHLER im TitanBot für Account *{account_name}* ({SYMBOL})!\n\n`{traceback.format_exc()}`"
         send_telegram_message(bot_token, chat_id, error_message[:4000])
-    
+
     logger.info(f"--- Ausführung für Account: {account_name} abgeschlossen ---")
 
 def main():
@@ -232,15 +232,22 @@ def main():
         key_path = os.path.abspath(os.path.join(PROJECT_ROOT, 'secret.json'))
         with open(key_path, "r") as f:
             secrets = json.load(f)
+
         api_configs = secrets.get('titan')
+        if not api_configs:
+            logger.critical("Fehler: Kein 'titan' Eintrag in secret.json gefunden.")
+            return
+
         telegram_config = secrets.get('telegram', {})
 
         if isinstance(api_configs, list):
+            logger.info(f"Multi-Account-Modus erkannt. Verarbeite {len(api_configs)} Accounts.")
             accounts_to_run = api_configs
         elif isinstance(api_configs, dict):
+            logger.info("Single-Account-Modus erkannt.")
             accounts_to_run = [api_configs]
         else:
-            logger.critical("Ungültiges Format für 'titan' in secret.json")
+            logger.critical("Fehler: Der 'titan' Eintrag in secret.json hat ein ungültiges Format.")
             return
 
     except Exception as e:
@@ -256,11 +263,11 @@ def main():
         if not api_key or not secret or not password:
             logger.warning(f"Überspringe Account '{account_name}', da API-Schlüssel, Secret oder Passwort fehlen.")
             continue
-        
+
         try:
             run_for_account(account, telegram_config)
         except Exception as e:
-            logger.error(f"Fehler bei der Ausführung für Account {account_name}: {e}", exc_info=True)
+            logger.error(f"Schwerwiegender Fehler bei der Ausführung für Account {account_name}: {e}", exc_info=True)
 
     logger.info(">>> TitanBot-Lauf abgeschlossen <<<\n")
 
