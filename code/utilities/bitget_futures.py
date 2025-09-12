@@ -74,12 +74,6 @@ class BitgetFutures():
         except Exception as e:
             logger.warning(f"Konnte nicht alle Trigger-Orders stornieren: {e}")
 
-    def cancel_order(self, id: str, symbol: str) -> Dict[str, Any]:
-        try:
-            return self.session.cancel_order(id, symbol)
-        except Exception as e:
-            raise Exception(f"Failed to cancel the {symbol} order {id}", e)
-
     def create_market_order(self, symbol: str, side: str, amount: float, params: dict = None) -> Dict[str, Any]:
         try:
             return self.session.create_order(symbol, 'market', side, amount, None, params or {})
