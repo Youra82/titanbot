@@ -82,11 +82,9 @@ def run_for_account(account, telegram_config):
             logger.info(f"[{account_name}] Teste set_leverage({leverage})...")
             bitget.set_leverage(SYMBOL, leverage, margin_mode)
 
-            # --- START: FINALE, AUTOMATISCHE LOGIK FÜR TEST-ORDER ---
             market_info = bitget.markets.get(SYMBOL, {})
             min_base_amount = market_info.get('limits', {}).get('amount', {}).get('min', 1.0)
             min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
-
             ticker = bitget.fetch_ticker(SYMBOL)
             current_price = ticker.get('last')
             
@@ -94,14 +92,12 @@ def run_for_account(account, telegram_config):
                 logger.error(f"[{account_name}] Ungültiger Preis ({current_price}) vom Ticker erhalten. Test-Modus wird abgebrochen.")
                 return
 
-            safe_min_cost = min_cost * 1.1 # 10% Sicherheits-Puffer
+            safe_min_cost = min_cost * 1.1
             min_amount_for_quote = safe_min_cost / current_price
-            
             test_amount = max(min_base_amount, min_amount_for_quote)
             
             away_pct = params['debug']['test_order_price_away_pct'] / 100
             test_price = current_price * (1 - away_pct)
-            # --- ENDE: FINALE LOGIK ---
 
             logger.info(f"[{account_name}] Teste place_limit_order (Menge: {test_amount:.4f}, Preis: ${test_price:.4f})...")
             order = bitget.place_limit_order(SYMBOL, 'buy', test_amount, test_price, leverage, margin_mode, post_only=True)
@@ -122,7 +118,6 @@ def run_for_account(account, telegram_config):
             entry_price = float(pos['entryPrice'])
             side = pos['side']
             trailing_stop_active = get_state(account_name, 'trailing_stop_active') == 'True'
-
             if not trailing_stop_active:
                 activation_rr = params['risk']['trailing_stop_activation_rr']
                 last_signal_ts_str = get_state(account_name, 'last_signal_ts')
@@ -138,7 +133,6 @@ def run_for_account(account, telegram_config):
                 risk_distance = abs(entry_price - initial_sl)
                 activation_price = entry_price + (risk_distance * activation_rr) if side == 'long' else entry_price - (risk_distance * activation_rr)
                 current_price = bitget.fetch_ticker(SYMBOL)['last']
-
                 if (side == 'long' and current_price >= activation_price) or (side == 'short' and current_price <= activation_price):
                     logger.info(f"[{account_name}] Aktivierungspreis ${activation_price:.4f} erreicht. Aktiviere Trailing Stop Loss.")
                     bitget.cancel_all_trigger_orders(SYMBOL)
@@ -187,7 +181,17 @@ def run_for_account(account, telegram_config):
                     if sl_distance == 0:
                         logger.warning(f"[{account_name}] SL-Distanz ist 0, Trade übersprungen."); return
                     
-                    amount = risk_per_trade_usd / sl_distance
+                    amount_calculated = risk_per_trade_usd / sl_distance
+                    
+                    # --- FINALE KORREKTUR: Mindestordergröße erzwingen ---
+                    market_info = bitget.markets.get(SYMBOL, {})
+                    min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
+                    if (amount_calculated * entry_price) < min_cost:
+                        logger.warning(f"[{account_name}] Berechnete Ordergröße ({amount_calculated * entry_price:.2f} USDT) unter Minimum. Erhöhe auf {min_cost:.2f} USDT.")
+                        amount_calculated = (min_cost * 1.05) / entry_price # 5% Puffer
+                    amount = amount_calculated
+                    # --- ENDE ---
+
                     leverage, margin_mode = params['risk']['leverage'], params['risk']['margin_mode']
                     rr = params['risk']['risk_reward_ratio']
                     take_profit_price = entry_price + sl_distance * rr if side == 'buy' else entry_price - sl_distance * rr
@@ -216,12 +220,10 @@ def main():
     try:
         key_path = os.path.abspath(os.path.join(PROJECT_ROOT, 'secret.json'))
         with open(key_path, "r") as f: secrets = json.load(f)
-        
         api_configs = secrets.get('titan')
         if not api_configs:
             logger.critical("Fehler: Kein 'titan' Eintrag in secret.json gefunden.")
             return
-            
         telegram_config = secrets.get('telegram', {})
         
         if isinstance(api_configs, list):
