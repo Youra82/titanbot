@@ -8,10 +8,15 @@ from typing import Any, Optional, Dict, List
 logger = logging.getLogger(__name__)
 
 class BitgetFutures():
-    def __init__(self, api_setup: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, api_setup: Optional[Dict[str, Any]] = None, demo_mode: bool = False) -> None:
         api_setup = api_setup or {}
         api_setup.setdefault("options", {"defaultType": "swap"})
-        self.session = ccxt.bitget(api_setup)
+        if demo_mode:
+            api_setup["options"]["productType"] = "SUSDT-FUTURES"
+            self.session = ccxt.bitget(api_setup)
+            self.session.set_sandbox_mode(True)
+        else:
+            self.session = ccxt.bitget(api_setup)
         self.markets = self.session.load_markets()
      
     def get_market_info(self, symbol: str) -> Dict[str, Any]:
