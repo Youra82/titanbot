@@ -113,9 +113,17 @@ def run_for_account(account, telegram_config):
             take_profit_price = entry_price * 1.03
             close_side = 'sell'
 
-            # Orders platzieren
+            # Zuerst alte Orders löschen
+            bitget.cancel_all_orders(SYMBOL)
+            bitget.cancel_all_trigger_orders(SYMBOL)
+
+            # Entry
             bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode)
+            time.sleep(1)  # kurze Pause, um sicherzustellen, dass Entry im System ist
+
+            # TP
             bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, reduce=True)
+            # SL
             bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, reduce=True)
 
             logger.info(f"[{account_name}] TEST-TRADE platziert: Entry={entry_price:.4f}, SL={stop_loss_price:.4f}, TP={take_profit_price:.4f}")
