@@ -8,6 +8,7 @@ import traceback
 import sqlite3
 import numpy as np
 import pandas as pd
+import time
 
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..', '..', '..')
 sys.path.append(os.path.join(PROJECT_ROOT, 'code'))
@@ -71,6 +72,33 @@ def run_for_account(account, telegram_config):
     setup_database(account_name)
 
     try:
+        if params.get('debug', {}).get('test_mode', False):
+            logger.warning(f"[{account_name}] ACHTUNG: TEST-MODUS IST AKTIV!")
+            margin_mode = params['risk']['margin_mode']
+            leverage = params['risk']['leverage']
+            logger.info(f"[{account_name}] Teste set_margin_mode('{margin_mode}')...")
+            bitget.set_margin_mode(SYMBOL, margin_mode)
+            logger.info(f"[{account_name}] Teste set_leverage({leverage})...")
+            bitget.set_leverage(SYMBOL, leverage, margin_mode)
+
+            market_info = bitget.get_market_info(SYMBOL)
+            min_amount = market_info.get('min_amount', 1.0)
+            current_price = bitget.fetch_ticker(SYMBOL)['last']
+            away_pct = params['debug']['test_order_price_away_pct'] / 100
+            test_price = current_price * (1 - away_pct)
+
+            logger.info(f"[{account_name}] Teste place_limit_order (Menge: {min_amount}, Preis: ${test_price:.4f})...")
+            order = bitget.place_limit_order(SYMBOL, 'buy', min_amount, test_price, leverage, margin_mode, post_only=True)
+            order_id = order['id']
+            logger.info(f"[{account_name}] Test-Order {order_id} erfolgreich platziert.")
+
+            time.sleep(2)
+            logger.info(f"[{account_name}] Teste cancel_order({order_id})...")
+            bitget.cancel_order(order_id, SYMBOL)
+            logger.info(f"[{account_name}] Test-Order {order_id} erfolgreich storniert.")
+            logger.warning(f"[{account_name}] TEST-MODUS ERFOLGREICH ABGESCHLOSSEN.")
+            return
+
         position = bitget.fetch_open_positions(SYMBOL)
         
         if position:
@@ -87,6 +115,7 @@ def run_for_account(account, telegram_config):
                     return
 
                 data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
+                data = calculate_smc_indicators(data, params['strategy'])
                 signal_timestamp = pd.to_datetime(int(last_signal_ts_str), unit='s', utc=True)
                 
                 if signal_timestamp not in data.index:
@@ -106,14 +135,11 @@ def run_for_account(account, telegram_config):
                 if (side == 'long' and current_price >= activation_price) or (side == 'short' and current_price <= activation_price):
                     logger.info(f"[{account_name}] Aktivierungspreis ${activation_price:.4f} erreicht. Aktiviere Trailing Stop Loss.")
                     bitget.cancel_all_trigger_orders(SYMBOL)
-                    
                     callback_rate = params['risk']['trailing_stop_callback_rate_pct']
                     contracts = float(pos['contracts'])
                     close_side = 'sell' if side == 'long' else 'buy'
-                    
                     bitget.place_trailing_stop_order(SYMBOL, close_side, contracts, callback_rate, current_price)
                     set_state(account_name, 'trailing_stop_active', 'True')
-                    
                     message = f"🚀 Trailing Stop für *{account_name}* ({SYMBOL}) aktiviert!\n- Gewinn ist bei >{activation_rr}:1 gesichert."
                     send_telegram_message(bot_token, chat_id, message)
             else:
@@ -185,7 +211,7 @@ def main():
         key_path = os.path.abspath(os.path.join(PROJECT_ROOT, 'secret.json'))
         with open(key_path, "r") as f: secrets = json.load(f)
         
-        api_configs = secrets.get('titan') # .get() ist sicherer als []
+        api_configs = secrets.get('titan')
         if not api_configs:
             logger.critical("Fehler: Kein 'titan' Eintrag in secret.json gefunden.")
             return
@@ -207,7 +233,6 @@ def main():
         sys.exit(1)
 
     for account in accounts_to_run:
-        # --- NEU: Sicherheits-Check für jeden Account ---
         api_key = account.get('apiKey')
         secret = account.get('secret')
         password = account.get('password')
@@ -215,8 +240,7 @@ def main():
 
         if not api_key or not secret or not password:
             logger.warning(f"Überspringe Account '{account_name}', da API-Schlüssel, Secret oder Passwort fehlen.")
-            continue # Springe zum nächsten Account in der Schleife
-        # --- Ende des Sicherheits-Checks ---
+            continue
         
         try:
             run_for_account(account, telegram_config)
