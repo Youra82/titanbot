@@ -82,11 +82,6 @@ def run_for_account(account, telegram_config):
             logger.info(f"[{account_name}] Teste set_leverage({leverage})...")
             bitget.set_leverage(SYMBOL, leverage, margin_mode)
 
-            # --- START: FINALE, AUTOMATISCHE LOGIK FÜR TEST-ORDER ---
-            market_info = bitget.markets.get(SYMBOL, {})
-            min_base_amount = market_info.get('limits', {}).get('amount', {}).get('min', 1.0)
-            min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
-
             ticker = bitget.fetch_ticker(SYMBOL)
             current_price = ticker.get('last')
             
@@ -94,13 +89,18 @@ def run_for_account(account, telegram_config):
                 logger.error(f"[{account_name}] Ungültiger Preis ({current_price}) vom Ticker erhalten. Test-Modus wird abgebrochen.")
                 return
 
-            safe_min_cost = min_cost * 1.1 # 10% Sicherheits-Puffer
-            min_amount_for_quote = safe_min_cost / current_price
-            test_amount = max(min_base_amount, min_amount_for_quote)
+            # --- FINALE LOGIK: Nutze den festen Wert aus der Config ---
+            forced_test_value = params.get('debug', {}).get('force_test_order_value_usdt')
+            if not forced_test_value or forced_test_value <= 0:
+                logger.error(f"[{account_name}] 'force_test_order_value_usdt' ist in der Config nicht oder ungültig gesetzt. Test abgebrochen.")
+                return
+            
+            logger.info(f"[{account_name}] Erzwungener Test-Order-Wert: {forced_test_value:.2f} USDT")
+            test_amount = forced_test_value / current_price
             
             away_pct = params['debug']['test_order_price_away_pct'] / 100
             test_price = current_price * (1 - away_pct)
-            # --- ENDE: FINALE LOGIK ---
+            # --- ENDE ---
 
             logger.info(f"[{account_name}] Teste place_limit_order (Menge: {test_amount:.4f}, Preis: ${test_price:.4f})...")
             order = bitget.place_limit_order(SYMBOL, 'buy', test_amount, test_price, leverage, margin_mode, post_only=True)
@@ -220,10 +220,12 @@ def main():
     try:
         key_path = os.path.abspath(os.path.join(PROJECT_ROOT, 'secret.json'))
         with open(key_path, "r") as f: secrets = json.load(f)
+        
         api_configs = secrets.get('titan')
         if not api_configs:
             logger.critical("Fehler: Kein 'titan' Eintrag in secret.json gefunden.")
             return
+            
         telegram_config = secrets.get('telegram', {})
         
         if isinstance(api_configs, list):
