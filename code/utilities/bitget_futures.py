@@ -74,6 +74,7 @@ class BitgetFutures():
         try:
             params = {}
             if margin_mode.lower() == 'isolated':
+                # Für isolated mode muss der Hebel für beide Richtungen gesetzt werden
                 params['holdSide'] = 'long'
                 self.session.set_leverage(leverage, symbol, params)
                 params['holdSide'] = 'short'
@@ -108,13 +109,16 @@ class BitgetFutures():
 
     def create_market_order(self, symbol: str, side: str, amount: float, params: dict = None) -> Dict[str, Any]:
         try:
-            return self.session.create_order(symbol, 'market', side, amount, None, params)
+            # KORREKTUR: Stellt sicher, dass params immer ein Dictionary ist, auch wenn None übergeben wird
+            order_params = params or {}
+            return self.session.create_order(symbol, 'market', side, amount, None, order_params)
         except Exception as e:
             raise Exception(f"Failed to create market order: {e}")
     
     def place_limit_order(self, symbol: str, side: str, amount: float, price: float, params: dict = None) -> Dict[str, Any]:
         try:
-            return self.session.create_order(symbol, 'limit', side, amount, price, params)
+            order_params = params or {}
+            return self.session.create_order(symbol, 'limit', side, amount, price, order_params)
         except Exception as e:
             raise Exception(f"Failed to place limit order: {e}")
 
