@@ -75,17 +75,14 @@ def run_for_account(account, telegram_config):
         if params.get('debug', {}).get('test_mode', False):
             logger.warning(f"[{account_name}] ACHTUNG: TEST-MODUS IST AKTIV!")
             
-            # Wenn bereits eine Position offen ist (vom letzten Testlauf), nichts tun
-            if bitget.fetch_open_positions(SYMBOL):
-                logger.warning(f"[{account_name}] TEST-MODUS: Es ist bereits eine Position offen. Bitte manuell schließen.")
-                return
-
             margin_mode = params['risk']['margin_mode']
             leverage = params['risk']['leverage']
             logger.info(f"[{account_name}] Teste set_margin_mode('{margin_mode}')...")
             bitget.set_margin_mode(SYMBOL, margin_mode)
             logger.info(f"[{account_name}] Teste set_leverage({leverage})...")
-            bitget.set_leverage(SYMBOL, leverage)
+            
+            # --- KORREKTUR: Fehlender `margin_mode` Parameter hinzugefügt ---
+            bitget.set_leverage(SYMBOL, leverage, margin_mode)
 
             market_info = bitget.get_market_info(SYMBOL)
             min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
@@ -101,8 +98,20 @@ def run_for_account(account, telegram_config):
             
             logger.info(f"[{account_name}] Platziere Test-Market-BUY-Order im Wert von ~{target_cost:.2f} USDT...")
             buy_order = bitget.create_market_buy_order_with_cost(SYMBOL, target_cost)
+            logger.info(f"[{account_name}] Test-BUY-Order {buy_order['id']} erfolgreich platziert.")
             
-            logger.warning(f"[{account_name}] TEST-MODUS: Order {buy_order['id']} platziert. Position wurde eröffnet. Bitte manuell auf Bitget schließen.")
+            time.sleep(3) 
+
+            open_pos = bitget.fetch_open_positions(SYMBOL)
+            if open_pos:
+                contracts_to_close = float(open_pos[0]['contracts'])
+                logger.info(f"[{account_name}] Schließe Test-Position (Menge: {contracts_to_close:.4f})...")
+                sell_order = bitget.create_market_order(SYMBOL, 'sell', contracts_to_close, {'reduceOnly': True})
+                logger.info(f"[{account_name}] Test-Position mit Order {sell_order['id']} erfolgreich geschlossen.")
+            else:
+                 logger.warning(f"[{account_name}] Konnte Test-Position zum Schließen nicht finden.")
+
+            logger.warning(f"[{account_name}] TEST-MODUS ERFOLGREICH ABGESCHLOSSEN. Bitte manuell prüfen und danach `test_mode` in der config.json auf `false` setzen.")
             return
 
         position = bitget.fetch_open_positions(SYMBOL)
@@ -189,7 +198,7 @@ def run_for_account(account, telegram_config):
                     close_side = 'sell' if side == 'buy' else 'buy'
 
                     bitget.set_margin_mode(SYMBOL, margin_mode)
-                    bitget.set_leverage(SYMBOL, leverage)
+                    bitget.set_leverage(SYMBOL, leverage, margin_mode)
                     bitget.place_limit_order(SYMBOL, side, amount, entry_price, {'marginMode': margin_mode})
                     bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, {'reduceOnly': True})
                     bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, {'reduceOnly': True})
