@@ -22,7 +22,6 @@
     },
     "debug": {
         "test_mode": false,
-        "test_order_price_away_pct": 20.0,
-        "force_test_order_value_usdt": 10.0
+        "test_order_price_away_pct": 20.0
     }
 }
