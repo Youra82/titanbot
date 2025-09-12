@@ -113,7 +113,14 @@ def run_for_account(account, telegram_config):
 
             logger.info(f"[{account_name}] Platzierung Test-Orders: {side.upper()} Entry={entry_price:.4f}, SL={stop_loss_price:.4f}, TP={take_profit_price:.4f}, Menge={amount:.4f}")
             
-            order = bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode)
+            order = bitget.place_limit_order(
+                SYMBOL,
+                side,
+                amount,
+                entry_price,
+                params={'leverage': leverage, 'marginMode': margin_mode, 'postOnly': True}
+            )
+
             close_side = 'sell' if side == 'buy' else 'buy'
             bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, {'reduce': True})
             bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, {'reduce': True})
@@ -180,91 +187,4 @@ def run_for_account(account, telegram_config):
                 entry_price, stop_loss_price, side = None, None, None
                 if latest_signal['trend'] == 1 and params['behavior']['use_longs'] and latest_signal['low'] > latest_signal['ob_high']:
                     entry_price, stop_loss_price, side = latest_signal['ob_high'], latest_signal['ob_low'], 'buy'
-                elif latest_signal['trend'] == -1 and params['behavior']['use_shorts'] and latest_signal['high'] < latest_signal['ob_low']:
-                    entry_price, stop_loss_price, side = latest_signal['ob_low'], latest_signal['ob_high'], 'sell'
-                
-                if side:
-                    risk_per_trade_pct = params['risk']['risk_per_trade_pct'] / 100
-                    balance = bitget.fetch_balance().get('USDT', {}).get('free', 0) * (params['risk']['balance_fraction_pct'] / 100)
-                    risk_per_trade_usd = balance * risk_per_trade_pct
-                    sl_distance = abs(entry_price - stop_loss_price)
-                    if sl_distance == 0:
-                        logger.warning(f"[{account_name}] SL-Distanz ist 0, Trade übersprungen."); return
-                    
-                    amount_calculated = risk_per_trade_usd / sl_distance
-                    market_info = bitget.markets.get(SYMBOL, {})
-                    min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
-                    if (amount_calculated * entry_price) < min_cost:
-                        logger.warning(f"[{account_name}] Berechnete Ordergröße ({amount_calculated * entry_price:.2f} USDT) unter Minimum. Erhöhe auf {min_cost:.2f} USDT.")
-                        amount_calculated = (min_cost * 1.05) / entry_price
-                    amount = amount_calculated
-
-                    leverage, margin_mode = params['risk']['leverage'], params['risk']['margin_mode']
-                    rr = params['risk']['risk_reward_ratio']
-                    take_profit_price = entry_price + sl_distance * rr if side == 'buy' else entry_price - sl_distance * rr
-                    close_side = 'sell' if side == 'buy' else 'buy'
-
-                    bitget.set_margin_mode(SYMBOL, margin_mode)
-                    bitget.set_leverage(SYMBOL, leverage, margin_mode)
-                    bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode)
-                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, reduce=True)
-                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, reduce=True)
-                    logger.info(f"[{account_name}] TitanBot Signal! Entry, TP und SL Orders platziert.")
-                    set_state(account_name, 'last_signal_ts', signal_ts)
-
-                    message = f"📈 TitanBot Signal für Account *{account_name}* ({SYMBOL}, {side.upper()})\n- Order @ ${entry_price:.4f}\n- SL: ${stop_loss_price:.4f}\n- TP: ${take_profit_price:.4f}"
-                    send_telegram_message(bot_token, chat_id, message)
-
-    except Exception as e:
-        logger.error(f"[{account_name}] Ein unerwarteter Fehler ist aufgetreten: {e}", exc_info=True)
-        error_message = f"🚨 KRITISCHER FEHLER im TitanBot für Account *{account_name}* ({SYMBOL})!\n\n`{traceback.format_exc()}`"
-        send_telegram_message(bot_token, chat_id, error_message[:4000])
-    
-    logger.info(f"--- Ausführung für Account: {account_name} abgeschlossen ---")
-
-def main():
-    logger.info(">>> TitanBot wird gestartet <<<")
-    try:
-        key_path = os.path.abspath(os.path.join(PROJECT_ROOT, 'secret.json'))
-        with open(key_path, "r") as f: secrets = json.load(f)
-        
-        api_configs = secrets.get('titan')
-        if not api_configs:
-            logger.critical("Fehler: Kein 'titan' Eintrag in secret.json gefunden.")
-            return
-            
-        telegram_config = secrets.get('telegram', {})
-        
-        if isinstance(api_configs, list):
-            logger.info(f"Multi-Account-Modus erkannt. Verarbeite {len(api_configs)} Accounts.")
-            accounts_to_run = api_configs
-        elif isinstance(api_configs, dict):
-            logger.info("Single-Account-Modus erkannt.")
-            accounts_to_run = [api_configs]
-        else:
-            logger.critical("Fehler: Der 'titan' Eintrag in secret.json hat ein ungültiges Format.")
-            return
-
-    except Exception as e:
-        logger.critical(f"Fehler beim Laden der API-Schlüssel oder Konfiguration: {e}")
-        sys.exit(1)
-
-    for account in accounts_to_run:
-        api_key = account.get('apiKey')
-        secret = account.get('secret')
-        password = account.get('password')
-        account_name = account.get('name', 'Unbenannter Account')
-
-        if not api_key or not secret or not password:
-            logger.warning(f"Überspringe Account '{account_name}', da API-Schlüssel, Secret oder Passwort fehlen.")
-            continue
-        
-        try:
-            run_for_account(account, telegram_config)
-        except Exception as e:
-            logger.error(f"Schwerwiegender Fehler bei der Ausführung für Account {account_name}: {e}", exc_info=True)
-
-    logger.info(">>> TitanBot-Lauf abgeschlossen <<<\n")
-
-if __name__ == "__main__":
-    main()
+                elif latest_signal['trend'] == -1 and params['behavior']['use_shorts']
