@@ -25,8 +25,10 @@ def main():
     if data.empty: print(f"Keine Daten für den Zeitraum gefunden."); return
 
     params = {**config['strategy'], **config['risk'], 'start_capital': start_capital}
+    
     print("Führe TitanBot (SMC) Backtest aus...")
-    result = run_smc_backtest(data.copy(), params)
+    # --- KORREKTUR: Wir rufen den Backtest jetzt mit use_balance_fraction=True auf ---
+    result = run_smc_backtest(data.copy(), params, use_balance_fraction=True)
 
     print("\n" + "="*50 + "\n    +++ BACKTEST-ERGEBNIS +++\n" + "="*50)
     print(f"  Zeitraum:           {start_date} bis {end_date}")
