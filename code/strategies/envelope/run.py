@@ -90,7 +90,7 @@ def run_for_account(account, telegram_config):
             
             market_info = bitget.get_market_info(SYMBOL)
             min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
-            target_cost = min_cost * 1.1
+            target_cost = min_cost * 1.1 
             
             ticker = bitget.fetch_ticker(SYMBOL)
             current_price = ticker.get('last')
