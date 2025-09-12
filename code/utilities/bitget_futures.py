@@ -69,7 +69,6 @@ class BitgetFutures():
     
     def cancel_all_trigger_orders(self, symbol: str):
         try:
-            # Bitget uses planType to differentiate trigger orders in some contexts
             self.session.cancel_all_orders(symbol, params={'planType': 'normal_plan'})
             self.session.cancel_all_orders(symbol, params={'planType': 'track_plan'})
         except Exception as e:
@@ -101,15 +100,23 @@ class BitgetFutures():
             return self.session.create_order(symbol, 'market', side, amount, None, order_params)
         except Exception as e:
             raise Exception(f"Failed to place trigger market order: {e}")
-
-    def place_trailing_stop_order(self, symbol: str, side: str, amount: float, callback_rate: float, activation_price: float, params: dict = None) -> Dict[str, Any]:
+            
+    # --- START DER KORREKTUR ---
+    def set_margin_mode(self, symbol: str, margin_mode: str):
         try:
-            order_params = {
-                'planType': 'track_plan', 'triggerPrice': activation_price,
-                'callbackRate': str(callback_rate / 100),
-            }
-            if params:
-                order_params.update(params)
-            return self.session.create_order(symbol, 'market', side, amount, None, params=order_params)
+            return self.session.set_margin_mode(margin_mode.lower(), symbol)
         except Exception as e:
-            raise Exception(f"Failed to place trailing stop order: {e}")
+            if 'Margin mode is the same' in str(e):
+                logger.info(f"Margin-Modus für {symbol} ist bereits '{margin_mode}'.")
+            else:
+                raise e
+
+    def set_leverage(self, symbol: str, leverage: float, params: dict = None):
+        try:
+            return self.session.set_leverage(leverage, symbol, params)
+        except Exception as e:
+            if 'Leverage not changed' in str(e):
+                logger.info(f"Hebel für {symbol} ist bereits auf {leverage}x gesetzt.")
+            else:
+                raise e
+    # --- ENDE DER KORREKTUR ---
