@@ -9,80 +9,55 @@ from typing import Any, Optional, Dict, List
 logger = logging.getLogger(__name__)
 
 class BitgetFutures():
-    def __init__(self, api_setup: Optional[Dict[str, Any]] = None, demo_mode: bool = False) -> None:
-        if api_setup is None:
-            self.session = ccxt.bitget()
-        else:
-            api_setup.setdefault("options", {"defaultType": "future"})
-            if demo_mode:
-                api_setup["options"]["productType"] = "SUSDT-FUTURES"
-            self.session = ccxt.bitget(api_setup)
-            if demo_mode:
-                self.session.set_sandbox_mode(True)
+    def __init__(self, api_setup: Optional[Dict[str, Any]] = None) -> None:
+        api_setup = api_setup or {}
+        # KORREKTUR: 'future' wird zu 'swap' geändert, was bei ccxt gängiger ist
+        api_setup.setdefault("options", {"defaultType": "swap"})
+        self.session = ccxt.bitget(api_setup)
         self.markets = self.session.load_markets()
      
-    def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
-        try:
-            return self.session.fetch_ticker(symbol)
-        except Exception as e:
-            raise Exception(f"Failed to fetch ticker for {symbol}: {e}")
-         
-    def amount_to_precision(self, symbol: str, amount: float) -> str:
-        try:
-            return self.session.amount_to_precision(symbol, amount)
-        except Exception as e:
-            raise Exception(f"Failed to convert amount {amount} {symbol} to precision", e)
-
-    def price_to_precision(self, symbol: str, price: float) -> str:
-        try:
-            return self.session.price_to_precision(symbol, price)
-        except Exception as e:
-            raise Exception(f"Failed to convert price {price} to precision for {symbol}", e)
-
-    def fetch_balance(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        if params is None:
-            params = {}
-        try:
-            return self.session.fetch_balance(params)
-        except Exception as e:
-            raise Exception(f"Failed to fetch balance: {e}")
-
-    def fetch_open_orders(self, symbol: str) -> List[Dict[str, Any]]:
-        try:
-            return self.session.fetch_open_orders(symbol)
-        except Exception as e:
-            raise Exception(f"Failed to fetch open orders: {e}")
-
-    def fetch_open_positions(self, symbol: str) -> List[Dict[str, Any]]:
-        try:
-            positions = self.session.fetch_positions([symbol])
-            return [p for p in positions if p.get('contracts') and float(p['contracts']) > 0]
-        except Exception as e:
-            raise Exception(f"Failed to fetch open positions: {e}")
-
+    # Die alten, unzuverlässigen Funktionen werden entfernt, da die Parameter jetzt direkt übergeben werden
     def set_margin_mode(self, symbol: str, margin_mode: str = 'isolated') -> None:
         try:
             self.session.set_margin_mode(margin_mode, symbol)
             logger.info(f"Margin-Modus für {symbol} auf '{margin_mode}' gesetzt.")
         except Exception as e:
-            if 'repeat submit' in str(e):
+            if 'repeat submit' in str(e) or 'Margin mode is the same' in str(e):
                 logger.info(f"Margin-Modus für {symbol} ist bereits auf '{margin_mode}' gesetzt.")
             else:
                 raise Exception(f"Fehler beim Setzen des Margin-Modus: {e}")
 
-    def set_leverage(self, symbol: str, leverage: int, margin_mode: str) -> None:
+    def set_leverage(self, symbol: str, leverage: int) -> None:
         try:
             self.session.set_leverage(leverage, symbol)
             logger.info(f"Hebel für {symbol} auf {leverage}x gesetzt.")
         except Exception as e:
-            if 'repeat submit' in str(e):
+            if 'repeat submit' in str(e) or 'Leverage is the same' in str(e):
                 logger.info(f"Hebel für {symbol} ist bereits auf {leverage}x gesetzt.")
             else:
                 raise Exception(f"Fehler beim Setzen des Hebels: {e}")
+                
+    # Alle 'fetch'-Funktionen bleiben wie zuvor...
+    def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
+        try: return self.session.fetch_ticker(symbol)
+        except Exception as e: raise Exception(f"Failed to fetch ticker for {symbol}: {e}")
+
+    def fetch_balance(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        try: return self.session.fetch_balance(params or {})
+        except Exception as e: raise Exception(f"Failed to fetch balance: {e}")
+
+    def fetch_open_orders(self, symbol: str) -> List[Dict[str, Any]]:
+        try: return self.session.fetch_open_orders(symbol)
+        except Exception as e: raise Exception(f"Failed to fetch open orders: {e}")
+
+    def fetch_open_positions(self, symbol: str) -> List[Dict[str, Any]]:
+        try:
+            positions = self.session.fetch_positions([symbol])
+            return [p for p in positions if p.get('contracts') and float(p['contracts']) > 0]
+        except Exception as e: raise Exception(f"Failed to fetch open positions: {e}")
 
     def get_market_info(self, symbol: str) -> Dict[str, Any]:
-        if symbol not in self.markets:
-            self.markets = self.session.load_markets(True)
+        if symbol not in self.markets: self.markets = self.session.load_markets(True)
         return self.markets.get(symbol, {})
 
     def fetch_recent_ohlcv(self, symbol: str, timeframe: str, limit: int = 1000) -> pd.DataFrame:
@@ -94,55 +69,58 @@ class BitgetFutures():
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
             df.set_index('timestamp', inplace=True)
             return df.sort_index()
-        except Exception as e:
-            raise Exception(f"Failed to fetch OHLCV data for {symbol}: {e}")
-     
-    def place_limit_order(self, symbol: str, side: str, amount: float, price: float, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        try:
-            return self.session.create_order(symbol, 'limit', side, amount, price, params)
-        except Exception as e:
-            raise Exception(f"Failed to place limit order: {e}")
+        except Exception as e: raise Exception(f"Failed to fetch OHLCV data for {symbol}: {e}")
 
-    def place_trigger_market_order(self, symbol: str, side: str, amount: float, trigger_price: float, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        try:
-            params = params or {}
-            params['stopPrice'] = trigger_price
-            return self.session.create_order(symbol, 'market', side, amount, None, params)
-        except Exception as err:
-            raise err
+    def cancel_all_orders(self, symbol: str) -> None:
+        try: self.session.cancel_all_orders(symbol)
+        except Exception as e: logger.warning(f"Konnte nicht alle Limit-Orders stornieren: {e}")
+    
+    def cancel_all_trigger_orders(self, symbol: str) -> None:
+        try: self.session.cancel_all_orders(symbol, params={'stop': True})
+        except Exception as e: logger.warning(f"Konnte nicht alle Trigger-Orders stornieren: {e}")
 
-    def place_trailing_stop_order(self, symbol: str, side: str, amount: float, callback_rate: float, activation_price: float, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        try:
-            params = params or {}
-            params.update({
-                'planType': 'track_plan',
-                'triggerPrice': activation_price,
-                'callbackRate': str(callback_rate / 100),
-            })
-            return self.session.create_order(symbol, 'market', side, amount, None, params)
-        except Exception as e:
-            raise Exception(f"Fehler beim Platzieren der Trailing-Stop-Order: {e}")
+    def cancel_order(self, id: str, symbol: str) -> Dict[str, Any]:
+        try: return self.session.cancel_order(id, symbol)
+        except Exception as e: raise Exception(f"Failed to cancel the {symbol} order {id}", e)
 
-    def create_market_order(self, symbol: str, side: str, amount: float, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    # --- START DER NEUEN ORDER-LOGIK ---
+    def create_market_order(self, symbol: str, side: str, amount: float, params: dict = None) -> Dict[str, Any]:
         try:
             return self.session.create_order(symbol, 'market', side, amount, None, params)
         except Exception as e:
             raise Exception(f"Failed to create market order: {e}")
     
-    def create_market_buy_order_with_cost(self, symbol: str, cost: float, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def create_market_buy_order_with_cost(self, symbol: str, cost: float, params: dict = None) -> Dict[str, Any]:
         try:
             return self.session.create_market_buy_order_with_cost(symbol, cost, params)
         except Exception as e:
             raise Exception(f"Failed to create market buy order with cost: {e}")
 
-    def cancel_all_orders(self, symbol: str) -> None:
+    def place_limit_order(self, symbol: str, side: str, amount: float, price: float, params: dict = None) -> Dict[str, Any]:
         try:
-            self.session.cancel_all_orders(symbol)
+            return self.session.create_order(symbol, 'limit', side, amount, price, params)
         except Exception as e:
-            logger.warning(f"Konnte nicht alle Limit-Orders stornieren: {e}")
-    
-    def cancel_all_trigger_orders(self, symbol: str) -> None:
+            raise Exception(f"Failed to place limit order: {e}")
+
+    def place_trigger_market_order(self, symbol: str, side: str, amount: float, trigger_price: float, params: dict = None) -> Dict[str, Any]:
         try:
-            self.session.cancel_all_orders(symbol, params={'stop': True})
+            order_params = {'stopPrice': trigger_price}
+            if params:
+                order_params.update(params)
+            return self.session.create_order(symbol, 'market', side, amount, None, order_params)
+        except Exception as err:
+            raise err
+
+    def place_trailing_stop_order(self, symbol: str, side: str, amount: float, callback_rate: float, activation_price: float, params: dict = None) -> Dict[str, Any]:
+        try:
+            order_params = {
+                'planType': 'track_plan',
+                'triggerPrice': activation_price,
+                'callbackRate': str(callback_rate / 100),
+            }
+            if params:
+                order_params.update(params)
+            return self.session.create_order(symbol, 'market', side, amount, None, params=order_params)
         except Exception as e:
-            logger.warning(f"Konnte nicht alle Trigger-Orders stornieren: {e}")
+            raise Exception(f"Fehler beim Platzieren der Trailing-Stop-Order: {e}")
+    # --- ENDE DER NEUEN ORDER-LOGIK ---
