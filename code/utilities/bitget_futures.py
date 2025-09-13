@@ -1,5 +1,4 @@
 # code/utilities/bitget_futures.py
-
 import ccxt
 import pandas as pd
 import logging
@@ -10,6 +9,7 @@ logger = logging.getLogger(__name__)
 class BitgetFutures():
     def __init__(self, api_setup: Optional[Dict[str, Any]] = None, demo_mode: bool = False) -> None:
         api_setup = api_setup or {}
+        # Wichtig: defaultType 'swap' für Perpetual Futures
         api_setup.setdefault("options", {"defaultType": "swap"})
         if demo_mode:
             api_setup["options"]["productType"] = "SUSDT-FUTURES"
@@ -63,15 +63,19 @@ class BitgetFutures():
 
     def set_margin_mode(self, symbol: str, margin_mode: str):
         try:
+            # Dieser Aufruf ist oft unzuverlässig, aber wir lassen ihn als "Best-Effort" drin.
+            # Die entscheidende Änderung ist das Mitschicken der Parameter bei der Order selbst.
             return self.session.set_margin_mode(margin_mode.lower(), symbol)
         except Exception as e:
             if 'Margin mode is the same' in str(e):
                 logger.info(f"Margin-Modus für {symbol} ist bereits '{margin_mode}'.")
             else:
-                raise e
+                # Wir loggen nur eine Warnung, anstatt einen Fehler auszulösen.
+                logger.warning(f"Fehler beim Voreinstellen des Margin-Modus (wird bei Order erneut versucht): {e}")
 
     def set_leverage(self, symbol: str, leverage: float, margin_mode: str):
         try:
+            # Wie bei set_margin_mode, dies ist nur ein Versuch.
             params = {}
             if margin_mode.lower() == 'isolated':
                 params['holdSide'] = 'long'
@@ -85,7 +89,7 @@ class BitgetFutures():
             if 'Leverage not changed' in str(e):
                 logger.info(f"Hebel für {symbol} ist bereits auf {leverage}x gesetzt.")
             else:
-                raise e
+                logger.warning(f"Fehler beim Voreinstellen des Hebels (wird bei Order erneut versucht): {e}")
     
     def cancel_all_orders(self, symbol: str):
         try:
@@ -106,17 +110,31 @@ class BitgetFutures():
         except Exception as e:
             raise Exception(f"Failed to cancel the {symbol} order {id}", e)
 
-    def create_market_order(self, symbol: str, side: str, amount: float, params: dict = None) -> Dict[str, Any]:
+    # === ANPASSUNG START ===
+    def create_market_order(self, symbol: str, side: str, amount: float, leverage: int, margin_mode: str, params: dict = None) -> Dict[str, Any]:
         try:
-            return self.session.create_order(symbol, 'market', side, amount, None, params or {})
+            order_params = {
+                'leverage': leverage,
+                'marginMode': margin_mode.lower()
+            }
+            if params:
+                order_params.update(params)
+            return self.session.create_order(symbol, 'market', side, amount, None, order_params)
         except Exception as e:
             raise Exception(f"Failed to create market order: {e}")
     
-    def place_limit_order(self, symbol: str, side: str, amount: float, price: float, params: dict = None) -> Dict[str, Any]:
+    def place_limit_order(self, symbol: str, side: str, amount: float, price: float, leverage: int, margin_mode: str, params: dict = None) -> Dict[str, Any]:
         try:
-            return self.session.create_order(symbol, 'limit', side, amount, price, params or {})
+            order_params = {
+                'leverage': leverage,
+                'marginMode': margin_mode.lower()
+            }
+            if params:
+                order_params.update(params)
+            return self.session.create_order(symbol, 'limit', side, amount, price, order_params)
         except Exception as e:
             raise Exception(f"Failed to place limit order: {e}")
+    # === ANPASSUNG ENDE ===
 
     def place_trigger_market_order(self, symbol: str, side: str, amount: float, trigger_price: float, params: dict = None) -> Dict[str, Any]:
         try:
