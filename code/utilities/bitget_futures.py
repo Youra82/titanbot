@@ -3,6 +3,7 @@ import ccxt
 import pandas as pd
 import logging
 from typing import Any, Optional, Dict, List
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,33 @@ class BitgetFutures():
         except Exception as e:
             raise Exception(f"Failed to fetch ohlcv data for {symbol}: {e}")
 
+    # === HIER IST DIE WIEDERHERGESTELLTE FUNKTION ===
+    def fetch_historical_ohlcv(self, symbol: str, timeframe: str, start_date_str: str, end_date_str: str) -> pd.DataFrame:
+        start_ts = int(datetime.strptime(start_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+        end_ts = int(datetime.strptime(end_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+        all_ohlcv = []
+        
+        while start_ts < end_ts:
+            try:
+                ohlcv = self.session.fetch_ohlcv(symbol, timeframe, since=start_ts, limit=1000)
+                if not ohlcv:
+                    break
+                all_ohlcv.extend(ohlcv)
+                last_timestamp = ohlcv[-1][0]
+                start_ts = last_timestamp + self.session.parse_timeframe(timeframe) * 1000
+            except Exception as e:
+                raise Exception(f"Failed to fetch historical OHLCV data for {symbol}: {e}")
+        
+        if not all_ohlcv:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(all_ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
+        df.set_index('timestamp', inplace=True)
+        df = df[~df.index.duplicated(keep='first')] # Doppelte Einträge entfernen
+        df.sort_index(inplace=True)
+        return df
+
     def set_margin_mode(self, symbol: str, margin_mode: str):
         try:
             return self.session.set_margin_mode(margin_mode.lower(), symbol)
@@ -68,7 +96,6 @@ class BitgetFutures():
                 logger.info(f"Margin-Modus für {symbol} ist bereits '{margin_mode}'.")
             else:
                 logger.warning(f"Fehler beim Voreinstellen des Margin-Modus (wird bei Order erneut versucht): {e}")
-
 
     def set_leverage(self, symbol: str, leverage: float, margin_mode: str):
         try:
@@ -86,7 +113,7 @@ class BitgetFutures():
                 logger.info(f"Hebel für {symbol} ist bereits auf {leverage}x gesetzt.")
             else:
                 logger.warning(f"Fehler beim Voreinstellen des Hebels (wird bei Order erneut versucht): {e}")
-
+    
     def cancel_all_orders(self, symbol: str):
         try:
             self.session.cancel_all_orders(symbol)
