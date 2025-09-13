@@ -1,35 +1,41 @@
-Envelope Trading Bot
+TitanBot
+Ein vollautomatischer Trading-Bot für Krypto-Futures auf der Bitget-Börse, basierend auf "Smart Money Concepts" (SMC).
 
+Dies ist ein vollautomatischer Trading-Bot für Krypto-Futures auf der Bitget-Börse. Das System wurde für den Betrieb auf einem Ubuntu-Server entwickelt und umfasst neben dem Live-Trading-Modul eine hochentwickelte Pipeline zur Strategie-Optimierung und -Analyse. Es unterstützt die Verwaltung mehrerer Accounts und ein dynamisches, zweistufiges Risikomanagement mit Trailing Stop.
 
-Dies ist ein vollautomatischer Trading-Bot für Krypto-Futures auf der Bitget-Börse. Das System wurde für den Betrieb auf einem Ubuntu-Server entwickelt und umfasst neben dem Live-Trading-Modul eine hochentwickelte Pipeline zur Strategie-Optimierung und -Analyse.
+## Kernstrategie (Smart Money Concepts)
+Der Bot implementiert eine auf "Smart Money Concepts" (SMC) basierende Trendfolgestrategie.
 
-Kernstrategie
-Der Bot implementiert eine Mean-Reversion-Strategie, die auf prozentualen "Envelopes" (Hüllkurven) um einen gleitenden Durchschnitt basiert.
-
-Handelsthese: Der Preis eines Assets tendiert dazu, nach einer starken Bewegung wieder zu seinem kurzfristigen Durchschnittswert zurückzukehren.
+Handelsthese: Preisbewegungen werden von institutionellem Orderflow angetrieben. Die Strategie zielt darauf ab, Zonen hoher Liquidität zu identifizieren ("Order Blocks"), in denen institutionelle Akteure wahrscheinlich in den Markt eintreten, nachdem ein bestehender Trend bestätigt wurde.
 
 Signale:
 
-Long-Einstieg: Der Preis fällt unter eine oder mehrere vordefinierte untere Hüllkurven. Der Bot platziert Limit-Kauf-Orders auf diesen Niveaus.
+Break of Structure (BoS): Der Bot identifiziert eine starke Trendbestätigung, indem der Preis ein vorheriges signifikantes Hoch (in einem Aufwärtstrend) oder Tief (in einem Abwärtstrend) durchbricht.
 
-Short-Einstieg: Der Preis steigt über eine oder mehrere vordefinierte obere Hüllkurven. Der Bot platziert Limit-Verkaufs-Orders auf diesen Niveaus.
+Order Block (OB): Nach einem BoS identifiziert der Bot die letzte gegensätzliche Kerze vor der starken Trendbewegung. Diese Zone wird als hochwahrscheinlicher Einstiegsbereich ("Order Block") markiert.
 
-Ausstieg: Der Take-Profit für jede Position liegt auf dem gleitenden Durchschnitt selbst, basierend auf der Annahme der Rückkehr zum Mittelwert. Ein Stop-Loss sichert die Positionen zusätzlich ab.
+Einstieg: Der Bot platziert eine Limit-Order direkt am Rande des identifizierten Order Blocks, um auf einen Rücksetzer des Preises zu warten.
 
-Dynamisches Risiko: Der eingesetzte Hebel wird dynamisch auf Basis der aktuellen Marktvolatilität (gemessen durch die ATR - Average True Range) angepasst, um das Risiko in unruhigen Marktphasen zu reduzieren.
+Ausstieg: Ein fester Stop-Loss wird auf der gegenüberliegenden Seite des Order Blocks platziert. Der initiale Take-Profit wird durch das in der Konfiguration definierte risk_reward_ratio bestimmt.
 
-Systemarchitektur
+Dynamisches Risikomanagement:
+
+Positionsgröße: Die Größe jeder Position wird dynamisch berechnet, um pro Trade nur einen festen Prozentsatz des verfügbaren Kapitals zu riskieren.
+
+Zweistufiger Take-Profit: Die Position startet mit einem festen Take-Profit. Sobald ein vordefinierter Gewinn erreicht ist (z.B. 2:1 Risk/Reward), wird der feste TP storniert und durch eine native Trailing-Stop-Order der Börse ersetzt. Dies sichert Gewinne ab und ermöglicht gleichzeitig die Mitnahme weiterer Profite in starken Trendphasen ("die Welle reiten").
+
+## Systemarchitektur
 Das Projekt ist in drei Kernkomponenten unterteilt:
 
 Live-Trading-Modul (/code/strategies/envelope)
 
-Der eigentliche Bot, der per Cronjob ausgeführt wird (run.py).
+Der eigentliche Bot (run.py), der per Cronjob ausgeführt wird.
 
-Verwaltet seinen Zustand (z.B. "in Position" oder "suche Trade") über eine lokale SQLite-Datenbank, um auch nach Neustarts robust zu bleiben.
+Verwaltet seinen Zustand (z.B. Zeitstempel des letzten Signals) über eine lokale SQLite-Datenbank, um Duplikate zu vermeiden und nach Neustarts robust zu bleiben.
 
 Kommuniziert über ein Utility-Modul (bitget_futures.py) mit der Bitget API.
 
-Versendet Status-Updates und kritische Fehler per Telegram.
+Versendet Status-Updates, Handelssignale und kritische Fehler per Telegram.
 
 Optimierungs- & Analyse-Pipeline (/code/analysis)
 
@@ -37,15 +43,11 @@ Ein leistungsstarkes Werkzeug (run_optimization_pipeline.sh), um die besten Stra
 
 Zweistufige Optimierung:
 
-Globale Suche (Pymoo): Ein genetischer Algorithmus (NSGA-II) durchsucht den gesamten Parameterraum, um eine Gruppe vielversprechender Kandidaten zu finden.
+Globale Suche (Pymoo): Ein genetischer Algorithmus durchsucht den gesamten Parameterraum, um eine Gruppe vielversprechender Kandidaten zu finden (Profit vs. Drawdown).
 
 Lokale Verfeinerung (Optuna): Die besten Kandidaten werden einer detaillierten lokalen Optimierung unterzogen, um die Parameter zu perfektionieren.
 
 Dedizierter Backtest-Modus: Ermöglicht das gezielte Testen einer einzelnen config.json-Datei gegen historische Daten, um Hypothesen schnell zu validieren.
-
-Performance-Analyse (/code/utilities/tax_endpoint_analysis.py)
-
-Ein Jupyter Notebook (run_pnl.ipynb) nutzt dieses Modul, um die tatsächliche Handels-Performance direkt vom Steuer-Endpunkt der Börse abzurufen. Dies dient als "Source of Truth" und ist unabhängig von den Bot-Logs.
 
 Installation
 Führe die folgenden Schritte auf einem frischen Ubuntu-Server (empfohlen: 22.04 LTS) aus, um den Bot einzurichten.
