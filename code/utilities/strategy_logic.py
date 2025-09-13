@@ -39,15 +39,13 @@ def calculate_smc_indicators(data, params):
         last_swing_low = data.iloc[i]['swing_low_price']
         prev_trend = data.iloc[i-1]['trend']
 
-        # Bullischer Strukturbruch
         if current_high > last_swing_high:
             data.iat[i, data.columns.get_loc('trend')] = 1
             data.iat[i, data.columns.get_loc('bos_level')] = last_swing_high
             
-            # --- KORREKTUR: Sicherheits-Check, ob der Swing-Punkt existiert (nicht NaN ist) ---
             start_idx = data.iloc[i]['swing_low_idx']
             if pd.isna(start_idx):
-                continue # Überspringe, wenn der Swing Low Index noch nicht definiert ist
+                continue
             
             relevant_range_start_iloc = int(start_idx)
             lookback_data = data.iloc[relevant_range_start_iloc:i]
@@ -58,15 +56,13 @@ def calculate_smc_indicators(data, params):
                 data.iat[i, data.columns.get_loc('ob_high')] = ob['high']
                 data.iat[i, data.columns.get_loc('ob_low')] = ob['low']
 
-        # Bärischer Strukturbruch
         elif current_low < last_swing_low:
             data.iat[i, data.columns.get_loc('trend')] = -1
             data.iat[i, data.columns.get_loc('bos_level')] = last_swing_low
 
-            # --- KORREKTUR: Sicherheits-Check, ob der Swing-Punkt existiert (nicht NaN ist) ---
             start_idx = data.iloc[i]['swing_high_idx']
             if pd.isna(start_idx):
-                continue # Überspringe, wenn der Swing High Index noch nicht definiert ist
+                continue
 
             relevant_range_start_iloc = int(start_idx)
             lookback_data = data.iloc[relevant_range_start_iloc:i]
