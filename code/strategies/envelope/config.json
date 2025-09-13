@@ -19,8 +19,5 @@
     "behavior": {
         "use_longs": true,
         "use_shorts": true
-    },
-    "debug": {
-        "test_mode": false
     }
 }
