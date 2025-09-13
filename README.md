@@ -119,6 +119,15 @@ Bash
 
 >./update_bot.sh
 
+Bei Problemen mit dem ./update_bot.sh:
+
+>git reset --hard HEAD
+
+>git stash drop
+
+>./update_bot.sh
+
+
 Strategien finden & testen
 Dies ist deine Steuerzentrale für alle Offline-Analysen.
 
