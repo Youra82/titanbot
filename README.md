@@ -125,6 +125,8 @@ Bei Problemen mit dem ./update_bot.sh:
 
 >git stash drop
 
+>chmod +x update_bot.sh
+
 >./update_bot.sh
 
 
