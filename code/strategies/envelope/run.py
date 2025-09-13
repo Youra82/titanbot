@@ -80,7 +80,6 @@ def run_for_account(account, telegram_config):
             margin_mode = params['risk']['margin_mode']
             leverage = params['risk']['leverage']
             
-            # Die set-Funktionen sind jetzt nur noch "Best-Effort"
             bitget.set_margin_mode(SYMBOL, margin_mode)
             bitget.set_leverage(SYMBOL, leverage, margin_mode)
             
@@ -96,10 +95,7 @@ def run_for_account(account, telegram_config):
             amount = target_cost / current_price
             
             logger.info(f"[{account_name}] Platziere Test-Market-BUY-Order (Menge: {amount:.4f}, Wert: ~{target_cost:.2f} USDT)...")
-            # === ANPASSUNG START ===
-            # Übergebe Hebel und Margin-Modus direkt an die Order-Funktion
             buy_order = bitget.create_market_order(SYMBOL, 'buy', amount, leverage, margin_mode)
-            # === ANPASSUNG ENDE ===
             logger.info(f"[{account_name}] Test-BUY-Order {buy_order['id']} erfolgreich platziert.")
             
             time.sleep(3) 
@@ -108,10 +104,7 @@ def run_for_account(account, telegram_config):
             if open_pos:
                 contracts_to_close = float(open_pos[0]['contracts'])
                 logger.info(f"[{account_name}] Schließe Test-Position (Menge: {contracts_to_close:.4f})...")
-                # === ANPASSUNG START ===
-                # Schließ-Order benötigt Hebel/Modus nicht, aber `reduceOnly`
                 sell_order = bitget.create_market_order(SYMBOL, 'sell', contracts_to_close, leverage, margin_mode, params={'reduceOnly': True})
-                # === ANPASSUNG ENDE ===
                 logger.info(f"[{account_name}] Test-Position mit Order {sell_order['id']} erfolgreich geschlossen.")
             else:
                  logger.warning(f"[{account_name}] Konnte Test-Position zum Schließen nicht finden.")
@@ -202,11 +195,7 @@ def run_for_account(account, telegram_config):
                     take_profit_price = entry_price + sl_distance * rr if side == 'buy' else entry_price - sl_distance * rr
                     close_side = 'sell' if side == 'buy' else 'buy'
                     
-                    # === ANPASSUNG START ===
-                    # Hebel und Modus auch hier an die Limit-Order übergeben
                     bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode, params={'postOnly': True})
-                    # Trigger-Orders (TP/SL) benötigen diese Parameter nicht, da sie auf eine existierende Position wirken
-                    # === ANPASSUNG ENDE ===
                     bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, params={'reduceOnly': True})
                     bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, params={'reduceOnly': True})
                     
