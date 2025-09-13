@@ -75,42 +75,45 @@ def run_for_account(account, telegram_config):
         if params.get('debug', {}).get('test_mode', False):
             logger.warning(f"[{account_name}] ACHTUNG: TEST-MODUS IST AKTIV!")
             
+            if bitget.fetch_open_positions(SYMBOL):
+                logger.warning(f"[{account_name}] TEST-MODUS: Es ist bereits eine Position offen. Bitte manuell schließen.")
+                return
+
             margin_mode = params['risk']['margin_mode']
             leverage = params['risk']['leverage']
-            logger.info(f"[{account_name}] Teste set_margin_mode('{margin_mode}')...")
+            
+            logger.info(f"[{account_name}] Setze Margin-Modus auf '{margin_mode}'...")
             bitget.set_margin_mode(SYMBOL, margin_mode)
-            logger.info(f"[{account_name}] Teste set_leverage({leverage})...")
-            bitget.set_leverage(SYMBOL, leverage, margin_mode)
 
+            logger.info(f"[{account_name}] Setze Hebel auf {leverage}x...")
+            bitget.set_leverage(SYMBOL, leverage, margin_mode)
+            
+            market_info = bitget.get_market_info(SYMBOL)
+            min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
+            target_cost = min_cost * 1.1 
+            
             ticker = bitget.fetch_ticker(SYMBOL)
             current_price = ticker.get('last')
-            
             if not current_price or current_price <= 0:
-                logger.error(f"[{account_name}] Ungültiger Preis ({current_price}) vom Ticker erhalten. Test-Modus wird abgebrochen.")
+                logger.error(f"Ungültiger Preis für Benchmark erhalten: {current_price}")
                 return
-
-            # --- FINALE LOGIK: Nutze den festen Wert aus der Config ---
-            forced_test_value = params.get('debug', {}).get('force_test_order_value_usdt')
-            if not forced_test_value or forced_test_value <= 0:
-                logger.error(f"[{account_name}] 'force_test_order_value_usdt' ist in der Config nicht oder ungültig gesetzt. Test abgebrochen.")
-                return
+            amount = target_cost / current_price
             
-            logger.info(f"[{account_name}] Erzwungener Test-Order-Wert: {forced_test_value:.2f} USDT")
-            test_amount = forced_test_value / current_price
+            logger.info(f"[{account_name}] Platziere Test-Market-BUY-Order (Menge: {amount:.4f}, Wert: ~{target_cost:.2f} USDT)...")
+            buy_order = bitget.create_market_order(SYMBOL, 'buy', amount)
+            logger.info(f"[{account_name}] Test-BUY-Order {buy_order['id']} erfolgreich platziert.")
             
-            away_pct = params['debug']['test_order_price_away_pct'] / 100
-            test_price = current_price * (1 - away_pct)
-            # --- ENDE ---
+            time.sleep(3) 
 
-            logger.info(f"[{account_name}] Teste place_limit_order (Menge: {test_amount:.4f}, Preis: ${test_price:.4f})...")
-            order = bitget.place_limit_order(SYMBOL, 'buy', test_amount, test_price, leverage, margin_mode, post_only=True)
-            order_id = order['id']
-            logger.info(f"[{account_name}] Test-Order {order_id} erfolgreich platziert.")
+            open_pos = bitget.fetch_open_positions(SYMBOL)
+            if open_pos:
+                contracts_to_close = float(open_pos[0]['contracts'])
+                logger.info(f"[{account_name}] Schließe Test-Position (Menge: {contracts_to_close:.4f})...")
+                sell_order = bitget.create_market_order(SYMBOL, 'sell', contracts_to_close, params={'reduceOnly': True})
+                logger.info(f"[{account_name}] Test-Position mit Order {sell_order['id']} erfolgreich geschlossen.")
+            else:
+                 logger.warning(f"[{account_name}] Konnte Test-Position zum Schließen nicht finden.")
 
-            time.sleep(2)
-            logger.info(f"[{account_name}] Teste cancel_order({order_id})...")
-            bitget.cancel_order(order_id, SYMBOL)
-            logger.info(f"[{account_name}] Test-Order {order_id} erfolgreich storniert.")
             logger.warning(f"[{account_name}] TEST-MODUS ERFOLGREICH ABGESCHLOSSEN.")
             return
 
@@ -125,7 +128,7 @@ def run_for_account(account, telegram_config):
                 activation_rr = params['risk']['trailing_stop_activation_rr']
                 last_signal_ts_str = get_state(account_name, 'last_signal_ts')
                 if last_signal_ts_str == '0': return
-                data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
+                data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'])
                 data = calculate_smc_indicators(data, params['strategy'])
                 signal_timestamp = pd.to_datetime(int(last_signal_ts_str), unit='s', utc=True)
                 if signal_timestamp not in data.index: return
@@ -142,7 +145,7 @@ def run_for_account(account, telegram_config):
                     callback_rate = params['risk']['trailing_stop_callback_rate_pct']
                     contracts = float(pos['contracts'])
                     close_side = 'sell' if side == 'long' else 'buy'
-                    bitget.place_trailing_stop_order(SYMBOL, close_side, contracts, callback_rate, current_price)
+                    bitget.place_trailing_stop_order(SYMBOL, close_side, contracts, callback_rate, current_price, params={'reduceOnly': True})
                     set_state(account_name, 'trailing_stop_active', 'True')
                     message = f"🚀 Trailing Stop für *{account_name}* ({SYMBOL}) aktiviert!\n- Gewinn ist bei >{activation_rr}:1 gesichert."
                     send_telegram_message(bot_token, chat_id, message)
@@ -161,7 +164,7 @@ def run_for_account(account, telegram_config):
         bitget.cancel_all_orders(SYMBOL)
         bitget.cancel_all_trigger_orders(SYMBOL)
         
-        data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'], 500)
+        data = bitget.fetch_recent_ohlcv(SYMBOL, params['market']['timeframe'])
         data = calculate_smc_indicators(data, params['strategy'])
         latest = data.iloc[-2]
 
@@ -177,6 +180,7 @@ def run_for_account(account, telegram_config):
                     entry_price, stop_loss_price, side = latest['ob_low'], latest['ob_high'], 'sell'
                 
                 if side:
+                    leverage, margin_mode = params['risk']['leverage'], params['risk']['margin_mode']
                     risk_per_trade_pct = params['risk']['risk_per_trade_pct'] / 100
                     balance = bitget.fetch_balance().get('USDT', {}).get('free', 0) * (params['risk']['balance_fraction_pct'] / 100)
                     risk_per_trade_usd = balance * risk_per_trade_pct
@@ -185,26 +189,25 @@ def run_for_account(account, telegram_config):
                         logger.warning(f"[{account_name}] SL-Distanz ist 0, Trade übersprungen."); return
                     
                     amount_calculated = risk_per_trade_usd / sl_distance
-                    market_info = bitget.markets.get(SYMBOL, {})
+                    market_info = bitget.get_market_info(SYMBOL)
                     min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
                     if (amount_calculated * entry_price) < min_cost:
                         logger.warning(f"[{account_name}] Berechnete Ordergröße ({amount_calculated * entry_price:.2f} USDT) unter Minimum. Erhöhe auf {min_cost:.2f} USDT.")
                         amount_calculated = (min_cost * 1.05) / entry_price
                     amount = amount_calculated
 
-                    leverage, margin_mode = params['risk']['leverage'], params['risk']['margin_mode']
                     rr = params['risk']['risk_reward_ratio']
                     take_profit_price = entry_price + sl_distance * rr if side == 'buy' else entry_price - sl_distance * rr
                     close_side = 'sell' if side == 'buy' else 'buy'
-
+                    
                     bitget.set_margin_mode(SYMBOL, margin_mode)
                     bitget.set_leverage(SYMBOL, leverage, margin_mode)
-                    bitget.place_limit_order(SYMBOL, side, amount, entry_price, leverage, margin_mode)
-                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, reduce=True)
-                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, reduce=True)
+                    bitget.place_limit_order(SYMBOL, side, amount, entry_price, params={'postOnly': True})
+                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, take_profit_price, params={'reduceOnly': True})
+                    bitget.place_trigger_market_order(SYMBOL, close_side, amount, stop_loss_price, params={'reduceOnly': True})
+                    
                     logger.info(f"[{account_name}] TitanBot Signal! Entry, TP und SL Orders platziert.")
                     set_state(account_name, 'last_signal_ts', signal_ts)
-
                     message = f"📈 TitanBot Signal für Account *{account_name}* ({SYMBOL}, {side.upper()})\n- Order @ ${entry_price:.4f}\n- SL: ${stop_loss_price:.4f}\n- TP: ${take_profit_price:.4f}"
                     send_telegram_message(bot_token, chat_id, message)
 
