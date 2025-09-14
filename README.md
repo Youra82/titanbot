@@ -121,6 +121,8 @@ Bash
 
 >./update_bot.sh
 
+>tail -n 100 ~/stbot/logs/cron.log
+
 Bei Problemen mit dem ./update_bot.sh:
 
 >git reset --hard HEAD
