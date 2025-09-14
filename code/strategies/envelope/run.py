@@ -66,15 +66,14 @@ def run_for_account(account, telegram_config):
     
     logger.info(f"--- Starte TitanBot Ausführung für Account: {account_name} | Symbol: {SYMBOL} ---")
     
-    # Der Bot verbindet sich jetzt immer im Live-Modus
     bitget = BitgetFutures(account, demo_mode=False)
     setup_database(account_name)
 
     try:
-        # Der gesamte Test-Modus Block wurde hier entfernt
-        
         position = bitget.fetch_open_positions(SYMBOL)
-        
+        open_orders = bitget.fetch_open_orders(SYMBOL)
+
+        # --- LOGIK-ÄNDERUNG 1: Positions-Management ---
         if position:
             pos = position[0]
             entry_price = float(pos['entryPrice'])
@@ -109,14 +108,17 @@ def run_for_account(account, telegram_config):
                 logger.info(f"[{account_name}] Trailing Stop ist bereits aktiv. Management durch Bitget.")
             return
 
+        # --- LOGIK-ÄNDERUNG 2: Warten auf offene Orders ---
+        if open_orders:
+            logger.info(f"[{account_name}] Warte auf Ausführung der Limit-Order für {SYMBOL}.")
+            return
+            
+        # --- LOGIK-ÄNDERUNG 3: Suche nach neuen Trades (nur wenn keine Position UND keine Orders offen sind) ---
         if get_state(account_name, 'trailing_stop_active') == 'True':
             set_state(account_name, 'trailing_stop_active', 'False')
 
-        if bitget.fetch_open_orders(SYMBOL):
-            logger.info(f"[{account_name}] Warte auf Ausführung der Limit-Order für {SYMBOL}.")
-            return
-
-        logger.info(f"[{account_name}] Keine Position offen. Suche nach neuen SMC-Einstiegen.")
+        logger.info(f"[{account_name}] Freier Slot. Suche nach neuen SMC-Einstiegen.")
+        # Das Aufräumen hier ist jetzt sicher, da wir wissen, dass keine legitimen Orders offen sind.
         bitget.cancel_all_orders(SYMBOL)
         bitget.cancel_all_trigger_orders(SYMBOL)
         
@@ -141,10 +143,22 @@ def run_for_account(account, telegram_config):
                     balance = bitget.fetch_balance().get('USDT', {}).get('free', 0) * (params['risk']['balance_fraction_pct'] / 100)
                     risk_per_trade_usd = balance * risk_per_trade_pct
                     sl_distance = abs(entry_price - stop_loss_price)
-                    if sl_distance == 0:
-                        logger.warning(f"[{account_name}] SL-Distanz ist 0, Trade übersprungen."); return
+                    
+                    if sl_distance / entry_price < 0.0001: 
+                        logger.warning(f"[{account_name}] SL-Distanz ist extrem klein ({sl_distance:.8f}), Trade übersprungen."); 
+                        set_state(account_name, 'last_signal_ts', signal_ts)
+                        return
                     
                     amount_calculated = risk_per_trade_usd / sl_distance
+                    
+                    max_position_notional = balance * leverage * 0.95
+                    order_notional_value = amount_calculated * entry_price
+                    
+                    if order_notional_value > max_position_notional:
+                        logger.warning(f"[{account_name}] Berechnete Ordergröße ({order_notional_value:,.2f} USDT) übersteigt max. Kapital ({max_position_notional:,.2f} USDT). Trade übersprungen.")
+                        set_state(account_name, 'last_signal_ts', signal_ts)
+                        return
+
                     market_info = bitget.get_market_info(SYMBOL)
                     min_cost = market_info.get('limits', {}).get('cost', {}).get('min', 5.0)
                     if (amount_calculated * entry_price) < min_cost:
