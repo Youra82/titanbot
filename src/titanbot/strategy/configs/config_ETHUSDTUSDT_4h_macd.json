@@ -1,0 +1,23 @@
+{
+    "market": {
+        "symbol": "ETH/USDT:USDT",
+        "timeframe": "4h"
+    },
+    "strategy": {
+        "prediction_threshold": 0.61
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 2.0,
+        "risk_reward_ratio": 5.0,
+        "leverage": 16,
+        "trailing_stop_activation_rr": 1.57,
+        "trailing_stop_callback_rate_pct": 0.58
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true,
+        "use_macd_trend_filter": true,
+        "macd_filter_timeframe": "1d"
+    }
+}
