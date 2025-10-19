@@ -7,7 +7,5 @@ requests
 scipy
 ta
 tqdm
-tensorflow-cpu==2.16.1
-scikit-learn
-joblib
 pytest
+yfinance
