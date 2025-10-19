@@ -26,13 +26,13 @@ def get_titan_signal(smc_results: dict, current_candle: pd.Series, params: dict)
         if fvg.bias == Bias.BULLISH and current_candle['low'] <= fvg.top:
             # Signal gefunden: Kaufe, sobald der FVG berührt wird
             # Wir verwenden den 'close' als Annäherung, trade_manager.py nimmt dann den Market-Preis
-            print(f"SMC-Signal: Long-Einstieg in Bullish FVG bei {fvg.top}")
+            # print(f"SMC-Signal: Long-Einstieg in Bullish FVG bei {fvg.top}") # DEBUG-Ausgabe entfernt
             return "buy", current_candle['close']
 
     # 2. Prüfe, ob die aktuelle Kerze in einen bärischen Order Block eintaucht
     for ob in unmitigated_obs:
         if ob.bias == Bias.BEARISH and current_candle['high'] >= ob.barLow:
-             print(f"SMC-Signal: Short-Einstieg in Bearish OB bei {ob.barLow}")
+             # print(f"SMC-Signal: Short-Einstieg in Bearish OB bei {ob.barLow}") # DEBUG-Ausgabe entfernt
              return "sell", current_candle['close']
 
 
