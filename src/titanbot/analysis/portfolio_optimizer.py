@@ -1,40 +1,38 @@
-# src/titanbot/analysis/portfolio_optimizer.py (Version für TitanBot SMC)
+# src/titanbot/analysis/portfolio_optimizer.py (Version für TitanBot SMC mit MaxDD Constraint)
 import pandas as pd
 import itertools
 from tqdm import tqdm
 import sys
 import os
+import json # Fürs Speichern
+import numpy as np # Für np.nan
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
-# *** Korrigierter Importpfad ***
 from titanbot.analysis.portfolio_simulator import run_portfolio_simulation
 
-def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date):
+# *** Angepasst: Nimmt target_max_dd entgegen ***
+def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date, target_max_dd: float):
     """
-    Findet die beste Kombination von SMC-Strategien, um die risikoadjustierte Rendite
-    (Score = PnL / MaxDD) zu maximieren, ohne dabei liquidiert zu werden,
-    unter Verwendung eines Greedy-Algorithmus.
-    'strategies_data' ist ein Dict {filename: {'symbol': ..., 'timeframe': ..., 'data': ..., 'smc_params': ..., 'risk_params': ...}}
+    Findet die Kombination von SMC-Strategien, die das höchste Endkapital liefert,
+    während der maximale Drawdown unter dem Zielwert (`target_max_dd`) bleibt.
+    Verwendet einen modifizierten Greedy-Algorithmus.
     """
-    print("\n--- Starte automatische Portfolio-Optimierung (SMC)... ---")
+    print(f"\n--- Starte automatische Portfolio-Optimierung (SMC) mit Max DD <= {target_max_dd:.2f}% ---")
+    target_max_dd_decimal = target_max_dd / 100.0 # Umrechnung in Dezimalzahl für Vergleiche
 
     if not strategies_data:
         print("Keine Strategien zum Optimieren gefunden.")
         return None
 
-    print("1/3: Analysiere Einzel-Performance jeder Strategie...")
+    # --- 1. Analysiere Einzel-Performance & filtere nach Max DD ---
+    print("1/3: Analysiere Einzel-Performance & filtere nach Max DD...")
     single_strategy_results = []
 
-    # Der Schlüssel im übergebenen strategies_data ist der Dateiname (z.B. config_...json)
     for filename, strat_data in tqdm(strategies_data.items(), desc="Bewerte Einzelstrategien"):
-        # Übergebe dem Simulator die Daten für die eine Strategie.
-        # Der Simulator erwartet Keys im Format Symbol_Timeframe
         strategy_key = f"{strat_data['symbol']}_{strat_data['timeframe']}"
         sim_data = {strategy_key: strat_data}
-
-        # Stelle sicher, dass data vorhanden ist
         if 'data' not in strat_data or strat_data['data'].empty:
             print(f"WARNUNG: Keine Daten für {filename} in Einzelanalyse.")
             continue
@@ -42,70 +40,65 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
         result = run_portfolio_simulation(start_capital, sim_data, start_date, end_date)
 
         if result and not result.get("liquidation_date"):
-            # Wir verwenden eine risikoadjustierte Rendite als Score
-            # (z.B. Calmar Ratio: PnL / MaxDD)
-            max_dd_pct = result.get('max_drawdown_pct', 100.0) # Standard 100% DD, falls nicht vorhanden
-            if max_dd_pct <= 0: max_dd_pct = 1.0 # Vermeide Division durch Null, setze auf minimalen DD
+            # Max DD aus Ergebnis holen (als Dezimalzahl)
+            # Nutze 1.0 (100%) als Fallback, wenn Schlüssel fehlt
+            actual_max_dd = result.get('max_drawdown_pct', 100.0) / 100.0 
             
-            # Teile PnL durch MaxDD in Prozent (nicht als Dezimalzahl)
-            score = result['total_pnl_pct'] / max_dd_pct 
-            
-            single_strategy_results.append({
-                'filename': filename,
-                'score': score,
-                'result': result # Speichere das vollständige Ergebnis
-            })
-        else:
-             print(f"Einzelstrategie {filename} führte zur Liquidation oder fehlgeschlagen.")
+            # *** NEU: Filter nach target_max_dd ***
+            if actual_max_dd <= target_max_dd_decimal:
+                # Füge nur Strategien hinzu, die die Bedingung erfüllen
+                single_strategy_results.append({
+                    'filename': filename,
+                    'result': result # Speichere das vollständige Ergebnis
+                })
+            # else:
+                # Optional: Logge verworfene Strategien
+                # print(f"Info: Einzelstrategie {filename} verworfen (Max DD {actual_max_dd*100:.2f}% > {target_max_dd:.2f}%)")
+        # else:
+            # Optional: Logge liquidierte Strategien
+            # print(f"Info: Einzelstrategie {filename} führte zur Liquidation.")
 
 
     if not single_strategy_results:
-        print("Keine einzige Strategie war für sich allein überlebensfähig. Portfolio-Optimierung nicht möglich.")
-        return None
+        print(f"Keine einzige Strategie erfüllte die Bedingung Max DD <= {target_max_dd:.2f}%. Portfolio-Optimierung nicht möglich.")
+        return {"optimal_portfolio": [], "final_result": None} # Gebe leeres Ergebnis zurück
 
-    # Sortiere nach dem besten Score, um den "Star-Spieler" zu finden
-    single_strategy_results.sort(key=lambda x: x['score'], reverse=True)
+    # --- 2. Finde den "Star-Spieler" basierend auf HÖCHSTEM PROFIT unter den gefilterten ---
+    # Sortiere nach Endkapital (absteigend)
+    single_strategy_results.sort(key=lambda x: x['result']['end_capital'], reverse=True)
 
     best_portfolio_files = [single_strategy_results[0]['filename']]
-    best_portfolio_score = single_strategy_results[0]['score']
     best_portfolio_result = single_strategy_results[0]['result']
+    best_end_capital = best_portfolio_result['end_capital'] # Merke dir das beste Kapital
 
-    # Pool der verbleibenden Kandidaten
+    # Pool der verbleibenden Kandidaten (alle, außer dem besten)
     candidate_pool = [res['filename'] for res in single_strategy_results[1:]]
 
-    print(f"2/3: Star-Spieler gefunden: {best_portfolio_files[0]} (Score: {best_portfolio_score:.2f})")
+    print(f"2/3: Beste Einzelstrategie (unter Max DD): {best_portfolio_files[0]} (Endkapital: {best_end_capital:.2f} USDT, Max DD: {best_portfolio_result['max_drawdown_pct']:.2f}%)")
     print("3/3: Suche die besten Team-Kollegen...")
 
-    # Greedy-Algorithmus: Füge schrittweise die beste nächste Strategie hinzu
+    # --- 3. Greedy-Algorithmus: Füge schrittweise die Strategie hinzu, die den Profit MAXIMIERT, ohne Max DD zu verletzen ---
     while True:
         best_next_addition = None
-        best_score_with_addition = best_portfolio_score
-        current_best_result_for_addition = best_portfolio_result # Merke dir das beste Ergebnis dieser Runde
+        best_capital_with_addition = best_end_capital # Starte mit dem Kapital des aktuellen besten Portfolios
+        current_best_result_for_addition = best_portfolio_result # Merke dir das Ergebnis dieser Runde
 
         progress_bar = tqdm(candidate_pool, desc=f"Teste Team mit {len(best_portfolio_files)+1} Mitgliedern")
         for candidate_file in progress_bar:
             current_team_files = best_portfolio_files + [candidate_file]
 
-            # Stelle sicher, dass keine Duplikate (gleicher Coin/Timeframe) im Team sind
+            # Eindeutigkeitsprüfung (gleicher Coin/Timeframe)
             unique_check = set()
             is_valid_team = True
             for f in current_team_files:
                 strat_info = strategies_data.get(f)
-                if not strat_info: # Sollte nicht passieren, aber sicher ist sicher
-                    is_valid_team = False
-                    break
+                if not strat_info: is_valid_team = False; break
                 key = strat_info['symbol'] + strat_info['timeframe']
-                if key in unique_check:
-                    is_valid_team = False
-                    break
+                if key in unique_check: is_valid_team = False; break
                 unique_check.add(key)
+            if not is_valid_team: continue
 
-            if not is_valid_team:
-                # print(f"Überspringe ungültiges Team: {current_team_files}") # Zum Debuggen
-                continue
-
-            # Stelle die Daten für den Simulator zusammen
-            # Der Simulator erwartet Keys im Format Symbol_Timeframe
+            # Daten für Simulator zusammenstellen
             current_team_data = {}
             valid_data_for_sim = True
             for fname in current_team_files:
@@ -114,50 +107,49 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
                       sim_key = f"{strat_d['symbol']}_{strat_d['timeframe']}"
                       current_team_data[sim_key] = strat_d
                  else:
-                      valid_data_for_sim = False
-                      print(f"WARNUNG: Fehlende Daten für {fname} im Team-Test.")
-                      break # Dieses Team kann nicht simuliert werden
+                      valid_data_for_sim = False; break
+            if not valid_data_for_sim: continue
 
-            if not valid_data_for_sim:
-                continue
-
+            # Portfolio simulieren
             result = run_portfolio_simulation(start_capital, current_team_data, start_date, end_date)
 
+            # Prüfen ob Ergebnis gültig UND Max DD eingehalten wird
             if result and not result.get("liquidation_date"):
-                max_dd_pct = result.get('max_drawdown_pct', 100.0)
-                if max_dd_pct <= 0: max_dd_pct = 1.0
-                score = result['total_pnl_pct'] / max_dd_pct
-
-                if score > best_score_with_addition:
-                    best_score_with_addition = score
+                actual_max_dd = result.get('max_drawdown_pct', 100.0) / 100.0
+                
+                # *** NEUE BEDINGUNG: Prüfe Max DD UND ob Endkapital besser ist ***
+                if actual_max_dd <= target_max_dd_decimal and result['end_capital'] > best_capital_with_addition:
+                    # Dieses Team ist besser als das bisher beste dieser Runde
+                    best_capital_with_addition = result['end_capital']
                     best_next_addition = candidate_file
-                    current_best_result_for_addition = result # Aktualisiere das beste Ergebnis
+                    current_best_result_for_addition = result # Aktualisiere das beste Ergebnis dieser Runde
 
-        # Prüfe, ob eine Verbesserung gefunden wurde
+        # Prüfe, ob eine Verbesserung gefunden wurde (best_next_addition ist nicht None)
         if best_next_addition:
-            print(f"-> Füge hinzu: {best_next_addition} (Neuer Score: {best_score_with_addition:.2f})")
+            # Eine bessere Kombination wurde gefunden
+            print(f"-> Füge hinzu: {best_next_addition} (Neues Kapital: {best_capital_with_addition:.2f} USDT, Max DD: {current_best_result_for_addition['max_drawdown_pct']:.2f}%)")
             best_portfolio_files.append(best_next_addition)
-            best_portfolio_score = best_score_with_addition
+            best_end_capital = best_capital_with_addition # Aktualisiere globales bestes Kapital
             best_portfolio_result = current_best_result_for_addition # Übernehme das beste Ergebnis
             candidate_pool.remove(best_next_addition) # Entferne aus Kandidaten
         else:
-            # Keine weitere Verbesserung möglich, der Algorithmus endet hier.
-            print("Keine weitere Verbesserung durch Hinzufügen von Strategien gefunden. Optimierung beendet.")
+            # Keine weitere Verbesserung durch Hinzufügen möglich oder alle Kandidaten verletzen Max DD
+            print("Keine weitere Verbesserung des Profits (unter Einhaltung des Max DD) durch Hinzufügen von Strategien gefunden. Optimierung beendet.")
             break # Verlasse die while-Schleife
 
-    # Speichere das Ergebnis im artifacts Verzeichnis (optional)
+    # --- Ergebnisse speichern ---
     try:
         results_dir = os.path.join(PROJECT_ROOT, 'artifacts', 'results')
         os.makedirs(results_dir, exist_ok=True)
         output_path = os.path.join(results_dir, 'optimization_results.json')
-        # Speichere nur die Dateinamen des optimalen Portfolios
+        # Speichere die Dateinamen des finalen Portfolios
         save_data = {"optimal_portfolio": best_portfolio_files}
         with open(output_path, 'w') as f:
             json.dump(save_data, f, indent=4)
-        print(f"Optimales Portfolio in '{output_path}' gespeichert.")
+        print(f"Optimales Portfolio (Max DD <= {target_max_dd:.2f}%) in '{output_path}' gespeichert.")
     except Exception as e:
         print(f"Fehler beim Speichern der Optimierungsergebnisse: {e}")
 
 
-    # Gib das vollständige Ergebnis des besten Portfolios zurück
+    # Gib das finale beste Portfolio und sein Ergebnis zurück
     return {"optimal_portfolio": best_portfolio_files, "final_result": best_portfolio_result}
