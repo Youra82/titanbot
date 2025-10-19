@@ -1,0 +1,15 @@
+{
+    "optimal_portfolio": [
+        "config_BIOUSDTUSDT_6h_macd.json",
+        "config_AAVEUSDTUSDT_1d.json",
+        "config_SOLUSDTUSDT_6h.json",
+        "config_ADAUSDTUSDT_1d.json",
+        "config_ETHUSDTUSDT_1d.json",
+        "config_DOGEUSDTUSDT_1d.json",
+        "config_XRPUSDTUSDT_1d.json",
+        "config_SOLUSDTUSDT_1d.json",
+        "config_ETHUSDTUSDT_2h.json",
+        "config_XRPUSDTUSDT_2h.json",
+        "config_ETHUSDTUSDT_6h.json"
+    ]
+}
