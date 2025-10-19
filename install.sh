@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# --- NEU: Not-Aus-Schalter ---
-# Beendet das Skript sofort, wenn ein Befehl fehlschlägt.
+# --- Not-Aus-Schalter ---
 set -e
 
 GREEN='\033[0;32m'
@@ -10,49 +9,55 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo -e "${BLUE}======================================================="
-echo "    JaegerBot Installations-Skript (Version mit LFS)"
+# *** TITEL GEÄNDERT ***
+echo "         TitanBot Installations-Skript"
 echo "=======================================================${NC}"
 
 # --- System-Abhängigkeiten installieren ---
-echo -e "\n${YELLOW}1/5: Aktualisiere Paketlisten und installiere System-Abhängigkeiten...${NC}"
-sudo apt-get update
-sudo apt-get install -y python3.12 python3.12-venv git curl
-
-# --- Git LFS (Large File Storage) installieren ---
-echo -e "\n${YELLOW}2/5: Installiere Git Large File Storage (LFS) für große Dateien...${NC}"
-curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-sudo apt-get install -y git-lfs
-git lfs install
-echo -e "${GREEN}✔ Git LFS erfolgreich installiert und konfiguriert.${NC}"
+echo -e "\n${YELLOW}1/4: Aktualisiere Paketlisten und installiere System-Abhängigkeiten...${NC}"
+# Prüfe, ob sudo benötigt wird (z.B. nicht in Docker als root)
+if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; else SUDO=""; fi
+$SUDO apt-get update
+# *** Python 3.12 Annahme beibehalten, ggf. anpassen ***
+$SUDO apt-get install -y python3.12 python3.12-venv git curl jq 
+echo -e "${GREEN}✔ System-Abhängigkeiten installiert.${NC}"
 
 # --- Python Virtuelle Umgebung einrichten ---
-echo -e "\n${YELLOW}3/5: Erstelle eine isolierte Python-Umgebung (.venv)...${NC}"
-python3 -m venv .venv
+echo -e "\n${YELLOW}2/4: Erstelle eine isolierte Python-Umgebung (.venv)...${NC}"
+python3.12 -m venv .venv # Explizit Version nutzen
 echo -e "${GREEN}✔ Virtuelle Umgebung wurde erstellt.${NC}"
 
 # --- Python-Bibliotheken installieren ---
-echo -e "\n${YELLOW}4/5: Aktiviere die virtuelle Umgebung und installiere die notwendigen Python-Bibliotheken...${NC}"
+echo -e "\n${YELLOW}3/4: Aktiviere die virtuelle Umgebung und installiere Python-Bibliotheken...${NC}"
 source .venv/bin/activate
 pip install --upgrade pip
+# Prüfe ob requirements.txt existiert
+if [ ! -f "requirements.txt" ]; then
+    echo -e "${RED}FEHLER: requirements.txt nicht gefunden!${NC}"
+    deactivate
+    exit 1
+fi
 pip install -r requirements.txt
 echo -e "${GREEN}✔ Alle Python-Bibliotheken wurden erfolgreich installiert.${NC}"
 deactivate
 
 # --- Abschluss ---
-echo -e "\n${YELLOW}5/5: Setze Ausführungsrechte für alle .sh-Skripte...${NC}"
+echo -e "\n${YELLOW}4/4: Setze Ausführungsrechte für alle .sh-Skripte...${NC}"
 chmod +x *.sh
 
 echo -e "\n${GREEN}======================================================="
 echo "✅  Installation erfolgreich abgeschlossen!"
 echo ""
-echo "WICHTIG: Wenn du Modelle von GitHub verwendest, lade sie jetzt herunter:"
-echo "     ( git lfs pull )"
-echo ""
+# *** MELDUNGEN ANGEPASST ***
 echo "Nächste Schritte:"
-echo "  1. Erstelle die 'secret.json' Datei mit deinen API-Keys."
+echo "  1. Erstelle/Bearbeite die 'secret.json' Datei mit deinen API-Keys."
 echo "     ( nano secret.json )"
-echo "  2. Führe die Pipeline aus, um Modelle direkt auf dem Server zu erstellen:"
-echo "     ( bash ./run_pipeline.sh )"
-echo "  3. Starte den Live-Bot mit:"
+echo "  2. Führe die Optimierungs-Pipeline aus, um SMC-Strategien zu finden:"
+echo "     ( ./run_pipeline.sh )"
+echo "  3. Bearbeite 'settings.json', um die gewünschten Strategien zu aktivieren."
+echo "     ( nano settings.json )"
+echo "  4. Richte einen Cronjob ein, um 'master_runner.py' regelmäßig zu starten."
+echo "     ( crontab -e )"
+echo "  5. Starte den Live-Bot manuell (optional zum Testen):"
 echo "     ( python3 master_runner.py )"
 echo -e "=======================================================${NC}"
