@@ -1,0 +1,13 @@
+ccxt==4.3.5
+numpy
+optuna
+pandas
+pydantic
+requests
+scipy
+ta
+tqdm
+tensorflow-cpu==2.16.1
+scikit-learn
+joblib
+pytest
