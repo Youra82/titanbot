@@ -24,7 +24,7 @@ Führe diese Schritte aus, um den TitanBot auf einem frischen Ubuntu-Server in B
 
 ```bash
 # Ersetze <DEIN_GITHUB_REPO_LINK> mit dem Link zu deinem neuen TitanBot Repo
-git clone <DEIN_GITHUB_REPO_LINK> titanbot
+git clone https://github.com/Youra82/titanbot.git
 cd titanbot
 ```
 
