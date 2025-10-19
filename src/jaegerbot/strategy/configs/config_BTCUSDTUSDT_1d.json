@@ -1,0 +1,21 @@
+{
+    "market": {
+        "symbol": "BTC/USDT:USDT",
+        "timeframe": "1d"
+    },
+    "strategy": {
+        "prediction_threshold": 0.62
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 2.0,
+        "risk_reward_ratio": 5.0,
+        "leverage": 25,
+        "trailing_stop_activation_rr": 1.92,
+        "trailing_stop_callback_rate_pct": 0.5
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    }
+}
