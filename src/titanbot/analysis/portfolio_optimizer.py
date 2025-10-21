@@ -1,4 +1,4 @@
-# src/titanbot/analysis/portfolio_optimizer.py (Version für TitanBot SMC mit MaxDD Constraint)
+# src/titanbot/analysis/portfolio_optimizer.py (Version für TitanBot SMC mit MaxDD Constraint & Coin-Kollisionsschutz)
 import pandas as pd
 import itertools
 from tqdm import tqdm
@@ -16,10 +16,10 @@ from titanbot.analysis.portfolio_simulator import run_portfolio_simulation
 def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date, target_max_dd: float):
     """
     Findet die Kombination von SMC-Strategien, die das höchste Endkapital liefert,
-    während der maximale Drawdown unter dem Zielwert (`target_max_dd`) bleibt.
+    während der maximale Drawdown unter dem Zielwert (`target_max_dd`) bleibt UND jeder Coin nur einmal vorkommt.
     Verwendet einen modifizierten Greedy-Algorithmus.
     """
-    print(f"\n--- Starte automatische Portfolio-Optimierung (SMC) mit Max DD <= {target_max_dd:.2f}% ---")
+    print(f"\n--- Starte automatische Portfolio-Optimierung (SMC) mit Max DD <= {target_max_dd:.2f}% & ohne Coin-Kollisionen ---")
     target_max_dd_decimal = target_max_dd / 100.0 # Umrechnung in Dezimalzahl für Vergleiche
 
     if not strategies_data:
@@ -42,8 +42,8 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
         if result and not result.get("liquidation_date"):
             # Max DD aus Ergebnis holen (als Dezimalzahl)
             # Nutze 1.0 (100%) als Fallback, wenn Schlüssel fehlt
-            actual_max_dd = result.get('max_drawdown_pct', 100.0) / 100.0 
-            
+            actual_max_dd = result.get('max_drawdown_pct', 100.0) / 100.0
+
             # *** NEU: Filter nach target_max_dd ***
             if actual_max_dd <= target_max_dd_decimal:
                 # Füge nur Strategien hinzu, die die Bedingung erfüllen
@@ -77,7 +77,17 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
     print(f"2/3: Beste Einzelstrategie (unter Max DD): {best_portfolio_files[0]} (Endkapital: {best_end_capital:.2f} USDT, Max DD: {best_portfolio_result['max_drawdown_pct']:.2f}%)")
     print("3/3: Suche die besten Team-Kollegen...")
 
-    # --- 3. Greedy-Algorithmus: Füge schrittweise die Strategie hinzu, die den Profit MAXIMIERT, ohne Max DD zu verletzen ---
+    # --- 3. Greedy-Algorithmus: Füge schrittweise die Strategie hinzu, die den Profit MAXIMIERT, ohne Max DD zu verletzen UND ohne Coin-Kollision ---
+
+    selected_coins = set() # NEU: Set für bereits ausgewählte Coins
+    # Füge den Coin der besten Einzelstrategie hinzu (falls vorhanden)
+    if best_portfolio_files: # NEU
+        initial_best_strat_data = strategies_data.get(best_portfolio_files[0]) # NEU
+        if initial_best_strat_data: # NEU
+            # Extrahiere Coin-Symbol (z.B. BTC aus BTC/USDT:USDT)
+            initial_coin = initial_best_strat_data['symbol'].split('/')[0] # NEU
+            selected_coins.add(initial_coin) # NEU
+
     while True:
         best_next_addition = None
         best_capital_with_addition = best_end_capital # Starte mit dem Kapital des aktuellen besten Portfolios
@@ -85,9 +95,23 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
 
         progress_bar = tqdm(candidate_pool, desc=f"Teste Team mit {len(best_portfolio_files)+1} Mitgliedern")
         for candidate_file in progress_bar:
+
+            # --- START: NEUER CODE ZUR KOLLISIONSPRÜFUNG ---
+            candidate_strat_data = strategies_data.get(candidate_file)
+            if not candidate_strat_data:
+                continue # Überspringe, falls Daten für Kandidat fehlen
+
+            candidate_coin = candidate_strat_data['symbol'].split('/')[0]
+
+            # Prüfe, ob der Coin dieses Kandidaten bereits im Portfolio ist
+            if candidate_coin in selected_coins:
+                continue # Überspringe diesen Kandidaten, da der Coin schon vorhanden ist
+            # --- ENDE: NEUER CODE ---
+
+            # Bestehender Code:
             current_team_files = best_portfolio_files + [candidate_file]
 
-            # Eindeutigkeitsprüfung (gleicher Coin/Timeframe)
+            # Eindeutigkeitsprüfung (gleicher Coin/Timeframe - sollte durch obige Prüfung unnötig sein, aber sicher ist sicher)
             unique_check = set()
             is_valid_team = True
             for f in current_team_files:
@@ -102,12 +126,12 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
             current_team_data = {}
             valid_data_for_sim = True
             for fname in current_team_files:
-                 strat_d = strategies_data.get(fname)
-                 if strat_d and 'data' in strat_d and not strat_d['data'].empty:
-                      sim_key = f"{strat_d['symbol']}_{strat_d['timeframe']}"
-                      current_team_data[sim_key] = strat_d
-                 else:
-                      valid_data_for_sim = False; break
+                strat_d = strategies_data.get(fname)
+                if strat_d and 'data' in strat_d and not strat_d['data'].empty:
+                    sim_key = f"{strat_d['symbol']}_{strat_d['timeframe']}"
+                    current_team_data[sim_key] = strat_d
+                else:
+                    valid_data_for_sim = False; break
             if not valid_data_for_sim: continue
 
             # Portfolio simulieren
@@ -116,7 +140,7 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
             # Prüfen ob Ergebnis gültig UND Max DD eingehalten wird
             if result and not result.get("liquidation_date"):
                 actual_max_dd = result.get('max_drawdown_pct', 100.0) / 100.0
-                
+
                 # *** NEUE BEDINGUNG: Prüfe Max DD UND ob Endkapital besser ist ***
                 if actual_max_dd <= target_max_dd_decimal and result['end_capital'] > best_capital_with_addition:
                     # Dieses Team ist besser als das bisher beste dieser Runde
@@ -129,12 +153,21 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
             # Eine bessere Kombination wurde gefunden
             print(f"-> Füge hinzu: {best_next_addition} (Neues Kapital: {best_capital_with_addition:.2f} USDT, Max DD: {current_best_result_for_addition['max_drawdown_pct']:.2f}%)")
             best_portfolio_files.append(best_next_addition)
+
+            # --- START: NEUER CODE ZUM AKTUALISIEREN DES SETS ---
+            added_strat_data = strategies_data.get(best_next_addition)
+            if added_strat_data:
+                added_coin = added_strat_data['symbol'].split('/')[0]
+                selected_coins.add(added_coin)
+            # --- ENDE: NEUER CODE ---
+
+            # Bestehender Code:
             best_end_capital = best_capital_with_addition # Aktualisiere globales bestes Kapital
             best_portfolio_result = current_best_result_for_addition # Übernehme das beste Ergebnis
             candidate_pool.remove(best_next_addition) # Entferne aus Kandidaten
         else:
-            # Keine weitere Verbesserung durch Hinzufügen möglich oder alle Kandidaten verletzen Max DD
-            print("Keine weitere Verbesserung des Profits (unter Einhaltung des Max DD) durch Hinzufügen von Strategien gefunden. Optimierung beendet.")
+            # Keine weitere Verbesserung durch Hinzufügen möglich oder alle Kandidaten verletzen Max DD/Coin-Constraint
+            print("Keine weitere Verbesserung des Profits (unter Einhaltung des Max DD & ohne Coin-Kollision) durch Hinzufügen von Strategien gefunden. Optimierung beendet.")
             break # Verlasse die while-Schleife
 
     # --- Ergebnisse speichern ---
