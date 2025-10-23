@@ -1,0 +1,22 @@
+{
+    "market": {
+        "symbol": "XRP/USDT:USDT",
+        "timeframe": "15m"
+    },
+    "strategy": {
+        "swingsLength": 46,
+        "ob_mitigation": "High/Low"
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 0.99,
+        "risk_reward_ratio": 1.84,
+        "leverage": 9,
+        "trailing_stop_activation_rr": 2.48,
+        "trailing_stop_callback_rate_pct": 2.5
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    }
+}
