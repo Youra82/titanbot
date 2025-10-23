@@ -139,7 +139,8 @@ def test_full_titanbot_workflow_on_bitget(test_setup):
 
     # Mocke 'get_titan_signal', damit es ein Kaufsignal zurückgibt, wenn check_and_open_new_position es aufruft
     with patch('titanbot.utils.trade_manager.get_titan_signal', return_value=('buy', None)):
-        check_and_open_new_position(exchange, params, telegram_config, logger)
+        # ***** KORREKTUR HIER: Füge None für model und scaler hinzu *****
+        check_and_open_new_position(exchange, None, None, params, telegram_config, logger)
 
     print("-> Warte 5s auf Order-Ausführung und Bestätigung...")
     time.sleep(5) # Gib der Börse und der API Zeit
