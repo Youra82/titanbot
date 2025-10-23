@@ -142,7 +142,6 @@ def test_full_titanbot_workflow_on_bitget(test_setup):
     trigger_orders = exchange.fetch_open_trigger_orders(symbol) 
     
     # ***** KORRIGIERTE ASSERTION *****
-    # Wir erwarten jetzt genau 2 Orders (1 TP, 1 TSL oder 1 SL Fallback)
     assert len(trigger_orders) == 2, f"FEHLER: Falsche Anzahl an SL/TP-Orders gefunden ({len(trigger_orders)} statt 2)."
     print("-> ✔ SL & TP Trigger-Orders erfolgreich platziert.")
 
