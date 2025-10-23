@@ -5,9 +5,9 @@ import ccxt
 import os
 import json
 from datetime import datetime
-import pandas as pd # Für ATR Berechnung benötigt
-import ta # Für ATR Berechnung benötigt
-import math # Für math.ceil
+import pandas as pd
+import ta
+import math
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 LOCK_FILE_PATH = os.path.join(PROJECT_ROOT, 'artifacts', 'db', 'trade_lock.json')
@@ -39,12 +39,11 @@ def set_trade_lock(strategy_id, candle_timestamp):
 def housekeeper_routine(exchange, symbol, logger):
     logger.info(f"Starte Aufräum-Routine für {symbol}...")
     try:
-        # Nutze die robustere cancel_all_orders_for_symbol
         cancelled_flag = exchange.cancel_all_orders_for_symbol(symbol)
-        if cancelled_flag > 0: # Gibt 1 bei Erfolg zurück
+        if cancelled_flag > 0:
             logger.info(f"Befehl zum Stornieren aller Orders für {symbol} gesendet.")
         else:
-            logger.info("Keine offenen Orders zum Aufräumen gefunden oder Befehl fehlgeschlagen.")
+            logger.info("Aufräum-Befehl fehlgeschlagen oder keine Orders gefunden.")
     except Exception as e:
         logger.error(f"Fehler während der Aufräum-Routine: {e}", exc_info=True)
 
@@ -52,7 +51,7 @@ def housekeeper_routine(exchange, symbol, logger):
 def check_and_open_new_position(exchange, model, scaler, params, telegram_config, logger):
     """
     Prüft auf neue SMC-Signale und eröffnet eine Position,
-    jetzt mit ATR-basiertem Stop-Loss und JaegerBot Order-Logik.
+    jetzt mit ATR-basiertem Stop-Loss und korrekter Bitget Order-Logik.
     """
     symbol = params['market']['symbol']
     timeframe = params['market']['timeframe']
@@ -61,15 +60,13 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
 
     logger.info("Suche nach neuen SMC-Signalen...")
     swing_length = params.get('strategy', {}).get('swingsLength', 50)
-    # Lade mehr Daten für ATR(14) + SMC Engine
-    limit_needed = max(swing_length * 3, 100) # Mindestens 100 Kerzen
+    limit_needed = max(swing_length * 3, 100)
     data = exchange.fetch_recent_ohlcv(symbol, timeframe, limit=limit_needed)
 
-    if len(data) < 15: # Mindestanzahl für ATR(14)
+    if len(data) < 15:
         logger.warning(f"Nicht genügend Daten ({len(data)}) für ATR-Berechnung geladen. Überspringe.")
         return
 
-    # --- ATR Berechnen ---
     try:
         atr_indicator = ta.volatility.AverageTrueRange(high=data['high'], low=data['low'], close=data['close'], window=14)
         data['atr'] = atr_indicator.average_true_range()
@@ -85,19 +82,16 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
     current_candle = data.iloc[-1]
     last_candle_timestamp = last_complete_candle.name 
 
-    # --- Lock-Datei prüfen ---
     last_trade_timestamp_str = get_trade_lock(strategy_id)
     if last_trade_timestamp_str and last_trade_timestamp_str == last_candle_timestamp.strftime('%Y-%m-%d %H:%M:%S'):
         logger.info(f"Signal für Kerze {last_candle_timestamp} wurde bereits gehandelt. Überspringe.")
         return
 
-    # --- SMC Analyse (bis zur letzten abgeschlossenen Kerze) ---
     logger.info(f"Starte SMCEngine-Analyse für {len(data)-1} Kerzen...")
     smc_params = params.get('strategy', {})
     engine = SMCEngine(settings=smc_params)
     smc_results = engine.process_dataframe(data[['open','high','low','close']].iloc[:-1].copy())
 
-    # --- Signal Logik ---
     side, _ = get_titan_signal(smc_results, current_candle, params)
 
     if side:
@@ -120,29 +114,27 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
              logger.error(f"Ungültiger Entry-Preis ({market_entry_price}) erhalten. Breche Trade ab.")
              return
 
-        # --- ATR-basierter Stop-Loss ---
         current_atr = last_complete_candle.get('atr')
         if pd.isna(current_atr) or current_atr <= 0:
             logger.error(f"Ungültiger ATR-Wert ({current_atr}) für SL-Berechnung. Breche Trade ab.")
             return
 
-        atr_multiplier_sl = 2.0 # Standard, kann aus Config kommen
+        atr_multiplier_sl = 2.0 
         sl_distance = current_atr * atr_multiplier_sl
-        min_sl_pct = 0.005 # 0.5% min SL (aus Backtester)
+        min_sl_pct = 0.005 
         sl_distance_min = market_entry_price * min_sl_pct
-        sl_distance = max(sl_distance, sl_distance_min) # Nimm den größeren von ATR oder Min-%
+        sl_distance = max(sl_distance, sl_distance_min) 
 
         if sl_distance <= 0:
             logger.error(f"Stop-Loss-Distanz ist Null oder negativ ({sl_distance}). Breche Trade ab."); return
 
         sl_distance_pct_equivalent = sl_distance / market_entry_price
-        if sl_distance_pct_equivalent <= 1e-6: # Div by zero check
+        if sl_distance_pct_equivalent <= 1e-6:
              logger.error(f"Prozentualer SL-Abstand ist Null. Breche Trade ab."); return
         
         notional_value = risk_amount_usd / sl_distance_pct_equivalent
         amount = notional_value / market_entry_price
         
-        # Positionsgrößen-Limits (aus Backtester)
         max_allowed_effective_leverage = 10 
         absolute_max_notional_value = 1000000
         min_notional = 5.0
@@ -152,10 +144,9 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         
         if notional_value < min_notional:
             logger.warning(f"Berechnete Positionsgröße ({notional_value:.2f} USDT) unter Minimum ({min_notional:.2f} USDT). Überspringe Trade.")
-            set_trade_lock(strategy_id, last_candle_timestamp) # Sperre trotzdem setzen, um Spam zu vermeiden
+            set_trade_lock(strategy_id, last_candle_timestamp)
             return
         
-        # Menge (Amount) basierend auf finalem Notional Value neu berechnen
         amount = notional_value / market_entry_price
         
         stop_loss_price = market_entry_price - sl_distance if side == 'buy' else market_entry_price + sl_distance
@@ -192,10 +183,9 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             actual_entry_price = float(final_position.get('entryPrice', market_entry_price))
             logger.info(f"Position bestätigt: {final_position['side']} {final_amount:.6f} @ ${actual_entry_price:.4f}")
 
-            # Neuberechnung SL/TP basierend auf tatsächlichem Entry Preis
-            sl_distance = current_atr * atr_multiplier_sl # ATR bleibt gleich
+            sl_distance = current_atr * atr_multiplier_sl
             sl_distance_min = actual_entry_price * min_sl_pct
-            sl_distance = max(sl_distance, sl_distance_min) # Erneut prüfen
+            sl_distance = max(sl_distance, sl_distance_min)
             
             stop_loss_price = actual_entry_price - sl_distance if side == 'buy' else actual_entry_price + sl_distance
             take_profit_price = actual_entry_price + sl_distance * p['risk_reward_ratio'] if side == 'buy' else actual_entry_price - sl_distance * p['risk_reward_ratio']
@@ -205,16 +195,21 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             
             logger.info(f"Platziere TP @ ${tp_rounded:.4f} und TSL (basierend auf Config) für Amount {final_amount:.6f}")
 
-            # --- JAEGERBOT ORDER-LOGIK START ---
+            # --- KORRIGIERTE ORDER-LOGIK (BASIEREND AUF JAEGERBOT & DOKU) ---
 
-            # 1. Platziere Take Profit (als normale Trigger-Order)
-            tp_order = exchange.place_trigger_market_order(symbol, 'sell' if side == 'buy' else 'buy', final_amount, tp_rounded, {'reduceOnly': True})
+            # 1. Platziere Take Profit (als 'tp_plan')
+            tp_order = exchange.place_trigger_market_order(
+                symbol, 
+                'sell' if side == 'buy' else 'buy', 
+                final_amount, 
+                tp_rounded, 
+                {'reduceOnly': True},
+                plan_type='tp_plan' # NEU: Korrekter planType für TP
+            )
 
-            # 2. Hole TSL-Parameter aus Config
+            # 2. Hole TSL-Parameter
             activation_rr = p.get('trailing_stop_activation_rr', 1.5)
-            callback_rate_decimal = p.get('trailing_stop_callback_rate_pct', 0.5) / 100.0 # Umwandlung in Dezimal
-            
-            # Berechne Aktivierungspreis
+            callback_rate_decimal = p.get('trailing_stop_callback_rate_pct', 0.5) / 100.0
             activation_price = actual_entry_price + sl_distance * activation_rr if side == 'buy' else actual_entry_price - sl_distance * activation_rr
             activation_price_rounded = float(exchange.exchange.price_to_precision(symbol, activation_price))
 
@@ -225,14 +220,21 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                     symbol,
                     'sell' if side == 'buy' else 'buy',
                     final_amount,
-                    activation_price_rounded, # Wann der TSL aktiviert wird
-                    callback_rate_decimal,    # Wie weit er trailed (als Dezimal)
+                    activation_price_rounded,
+                    callback_rate_decimal,
                     {'reduceOnly': True}
                 )
             except Exception as tsl_e:
                 logger.error(f"FEHLER: Platzierung des Trailing-Stop fehlgeschlagen: {tsl_e}. Platziere stattdessen fixen SL.")
-                # Fallback auf fixen SL, falls TSL fehlschlägt
-                tsl_order = exchange.place_trigger_market_order(symbol, 'sell' if side == 'buy' else 'buy', final_amount, sl_rounded, {'reduceOnly': True})
+                # Fallback: Platziere fixen SL (als 'sl_plan')
+                tsl_order = exchange.place_trigger_market_order(
+                    symbol, 
+                    'sell' if side == 'buy' else 'buy', 
+                    final_amount, 
+                    sl_rounded, 
+                    {'reduceOnly': True},
+                    plan_type='sl_plan' # NEU: Korrekter planType für SL
+                )
             
             # 3. Prüfen, ob BEIDE Orders platziert wurden
             if not tp_order or not tsl_order:
@@ -240,9 +242,8 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                 housekeeper_routine(exchange, symbol, logger)
                 raise Exception("SL/TP Platzierung fehlgeschlagen.")
 
-            # --- JAEGERBOT ORDER-LOGIK ENDE ---
+            # --- KORRIGIERTE ORDER-LOGIK ENDE ---
 
-            # Sperre setzen, NACHDEM Orders platziert wurden
             set_trade_lock(strategy_id, last_candle_timestamp)
 
             message = (f"🤖 TITAN Signal für *{account_name}* ({symbol} {timeframe}, {side.upper()})\n"
@@ -255,15 +256,11 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
 
         except ccxt.InsufficientFunds as e:
              logger.error(f"Fehler 'InsufficientFunds' beim Trade: {e}")
-             # Lock nicht entfernen, da Guthaben fehlt
         except ccxt.ExchangeError as e:
              logger.error(f"Börsen-Fehler beim Trade: {e}", exc_info=True)
-             # Lock nicht entfernen, da Börsenproblem vorliegen könnte
         except Exception as e:
             logger.error(f"Allgemeiner Fehler beim Eröffnen des Trades: {e}", exc_info=True)
-            # Lock hier ggf. entfernen? Risiko: Endlosschleife
-            # clear_trade_lock(strategy_id) 
-            housekeeper_routine(exchange, symbol, logger) # Aufräumen versuchen
+            housekeeper_routine(exchange, symbol, logger)
 
 def full_trade_cycle(exchange, model, scaler, params, telegram_config, logger):
     """Der Haupt-Handelszyklus für eine einzelne Strategie."""
@@ -275,7 +272,7 @@ def full_trade_cycle(exchange, model, scaler, params, telegram_config, logger):
             logger.info(f"Offene Position für {symbol} gefunden: {position.get('side')} {position.get('contracts')} @ ${position.get('entryPrice')}. Management durch SL/TP.")
         else:
             housekeeper_routine(exchange, symbol, logger)
-            check_and_open_new_position(exchange, model, scaler, params, telegram_config, logger) # model/scaler werden als None übergeben
+            check_and_open_new_position(exchange, model, scaler, params, telegram_config, logger)
     except ccxt.DDoSProtection as e:
          logger.warning(f"DDoS Protection / Rate Limit: {e}. Warte 10s...")
          time.sleep(10)
@@ -287,7 +284,6 @@ def full_trade_cycle(exchange, model, scaler, params, telegram_config, logger):
          time.sleep(10)
     except ccxt.AuthenticationError as e:
         logger.critical(f"AUTHENTIFIZIERUNGSFEHLER: {e}. API-Schlüssel ungültig? Bot wird für diesen Account gestoppt!", exc_info=True)
-        # sys.exit(1) # Beendet nur diesen Worker-Prozess
     except Exception as e:
         logger.error(f"Unerwarteter Fehler im Haupt-Handelszyklus für {symbol}: {e}", exc_info=True)
         time.sleep(5)
