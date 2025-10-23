@@ -1,6 +1,5 @@
 #!/bin/bash
 # Dieses Skript führt das komplette Test-Sicherheitsnetz aus.
-# *** TITEL GEÄNDERT ***
 echo "--- Starte TitanBot-Sicherheitsnetz ---"
 
 # Aktiviere die virtuelle Umgebung
@@ -11,16 +10,27 @@ fi
 source .venv/bin/activate
 
 # Führe pytest aus. -v für mehr Details, -s um print() Ausgaben anzuzeigen.
-# ACHTUNG: Die Tests müssen erst für TitanBot geschrieben werden!
-echo "WARNUNG: Führe pytest aus, aber die Tests für TitanBot müssen erst implementiert werden."
+echo "Führe Pytest aus (inkl. Live-Workflow-Test)..."
 if python3 -m pytest -v -s; then
-    echo "Pytest erfolgreich durchgelaufen (möglicherweise keine Tests gefunden)."
+    # Exit Code 0: Alle Tests bestanden
+    echo "✅ Pytest erfolgreich durchgelaufen. Alle Tests bestanden."
+    EXIT_CODE=0
 else
-    echo "Pytest fehlgeschlagen."
+    # Anderer Exit Code
+    PYTEST_EXIT_CODE=$?
+    if [ $PYTEST_EXIT_CODE -eq 5 ]; then
+        # Exit Code 5: Keine Tests gefunden
+        echo "⚠️ Pytest beendet: Keine Tests zum Ausführen gefunden."
+        EXIT_CODE=0 # Betrachte dies nicht als Fehler für das Skript
+    else
+        # Anderer Fehler (z.B. Tests fehlgeschlagen)
+        echo "❌ Pytest fehlgeschlagen (Exit Code: $PYTEST_EXIT_CODE)."
+        EXIT_CODE=$PYTEST_EXIT_CODE
+    fi
 fi
-
 
 # Deaktiviere die Umgebung wieder
 deactivate
 
 echo "--- Sicherheitscheck abgeschlossen ---"
+exit $EXIT_CODE # Gib den Pytest-Fehlercode weiter (außer bei Code 5)
