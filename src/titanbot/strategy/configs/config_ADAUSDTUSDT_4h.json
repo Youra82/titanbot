@@ -1,0 +1,22 @@
+{
+    "market": {
+        "symbol": "ADA/USDT:USDT",
+        "timeframe": "4h"
+    },
+    "strategy": {
+        "swingsLength": 79,
+        "ob_mitigation": "Close"
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 2.0,
+        "risk_reward_ratio": 2.18,
+        "leverage": 11,
+        "trailing_stop_activation_rr": 1.45,
+        "trailing_stop_callback_rate_pct": 0.5
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    }
+}
