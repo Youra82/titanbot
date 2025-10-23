@@ -1,11 +1,11 @@
 # /root/titanbot/src/titanbot/utils/exchange.py
+# KORRIGIERTE VERSION - BASIEREND AUF JAEGERBOT-LOGIK
 import ccxt
 import pandas as pd
 from datetime import datetime, timezone, timedelta
 import time
 import logging
 
-# Verwende das Standard-Logging
 logger = logging.getLogger(__name__)
 
 class Exchange:
@@ -107,7 +107,6 @@ class Exchange:
         df = df[~df.index.duplicated(keep='first')].sort_index()
         return df.loc[start_dt:end_dt]
 
-
     def fetch_ticker(self, symbol):
          if not self.markets: return None
          try:
@@ -119,6 +118,8 @@ class Exchange:
     def set_margin_mode(self, symbol, mode='isolated'):
         if not self.markets: return False
         try:
+            # Für Bitget v3 API (die ccxt 4.x verwendet) ist productType oft nicht nötig
+            # aber wir behalten es zur Sicherheit bei, wie im JaegerBot impliziert
             params = {'productType': 'USDT-FUTURES'}
             self.exchange.set_margin_mode(mode, symbol, params=params)
             return True
@@ -129,8 +130,17 @@ class Exchange:
                 logger.error(f"FEHLER: Margin-Modus konnte für {symbol} nicht auf '{mode}' gesetzt werden: {e}")
                 return False
         except Exception as e:
-            logger.error(f"Unerwarteter Fehler bei set_margin_mode für {symbol}: {e}")
-            return False
+            # Fallback für ältere ccxt-Versionen, die productType nicht kennen
+            try:
+                self.exchange.set_margin_mode(mode, symbol)
+                return True
+            except ccxt.ExchangeError as e2:
+                 if 'Margin mode is the same' in str(e2) or '45115' in str(e2): return True
+                 logger.error(f"FEHLER: Margin-Modus (Fallback) konnte nicht gesetzt werden: {e2}")
+                 return False
+            except Exception as e3:
+                 logger.error(f"Unerwarteter Fehler bei set_margin_mode (Fallback): {e3}")
+                 return False
 
     def set_leverage(self, symbol, level=10):
         if not self.markets: return False
@@ -168,11 +178,11 @@ class Exchange:
             logger.error(f"FEHLER beim Erstellen der Market Order ({symbol}, {side}, {amount}): {e}")
             return None
 
-    # *** KORRIGIERTE TRIGGER ORDER FUNKTION ***
-    def place_trigger_market_order(self, symbol, side, amount, trigger_price, params={}, plan_type='normal_plan'):
+    # *** KORRIGIERTE TRIGGER ORDER FUNKTION - WIE JAEGERBOT ***
+    def place_trigger_market_order(self, symbol, side, amount, trigger_price, params={}):
         """ 
         Platziert eine Standard Trigger-Order (Stop-Loss oder Take-Profit).
-        'plan_type' wird hinzugefügt, um 'tp_plan' oder 'sl_plan' zu übergeben.
+        Verwendet die Parameter-Struktur von JaegerBot.
         """
         if not self.markets: return None
         try:
@@ -182,16 +192,17 @@ class Exchange:
                  logger.error(f"FEHLER: Berechneter Trigger-Order-Betrag ist Null ({rounded_amount}).")
                  return None
             
-            # Parameter gemäß Bitget-Doku für "Plan Orders"
+            # Dies ist die einfache Parameterstruktur von JaegerBot
+            # ccxt wandelt 'triggerPrice' in den korrekten API-Parameter um (z.B. stopPrice)
             order_params = {
-                **params, # Übernimmt z.B. reduceOnly
-                'planType': plan_type,             # NEU: 'tp_plan' oder 'sl_plan'
                 'triggerPrice': rounded_price,
-                'triggerPriceType': 'market_price' # Löst basierend auf dem Marktpreis aus (oder 'last_price')
+                'reduceOnly': params.get('reduceOnly', False)
             }
+            order_params.update(params) # Fügt productType etc. hinzu, falls es in params ist
             
-            # 'market' Typ signalisiert ccxt, eine Market-Order auszulösen, wenn der Trigger erreicht wird
             logger.info(f"Sende Trigger Order: Side={side}, Amount={rounded_amount}, Params={order_params}")
+            # WICHTIG: JaegerBot verwendet 'market' als Typ. ccxt erkennt 'triggerPrice'
+            # und erstellt eine Stop-Market (Trigger) Order.
             return self.exchange.create_order(symbol, 'market', side, rounded_amount, params=order_params)
         
         except Exception as e:
@@ -221,8 +232,6 @@ class Exchange:
          if not self.markets: return []
          try:
              # 'stop': True ist der ccxt-Weg, um nach Trigger-Orders zu filtern
-             # Bitget API unterscheidet Plan-Orders. Wir müssen evtl. 'fetchOrders' mit Status 'not_triggered'
-             # ODER 'fetchOpenOrders' mit 'stop': True verwenden. 'stop':True ist der ccxt-Standard.
              params = {'productType': 'USDT-FUTURES', 'stop': True} 
              orders = self.exchange.fetch_open_orders(symbol, params=params)
              return orders
@@ -255,50 +264,58 @@ class Exchange:
             logger.error(f"FEHLER beim Abrufen des USDT-Kontostandes: {e}", exc_info=True)
             return 0
 
+    # *** KORRIGIERTE CANCEL ORDERS FUNKTION - WIE JAEGERBOT ***
     def cancel_all_orders_for_symbol(self, symbol):
+        """Storniert ALLE Order-Typen (Limit, Market if cancellable, Trigger) für ein Symbol."""
         if not self.markets: return 0
         cancelled_count = 0
         try:
-            # Bitget API: 'cancelAllOrders' storniert normale Orders.
-            # Wir brauchen 'cancel_all_plan_orders' für SL/TP.
-            # ccxt's `cancelAllOrders` sollte dies *eigentlich* handhaben, aber wir machen es explizit.
-            
-            # 1. Normale Orders stornieren (falls `cancelAllOrders` nur die macht)
-            # response_normal = self.exchange.cancel_all_orders(symbol, params={'productType': 'USDT-FUTURES'})
-            # logger.info(f"Befehl 'cancel_all_orders' (normal) gesendet. Antwort: {response_normal}")
-            
-            # 2. Plan-Orders (SL/TP/TSL) stornieren
-            # Dies ist ein privater API-Call, den wir über ccxt's `privatePost` machen
-            logger.info("Sende Befehl zum Stornieren aller Plan-Orders (SL/TP/TSL)...")
-            response_plan = self.exchange.privatePost('/api/v2/spot/trade/cancel-all-plan-orders', {
-                'symbol': self.exchange.market_id(symbol),
-                'productType': 'USDT-FUTURES' # Oder 'umcbl' je nach API-Version von ccxt
-            })
-            logger.info(f"Antwort von 'cancel-all-plan-orders': {response_plan}")
-            
-            cancelled_count = 1 # Signalisiert, dass Befehle gesendet wurden
-            time.sleep(1)
-
+            # 1. Normale Orders stornieren
+            # Wir verwenden `cancelAllOrders` ohne `stop:True`, was ccxt als "normale" Orders interpretieren sollte
+            logger.info(f"Sende Befehl 'cancelAllOrders' (Normal) für {symbol}...")
+            self.exchange.cancel_all_orders(symbol, params={'productType': 'USDT-FUTURES'})
+            cancelled_count = 1 # Markiere als erfolgreich gesendet
+            time.sleep(0.5) # Kurze Pause
         except ccxt.ExchangeError as e:
-            if 'Order not found' in str(e) or 'no order to cancel' in str(e).lower() or '22001' in str(e) or '40411' in str(e):
-                logger.info(f"Info: Keine offenen Orders für {symbol} zum Stornieren gefunden.")
+            if 'Order not found' in str(e) or 'no order to cancel' in str(e).lower() or '22001' in str(e):
+                logger.info("Keine normalen Orders zum Stornieren gefunden.")
                 cancelled_count = 1
             else:
-                logger.error(f"FEHLER bei cancel_all_orders (oder Plan-Orders): {e}")
-                cancelled_count = 0
+                 logger.error(f"Fehler beim Stornieren normaler Orders: {e}")
+                 cancelled_count = 0 # Fehler aufgetreten
         except Exception as e:
-            logger.error(f"Unerwarteter FEHLER bei cancel_all_orders: {e}")
+             logger.error(f"Unerwarteter Fehler beim Stornieren normaler Orders: {e}")
+             cancelled_count = 0 # Fehler aufgetreten
+
+        try:
+            # 2. Trigger Orders stornieren (ccxt-Standardweg)
+            logger.info(f"Sende Befehl 'cancelAllOrders' (Trigger/Stop) für {symbol}...")
+            # 'stop': True ist der ccxt-Standardweg, um Trigger/Plan-Orders zu adressieren
+            self.exchange.cancel_all_orders(symbol, params={'productType': 'USDT-FUTURES', 'stop': True})
+            cancelled_count = 1
+            time.sleep(0.5)
+        except ccxt.ExchangeError as e:
+            if 'Order not found' in str(e) or 'no order to cancel' in str(e).lower() or '22001' in str(e):
+                logger.info("Keine Trigger-Orders zum Stornieren gefunden.")
+                cancelled_count = 1
+            else:
+                 logger.error(f"Fehler beim Stornieren von Trigger-Orders: {e}")
+                 cancelled_count = 0
+        except Exception as e:
+            logger.error(f"Unerwarteter Fehler beim Stornieren von Trigger-Orders: {e}")
             cancelled_count = 0
+
         return cancelled_count
 
     def cleanup_all_open_orders(self, symbol):
-        # Ruft die robustere Funktion auf, die (hoffentlich) auch Plan-Orders storniert
+        # Nutzt jetzt die robustere cancel_all_orders Funktion
         return self.cancel_all_orders_for_symbol(symbol)
 
-    # *** KORRIGIERTE TRAILING STOP FUNKTION ***
+    # *** KORRIGIERTE TRAILING STOP FUNKTION - WIE JAEGERBOT ***
     def place_trailing_stop_order(self, symbol, side, amount, activation_price, callback_rate_decimal, params={}):
         """
         Platziert eine Trailing Stop Market Order (Stop-Loss) über ccxt für Bitget.
+        Verwendet die Parameter-Struktur von JaegerBot.
         :param callback_rate_decimal: Die Callback-Rate als Dezimalzahl (z.B. 0.01 für 1%)
         """
         if not self.markets: return None
@@ -309,20 +326,18 @@ class Exchange:
                  logger.error(f"FEHLER: Berechneter TSL-Betrag ist Null ({rounded_amount}).")
                  return None
 
-            callback_rate_str = "{:.2f}".format(callback_rate_decimal * 100).rstrip('0').rstrip('.')
-            if not callback_rate_str: callback_rate_str = "0"
+            callback_rate_str = str(callback_rate_decimal * 100)
 
-            # Parameter gemäß Bitget-Doku für "Plan Orders"
+            # Dies sind die Bitget-spezifischen Parameter, die ccxt durchreichen muss
             order_params = {
-                **params, # Übernimmt z.B. reduceOnly
-                'planType': 'moving_sl_plan',       # ***** KORRIGIERT: 'moving_sl_plan' statt 'trailing_stop' *****
+                **params,
+                'planType': 'trailing_stop',       # JaegerBot-Wert
                 'triggerPrice': rounded_activation,   # Aktivierungspreis
-                'callbackRate': callback_rate_str,    # Callback in Prozent (z.B. "0.5")
-                'triggerPriceType': 'market_price'    # Löst basierend auf dem Marktpreis aus (oder 'last_price')
+                'callbackRate': callback_rate_str,    # Callback in Prozent
+                'triggerPriceType': 'market_price'    # JaegerBot-Wert
             }
 
             logger.info(f"Sende Trailing-Stop-Order: Side={side}, Amount={rounded_amount}, Params={order_params}")
-            # 'market' Typ signalisiert ccxt, eine Market-Order auszulösen
             return self.exchange.create_order(symbol, 'market', side, rounded_amount, params=order_params)
         
         except Exception as e:
