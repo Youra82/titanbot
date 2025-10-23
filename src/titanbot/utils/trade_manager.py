@@ -1,4 +1,5 @@
 # /root/titanbot/src/titanbot/utils/trade_manager.py
+# KORRIGIERTE VERSION - BASIEREND AUF JAEGERBOT-LOGIK
 import logging
 import time
 import ccxt
@@ -51,7 +52,7 @@ def housekeeper_routine(exchange, symbol, logger):
 def check_and_open_new_position(exchange, model, scaler, params, telegram_config, logger):
     """
     Prüft auf neue SMC-Signale und eröffnet eine Position,
-    jetzt mit ATR-basiertem Stop-Loss und korrekter Bitget Order-Logik.
+    jetzt mit ATR-basiertem Stop-Loss und JaegerBot Order-Logik.
     """
     symbol = params['market']['symbol']
     timeframe = params['market']['timeframe']
@@ -195,16 +196,16 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             
             logger.info(f"Platziere TP @ ${tp_rounded:.4f} und TSL (basierend auf Config) für Amount {final_amount:.6f}")
 
-            # --- KORRIGIERTE ORDER-LOGIK (BASIEREND AUF JAEGERBOT & DOKU) ---
+            # --- JAEGERBOT ORDER-LOGIK START (MIT FALLBACK) ---
 
-            # 1. Platziere Take Profit (als 'tp_plan')
+            # 1. Platziere Take Profit (als normale Trigger-Order, *ohne* planType)
             tp_order = exchange.place_trigger_market_order(
                 symbol, 
                 'sell' if side == 'buy' else 'buy', 
                 final_amount, 
                 tp_rounded, 
-                {'reduceOnly': True},
-                plan_type='tp_plan' # NEU: Korrekter planType für TP
+                {'reduceOnly': True}
+                # Kein planType, genau wie in JaegerBot
             )
 
             # 2. Hole TSL-Parameter
@@ -215,6 +216,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
 
             tsl_order = None
             try:
+                # 3. Versuche TSL zu platzieren (mit JaegerBot-Parametern)
                 logger.info(f"Platziere Trailing-Stop: Aktivierung @ {activation_price_rounded}, Callback @ {callback_rate_decimal*100:.2f}%")
                 tsl_order = exchange.place_trailing_stop_order(
                     symbol,
@@ -224,25 +226,29 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                     callback_rate_decimal,
                     {'reduceOnly': True}
                 )
+                if not tsl_order:
+                     # Wenn die Funktion None zurückgibt (z.B. bei API-Fehler), löse eine Exception aus, um den Fallback zu triggern
+                     raise Exception("place_trailing_stop_order hat None zurückgegeben (wahrscheinlich API-Fehler)")
+
             except Exception as tsl_e:
                 logger.error(f"FEHLER: Platzierung des Trailing-Stop fehlgeschlagen: {tsl_e}. Platziere stattdessen fixen SL.")
-                # Fallback: Platziere fixen SL (als 'sl_plan')
+                # 4. Fallback: Platziere fixen SL (als normale Trigger-Order)
                 tsl_order = exchange.place_trigger_market_order(
                     symbol, 
                     'sell' if side == 'buy' else 'buy', 
                     final_amount, 
                     sl_rounded, 
-                    {'reduceOnly': True},
-                    plan_type='sl_plan' # NEU: Korrekter planType für SL
+                    {'reduceOnly': True}
+                    # Kein planType, genau wie in JaegerBot
                 )
             
-            # 3. Prüfen, ob BEIDE Orders platziert wurden
+            # 5. Prüfen, ob BEIDE Orders platziert wurden
             if not tp_order or not tsl_order:
                 logger.error("Fehler beim Platzieren von TP und/oder SL! Versuche aufzuräumen...")
                 housekeeper_routine(exchange, symbol, logger)
                 raise Exception("SL/TP Platzierung fehlgeschlagen.")
 
-            # --- KORRIGIERTE ORDER-LOGIK ENDE ---
+            # --- JAEGERBOT ORDER-LOGIK ENDE ---
 
             set_trade_lock(strategy_id, last_candle_timestamp)
 
@@ -250,7 +256,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                        f"- Entry @ Market (≈${actual_entry_price:.4f})\n"
                        f"- Size: {final_amount:.4f} ({notional_value:.2f} USDT)\n"
                        f"- TP: ${tp_rounded:.4f} (RR: {p['risk_reward_ratio']:.2f})\n"
-                       f"- TSL: Aktivierung @ ${activation_price_rounded:.4f}, Callback: {callback_rate_decimal*100:.2f}%")
+                       f"- TSL: Aktivierung @ ${activation_price_rounded:.4f}, Callback: {callback_rate_decimal*100:.2f}% (Fallback auf fixen SL bei {sl_rounded:.4f} falls TSL fehlschlägt)")
             send_message(telegram_config.get('bot_token'), telegram_config.get('chat_id'), message)
             logger.info(f"Trade-Eröffnungsprozess erfolgreich abgeschlossen.")
 
