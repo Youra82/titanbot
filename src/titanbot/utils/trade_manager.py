@@ -44,8 +44,7 @@ def housekeeper_routine(exchange, symbol, logger):
         if cancelled_flag > 0:
             logger.info(f"Befehl zum Stornieren aller Orders für {symbol} gesendet.")
         else:
-            # Diese Meldung kommt, wenn der Befehl fehlschlägt (nicht, wenn 0 Orders storniert wurden)
-            logger.info("Aufräum-Befehl fehlgeschlagen.")
+            logger.info("Aufräum-Befehl fehlgeschlagen oder keine Orders gefunden.")
     except Exception as e:
         logger.error(f"Fehler während der Aufräum-Routine: {e}", exc_info=True)
 
@@ -155,13 +154,16 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         take_profit_price = market_entry_price + sl_distance * p['risk_reward_ratio'] if side == 'buy' else market_entry_price - sl_distance * p['risk_reward_ratio']
 
         try:
+            # *** JAEGERBOT-LOGIK: set_leverage OHNE params['productType'] aufrufen ***
             if not exchange.set_leverage(symbol, p['leverage']):
                 logger.warning(f"Konnte Hebel nicht setzen für {symbol}.")
+            # *** JAEGERBOT-LOGIK: set_margin_mode OHNE params['productType'] aufrufen ***
             if not exchange.set_margin_mode(symbol, p['margin_mode']):
                 logger.warning(f"Konnte Margin Mode nicht setzen für {symbol}.")
 
             logger.info(f"Platziere Market Order: {side.upper()} {amount:.6f} {symbol.split('/')[0]} @ Market (≈${market_entry_price:.4f})")
-            order_params = {'marginMode': p['margin_mode']}
+            # Market Order braucht productType
+            order_params = {'marginMode': p['margin_mode'], 'productType': 'USDT-FUTURES'}
             market_order = exchange.create_market_order(symbol, side, amount, params=order_params)
             if not market_order: raise Exception("Market Order fehlgeschlagen (Antwort war None).")
 
@@ -200,13 +202,12 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             # --- JAEGERBOT ORDER-LOGIK START (MIT FALLBACK) ---
 
             # 1. Platziere Take Profit (als normale Trigger-Order, *ohne* planType)
-            # Wir übergeben productType zur Sicherheit, da es in der JaegerBot config_*.json fehlt
             tp_order = exchange.place_trigger_market_order(
                 symbol, 
                 'sell' if side == 'buy' else 'buy', 
                 final_amount, 
                 tp_rounded, 
-                {'reduceOnly': True, 'productType': 'USDT-FUTURES'}
+                {'reduceOnly': True, 'productType': 'USDT-FUTURES'} # productType hier ist OK
             )
 
             # 2. Hole TSL-Parameter
@@ -225,7 +226,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                     final_amount,
                     activation_price_rounded,
                     callback_rate_decimal,
-                    {'reduceOnly': True, 'productType': 'USDT-FUTURES'} # Füge productType hinzu
+                    {'reduceOnly': True, 'productType': 'USDT-FUTURES'} # productType hier ist OK
                 )
                 if not tsl_order:
                      raise Exception("place_trailing_stop_order hat None zurückgegeben (wahrscheinlich API-Fehler)")
@@ -238,7 +239,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                     'sell' if side == 'buy' else 'buy', 
                     final_amount, 
                     sl_rounded, 
-                    {'reduceOnly': True, 'productType': 'USDT-FUTURES'} # Füge productType hinzu
+                    {'reduceOnly': True, 'productType': 'USDT-FUTURES'}
                 )
             
             # 5. Prüfen, ob BEIDE Orders platziert wurden
