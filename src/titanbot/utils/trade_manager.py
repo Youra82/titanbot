@@ -44,7 +44,8 @@ def housekeeper_routine(exchange, symbol, logger):
         if cancelled_flag > 0:
             logger.info(f"Befehl zum Stornieren aller Orders für {symbol} gesendet.")
         else:
-            logger.info("Aufräum-Befehl fehlgeschlagen oder keine Orders gefunden.")
+            # Diese Meldung kommt, wenn der Befehl fehlschlägt (nicht, wenn 0 Orders storniert wurden)
+            logger.info("Aufräum-Befehl fehlgeschlagen.")
     except Exception as e:
         logger.error(f"Fehler während der Aufräum-Routine: {e}", exc_info=True)
 
@@ -199,13 +200,13 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             # --- JAEGERBOT ORDER-LOGIK START (MIT FALLBACK) ---
 
             # 1. Platziere Take Profit (als normale Trigger-Order, *ohne* planType)
+            # Wir übergeben productType zur Sicherheit, da es in der JaegerBot config_*.json fehlt
             tp_order = exchange.place_trigger_market_order(
                 symbol, 
                 'sell' if side == 'buy' else 'buy', 
                 final_amount, 
                 tp_rounded, 
-                {'reduceOnly': True}
-                # Kein planType, genau wie in JaegerBot
+                {'reduceOnly': True, 'productType': 'USDT-FUTURES'}
             )
 
             # 2. Hole TSL-Parameter
@@ -224,10 +225,9 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                     final_amount,
                     activation_price_rounded,
                     callback_rate_decimal,
-                    {'reduceOnly': True}
+                    {'reduceOnly': True, 'productType': 'USDT-FUTURES'} # Füge productType hinzu
                 )
                 if not tsl_order:
-                     # Wenn die Funktion None zurückgibt (z.B. bei API-Fehler), löse eine Exception aus, um den Fallback zu triggern
                      raise Exception("place_trailing_stop_order hat None zurückgegeben (wahrscheinlich API-Fehler)")
 
             except Exception as tsl_e:
@@ -238,8 +238,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                     'sell' if side == 'buy' else 'buy', 
                     final_amount, 
                     sl_rounded, 
-                    {'reduceOnly': True}
-                    # Kein planType, genau wie in JaegerBot
+                    {'reduceOnly': True, 'productType': 'USDT-FUTURES'} # Füge productType hinzu
                 )
             
             # 5. Prüfen, ob BEIDE Orders platziert wurden
