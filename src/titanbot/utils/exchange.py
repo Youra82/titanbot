@@ -1,5 +1,5 @@
 # /root/titanbot/src/titanbot/utils/exchange.py
-# KORRIGIERTE VERSION - EXAKT WIE JAEGERBOT
+# KORRIGIERTE VERSION - EXAKT WIE JAEGERBOT bei set_leverage/set_margin_mode
 import ccxt
 import pandas as pd
 from datetime import datetime, timezone, timedelta
@@ -115,58 +115,38 @@ class Exchange:
              logger.error(f"Fehler bei fetch_ticker für {symbol}: {e}")
              return None
 
+    # *** START: 1:1 JAEGERBOT LOGIK ***
     def set_margin_mode(self, symbol, mode='isolated'):
         if not self.markets: return False
         try:
-            # Versuche zuerst mit productType (neuere API)
-            params = {'productType': 'USDT-FUTURES'}
-            self.exchange.set_margin_mode(mode, symbol, params=params)
+            self.exchange.set_margin_mode(mode, symbol)
             return True
-        except ccxt.ExchangeError as e:
-            if 'Margin mode is the same' in str(e) or '45115' in str(e):
-                 return True
-            else:
-                # Versuche Fallback ohne productType (wie JaegerBot implizit)
-                try:
-                    self.exchange.set_margin_mode(mode, symbol)
-                    return True
-                except ccxt.ExchangeError as e2:
-                    if 'Margin mode is the same' in str(e2) or '45115' in str(e2): return True
-                    logger.error(f"FEHLER: Margin-Modus konnte für {symbol} nicht auf '{mode}' gesetzt werden (auch Fallback): {e2}")
-                    return False
         except Exception as e:
-            logger.error(f"Unerwarteter Fehler bei set_margin_mode für {symbol}: {e}")
-            return False
+            if 'Margin mode is the same' not in str(e): 
+                logger.warning(f"Warnung: Margin-Modus konnte nicht gesetzt werden: {e}")
+            else:
+                 return True # War bereits gesetzt, ist OK
+            return False # Expliziter Fehler
 
     def set_leverage(self, symbol, level=10):
         if not self.markets: return False
         try:
-            params = {'marginCoin': 'USDT'}
-            self.exchange.set_leverage(level, symbol, params={'holdSide': 'long', **params})
-            self.exchange.set_leverage(level, symbol, params={'holdSide': 'short', **params})
+            self.exchange.set_leverage(level, symbol)
             return True
-        except ccxt.ExchangeError as e:
-            if 'Leverage not changed' in str(e) or '45116' in str(e):
-                 return True
-            else:
-                 # Fallback-Versuch ohne holdSide (obwohl JaegerBot es hat, ist dies eine häufige Fehlerquelle)
-                 try:
-                     self.exchange.set_leverage(level, symbol, params=params)
-                     return True
-                 except ccxt.ExchangeError as e2:
-                     if 'Leverage not changed' in str(e2) or '45116' in str(e2): return True
-                     logger.error(f"FEHLER: Leverage konnte für {symbol} nicht auf {level}x gesetzt werden (auch Fallback): {e2}")
-                     return False
         except Exception as e:
-            logger.error(f"Unerwarteter Fehler bei set_leverage für {symbol}: {e}")
-            return False
+            if 'Leverage not changed' not in str(e): 
+                logger.warning(f"Warnung: Set leverage failed: {e}")
+            else:
+                 return True # War bereits gesetzt, ist OK
+            return False # Expliziter Fehler
+    # *** ENDE: 1:1 JAEGERBOT LOGIK ***
 
     def create_market_order(self, symbol, side, amount, params={}):
         if not self.markets: return None
         try:
             order_params = {**params}
             if 'productType' not in order_params:
-                 order_params['productType'] = 'USDT-FUTURES'
+                 order_params['productType'] = 'USDT-FUTURES' # Behalten wir zur Sicherheit bei
             rounded_amount = float(self.exchange.amount_to_precision(symbol, amount))
             if rounded_amount <= 0:
                  logger.error(f"FEHLER: Berechneter Order-Betrag ist Null oder negativ ({rounded_amount}).")
@@ -199,11 +179,9 @@ class Exchange:
                 'triggerPrice': rounded_price,
                 'reduceOnly': params.get('reduceOnly', False)
             }
-            # FÜGE productType HINZU, da dies bei neueren APIs oft erforderlich ist
-            order_params['productType'] = 'USDT-FUTURES'
+            order_params.update(params) 
             
             logger.info(f"Sende Trigger Order: Side={side}, Amount={rounded_amount}, Params={order_params}")
-            # 'market' Typ + 'triggerPrice' ist der ccxt-Weg für eine Stop-Market-Order
             return self.exchange.create_order(symbol, 'market', side, rounded_amount, params=order_params)
         
         except Exception as e:
@@ -273,7 +251,6 @@ class Exchange:
         # 1. Normale Orders stornieren
         try:
             logger.info(f"Sende Befehl 'cancelAllOrders' (Normal) für {symbol}...")
-            # 'stop': False ist explizit für normale Orders
             self.exchange.cancel_all_orders(symbol, params={'productType': 'USDT-FUTURES', 'stop': False})
             cancelled_count = 1
             time.sleep(0.5)
@@ -291,7 +268,6 @@ class Exchange:
         # 2. Trigger Orders stornieren
         try:
             logger.info(f"Sende Befehl 'cancelAllOrders' (Trigger/Stop) für {symbol}...")
-            # 'stop': True ist der ccxt-Standardweg, um Trigger/Plan-Orders zu adressieren
             self.exchange.cancel_all_orders(symbol, params={'productType': 'USDT-FUTURES', 'stop': True})
             cancelled_count = 1
             time.sleep(0.5)
@@ -328,14 +304,14 @@ class Exchange:
 
             callback_rate_str = str(callback_rate_decimal * 100)
 
-            # Exakte Parameterstruktur von JaegerBot (die in TitanBot fehlschlug, aber wir versuchen es erneut)
+            # Exakte Parameterstruktur von JaegerBot
             order_params = {
                 **params,
-                'planType': 'trailing_stop',       # JaegerBot-Wert
-                'triggerPrice': rounded_activation,   # Aktivierungspreis
-                'callbackRate': callback_rate_str,    # Callback in Prozent
-                'triggerPriceType': 'market_price',   # JaegerBot-Wert
-                'productType': 'USDT-FUTURES'     # Sicherheitshalber hinzugefügt
+                'planType': 'trailing_stop',       
+                'triggerPrice': rounded_activation,   
+                'callbackRate': callback_rate_str,    
+                'triggerPriceType': 'market_price',
+                'productType': 'USDT-FUTURES'
             }
 
             logger.info(f"Sende Trailing-Stop-Order: Side={side}, Amount={rounded_amount}, Params={order_params}")
@@ -343,4 +319,4 @@ class Exchange:
         
         except Exception as e:
             logger.error(f"FEHLER beim Platzieren des Trailing Stop ({symbol}, {side}): {e} | Params: {order_params}", exc_info=True)
-            return None # Gibt None zurück, um den Fallback auszulösen
+            return None
