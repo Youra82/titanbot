@@ -95,6 +95,15 @@ Füge die folgende **eine Zeile** am Ende der Datei ein (passe den Pfad `/root/t
 */5 * * * * cd /root/titanbot && /root/titanbot/.venv/bin/python3 /root/titanbot/master_runner.py >> /root/titanbot/logs/cron.log 2>&1
 ```
 
+Master run manuell starten:
+
+```
+# Starte den TitanBot Master-Runner manuell
+cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu/titanbot/master_runner.py
+```
+
+
+
 -----
 
 ## Workflow & Befehlsreferenz ⚙️
