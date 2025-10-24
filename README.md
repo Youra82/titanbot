@@ -88,11 +88,11 @@ Richte den Cronjob ein, der den `master_runner` regelmäßig startet (z.B. alle 
 crontab -e
 ```
 
-Füge die folgende **eine Zeile** am Ende der Datei ein (passe den Pfad `/root/titanbot` an, falls dein Bot woanders liegt):
+Füge die folgende **eine Zeile** am Ende der Datei ein:
 
 ```
-# Starte den TitanBot Master-Runner alle 5 Minuten
-*/5 * * * * cd /root/titanbot && /root/titanbot/.venv/bin/python3 /root/titanbot/master_runner.py >> /root/titanbot/logs/cron.log 2>&1
+# Starte den TitanBot Master-Runner alle 15 Minuten
+*/15 * * * * /usr/bin/flock -n /home/ubuntu/titanbot/titanbot.lock /bin/sh -c "cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu/titanbot/master_runner.py >> /home/ubuntu/titanbot/logs/cron.log 2>&1"
 ```
 
 Master run manuell starten:
@@ -103,6 +103,11 @@ cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu
 ```
 
 
+Logverzeichnis anlegen:
+
+```
+mkdir -p /home/ubuntu/titanbot/logs
+```
 
 -----
 
