@@ -36,7 +36,13 @@ def create_safe_filename(symbol, timeframe):
 def objective(trial):
     smc_params = {
         'swingsLength': trial.suggest_int('swingsLength', 10, 100),
-        'ob_mitigation': trial.suggest_categorical('ob_mitigation', ['High/Low', 'Close'])
+        'ob_mitigation': trial.suggest_categorical('ob_mitigation', ['High/Low', 'Close']),
+        
+        # --- NEU: ADX-Filter-Parameter zur Optimierung hinzugefügt ---
+        'use_adx_filter': trial.suggest_categorical('use_adx_filter', [True, False]),
+        'adx_period': trial.suggest_int('adx_period', 10, 20), # z.B. Standard 14
+        'adx_threshold': trial.suggest_int('adx_threshold', 20, 30) # z.B. Standard 25
+        # --- ENDE NEU ---
     }
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.0, 5.0),
@@ -44,13 +50,11 @@ def objective(trial):
         'leverage': trial.suggest_int('leverage', 5, 15), # Leverage zwischen 5x und 15x
         'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 4.0),
         'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 3.0),
-        
-        # --- NEU: Optimierungs-Parameter für dynamischen SL ---
         'atr_multiplier_sl': trial.suggest_float('atr_multiplier_sl', 1.0, 4.0),
         'min_sl_pct': trial.suggest_float('min_sl_pct', 0.3, 2.0) # Als % (0.3% bis 2.0%)
-        # --- ENDE NEU ---
     }
 
+    # Übergebe BEIDE Parameter-Dictionaries an den Backtester
     result = run_smc_backtest( HISTORICAL_DATA.copy(), smc_params, risk_params, START_CAPITAL, verbose=False )
     pnl = result.get('total_pnl_pct', -1000)
     drawdown = result.get('max_drawdown_pct', 1.0) # Backtester gibt Dezimal zurück
@@ -126,7 +130,16 @@ def main():
         os.makedirs(config_dir, exist_ok=True)
         config_output_path = os.path.join(config_dir, f'config_{create_safe_filename(symbol, timeframe)}{CONFIG_SUFFIX}.json')
 
-        strategy_config = { 'swingsLength': best_params['swingsLength'], 'ob_mitigation': best_params['ob_mitigation'] }
+        # --- NEU: ADX-Parameter werden hier ausgelesen und gespeichert ---
+        strategy_config = { 
+            'swingsLength': best_params['swingsLength'], 
+            'ob_mitigation': best_params['ob_mitigation'],
+            'use_adx_filter': best_params['use_adx_filter'],
+            'adx_period': best_params['adx_period'],
+            'adx_threshold': best_params['adx_threshold']
+        }
+        # --- ENDE NEU ---
+        
         risk_config = {
             'margin_mode': "isolated", 
             'risk_per_trade_pct': round(best_params['risk_per_trade_pct'], 2),
@@ -134,11 +147,8 @@ def main():
             'leverage': best_params['leverage'],
             'trailing_stop_activation_rr': round(best_params['trailing_stop_activation_rr'], 2),
             'trailing_stop_callback_rate_pct': round(best_params['trailing_stop_callback_rate_pct'], 2),
-            
-            # --- NEU: Parameter in Config speichern ---
             'atr_multiplier_sl': round(best_params['atr_multiplier_sl'], 2),
             'min_sl_pct': round(best_params['min_sl_pct'], 2)
-            # --- ENDE NEU ---
         }
         behavior_config = {"use_longs": True, "use_shorts": True}
         config_output = {
