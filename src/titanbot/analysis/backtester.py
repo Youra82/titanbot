@@ -71,31 +71,42 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
 def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=False):
     if data.empty or len(data) < 15:
         return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
+    
+    # --- NEU: ADX-Periode aus smc_params holen ---
+    adx_period = smc_params.get('adx_period', 14)
+    
     try:
+        # ATR-Berechnung
         atr_indicator = ta.volatility.AverageTrueRange(high=data['high'], low=data['low'], close=data['close'], window=14)
         data['atr'] = atr_indicator.average_true_range()
-        data.dropna(subset=['atr'], inplace=True)
+        
+        # --- NEU: ADX-Berechnung ---
+        adx_indicator = ta.trend.ADXIndicator(high=data['high'], low=data['low'], close=data['close'], window=adx_period)
+        data['adx'] = adx_indicator.adx()
+        data['adx_pos'] = adx_indicator.adx_pos()
+        data['adx_neg'] = adx_indicator.adx_neg()
+        # --- ENDE NEU ---
+        
+        data.dropna(subset=['atr', 'adx'], inplace=True) # Stelle sicher, dass beide Indikatoren berechnet wurden
+        
         if data.empty:
             return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
     except Exception as e:
-        print(f"FEHLER bei ATR-Berechnung: {e}")
+        print(f"FEHLER bei Indikator-Berechnung: {e}")
         return {"total_pnl_pct": -999, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
 
     risk_reward_ratio = risk_params.get('risk_reward_ratio', 1.5)
     risk_per_trade_pct = risk_params.get('risk_per_trade_pct', 1.0) / 100
     activation_rr = risk_params.get('trailing_stop_activation_rr', 2.0)
     callback_rate = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100
-    leverage = risk_params.get('leverage', 10) # Leverage aus Optuna
+    leverage = risk_params.get('leverage', 10) 
     fee_pct = 0.05 / 100
     
-    # --- ÄNDERUNG: Werte aus risk_params lesen statt hartcodiert ---
-    # Fallbacks (z.B. 2.0 und 0.5) werden verwendet, falls die Config alt ist
     atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0) 
-    min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0 # Von % in Dezimal umrechnen
-    # --- ENDE ÄNDERUNG ---
+    min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0
     
-    max_allowed_effective_leverage = 10 # Max 10x effektiver Hebel aufs GESAMTKAPITAL
-    absolute_max_notional_value = 1000000 # Max 1 Mio USD Positionsgröße
+    max_allowed_effective_leverage = 10
+    absolute_max_notional_value = 1000000
 
     engine = SMCEngine(settings=smc_params)
     smc_results = engine.process_dataframe(data[['open', 'high', 'low', 'close']].copy())
@@ -106,6 +117,9 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     trades_count = 0
     wins_count = 0
     position = None
+
+    # --- NEU: Kombiniere Parameter für die Logik-Funktion ---
+    params_for_logic = {"strategy": smc_params, "risk": risk_params}
 
     iterator = data.iterrows()
 
@@ -150,14 +164,14 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
 
         # --- Einstiegs-Logik ---
         if not position and current_capital > 0:
-            side, _ = get_titan_signal(smc_results, current_candle, params={})
+            # --- NEU: Übergebe params_for_logic an die Signalfunktion ---
+            side, _ = get_titan_signal(smc_results, current_candle, params=params_for_logic)
 
             if side:
                 entry_price = current_candle['close']
                 current_atr = current_candle.get('atr')
                 if pd.isna(current_atr) or current_atr <= 0: continue
 
-                # Diese Zeilen verwenden jetzt die geladenen/optimierten Variablen
                 sl_distance_atr = current_atr * atr_multiplier_sl
                 sl_distance_min = entry_price * min_sl_pct
                 sl_distance = max(sl_distance_atr, sl_distance_min)
