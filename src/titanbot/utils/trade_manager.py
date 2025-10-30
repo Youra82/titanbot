@@ -60,27 +60,42 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
     account_name = exchange.account.get('name', 'Standard-Account')
 
     logger.info("Suche nach neuen SMC-Signalen...")
-    swing_length = params.get('strategy', {}).get('swingsLength', 50)
-    limit_needed = max(swing_length * 3, 100)
+    smc_params = params.get('strategy', {}) # Hole smc_params
+    swing_length = smc_params.get('swingsLength', 50)
+    
+    # --- NEU: ADX-Periode aus smc_params holen ---
+    adx_period = smc_params.get('adx_period', 14)
+    
+    # Stelle sicher, dass genug Daten für ATR(14) und ADX(adx_period) geladen werden
+    limit_needed = max(swing_length * 3, 100, adx_period + 50) 
     data = exchange.fetch_recent_ohlcv(symbol, timeframe, limit=limit_needed)
 
-    if len(data) < 15:
-        logger.warning(f"Nicht genügend Daten ({len(data)}) für ATR-Berechnung geladen. Überspringe.")
+    if len(data) < max(15, adx_period + 1):
+        logger.warning(f"Nicht genügend Daten ({len(data)}) für Indikator-Berechnung geladen. Überspringe.")
         return
 
     try:
+        # ATR-Berechnung
         atr_indicator = ta.volatility.AverageTrueRange(high=data['high'], low=data['low'], close=data['close'], window=14)
         data['atr'] = atr_indicator.average_true_range()
+        
+        # --- NEU: ADX-Berechnung ---
+        adx_indicator = ta.trend.ADXIndicator(high=data['high'], low=data['low'], close=data['close'], window=adx_period)
+        data['adx'] = adx_indicator.adx()
+        data['adx_pos'] = adx_indicator.adx_pos()
+        data['adx_neg'] = adx_indicator.adx_neg()
+        # --- ENDE NEU ---
+        
     except Exception as e:
-        logger.error(f"Fehler bei ATR-Berechnung im Live-Modus: {e}. Überspringe Signalprüfung.")
+        logger.error(f"Fehler bei Indikator-Berechnung im Live-Modus: {e}. Überspringe Signalprüfung.")
         return
 
     if len(data) < 2:
-        logger.warning("Zu wenige Datenpunkte nach ATR Berechnung.")
+        logger.warning("Zu wenige Datenpunkte nach Indikator-Berechnung.")
         return
 
     last_complete_candle = data.iloc[-2]
-    current_candle = data.iloc[-1]
+    current_candle = data.iloc[-1] # Die 'current_candle' enthält jetzt 'adx', 'adx_pos', 'adx_neg'
     last_candle_timestamp = last_complete_candle.name
 
     last_trade_timestamp_str = get_trade_lock(strategy_id)
@@ -89,10 +104,11 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         return
 
     logger.info(f"Starte SMCEngine-Analyse für {len(data)-1} Kerzen...")
-    smc_params = params.get('strategy', {})
     engine = SMCEngine(settings=smc_params)
     smc_results = engine.process_dataframe(data[['open','high','low','close']].iloc[:-1].copy())
 
+    # --- WICHTIG: Übergebe die volle 'params'-Struktur an die Logik ---
+    # (current_candle enthält jetzt ADX-Daten)
     side, _ = get_titan_signal(smc_results, current_candle, params)
 
     if side:
@@ -120,11 +136,9 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             logger.error(f"Ungültiger ATR-Wert ({current_atr}) für SL-Berechnung. Breche Trade ab.")
             return
 
-        # --- ÄNDERUNG: Werte aus p (params['risk']) lesen statt hartcodiert ---
-        # Fallbacks (z.B. 2.0 und 0.5) werden verwendet, falls die Config alt ist
+        # Lese optimierte SL-Parameter aus der Config
         atr_multiplier_sl = p.get('atr_multiplier_sl', 2.0) 
-        min_sl_pct = p.get('min_sl_pct', 0.5) / 100.0 # Von % in Dezimal umrechnen
-        # --- ENDE ÄNDERUNG ---
+        min_sl_pct = p.get('min_sl_pct', 0.5) / 100.0
         
         sl_distance = current_atr * atr_multiplier_sl
         sl_distance_min = market_entry_price * min_sl_pct
@@ -154,7 +168,6 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
 
         amount = notional_value / market_entry_price
 
-        # SL/TP Preise werden jetzt basierend auf der finalen sl_distance berechnet
         stop_loss_price = market_entry_price - sl_distance if side == 'buy' else market_entry_price + sl_distance
         take_profit_price = market_entry_price + sl_distance * p['risk_reward_ratio'] if side == 'buy' else market_entry_price - sl_distance * p['risk_reward_ratio']
 
@@ -190,7 +203,6 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             logger.info(f"Position bestätigt: {final_position['side']} {final_amount:.6f} @ ${actual_entry_price:.4f}")
 
             # Neuberechnung der SL/TP-Preise basierend auf dem *tatsächlichen* Einstiegspreis
-            # Verwende dieselben SL-Parameter (atr_multiplier, min_sl_pct) wie zuvor
             sl_distance = current_atr * atr_multiplier_sl
             sl_distance_min = actual_entry_price * min_sl_pct
             sl_distance = max(sl_distance, sl_distance_min)
