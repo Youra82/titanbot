@@ -52,7 +52,7 @@ def housekeeper_routine(exchange, symbol, logger):
 def check_and_open_new_position(exchange, model, scaler, params, telegram_config, logger):
     """
     Prüft auf neue SMC-Signale und eröffnet eine Position,
-    jetzt mit ATR-basiertem Stop-Loss und JaegerBot Order-Logik.
+    jetzt mit optimierten ATR-basiertem Stop-Loss und JaegerBot Order-Logik.
     """
     symbol = params['market']['symbol']
     timeframe = params['market']['timeframe']
@@ -72,16 +72,16 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         atr_indicator = ta.volatility.AverageTrueRange(high=data['high'], low=data['low'], close=data['close'], window=14)
         data['atr'] = atr_indicator.average_true_range()
     except Exception as e:
-         logger.error(f"Fehler bei ATR-Berechnung im Live-Modus: {e}. Überspringe Signalprüfung.")
-         return
+        logger.error(f"Fehler bei ATR-Berechnung im Live-Modus: {e}. Überspringe Signalprüfung.")
+        return
 
     if len(data) < 2:
-         logger.warning("Zu wenige Datenpunkte nach ATR Berechnung.")
-         return
+        logger.warning("Zu wenige Datenpunkte nach ATR Berechnung.")
+        return
 
     last_complete_candle = data.iloc[-2]
     current_candle = data.iloc[-1]
-    last_candle_timestamp = last_complete_candle.name 
+    last_candle_timestamp = last_complete_candle.name
 
     last_trade_timestamp_str = get_trade_lock(strategy_id)
     if last_trade_timestamp_str and last_trade_timestamp_str == last_candle_timestamp.strftime('%Y-%m-%d %H:%M:%S'):
@@ -97,7 +97,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
 
     if side:
         logger.info(f"Gültiges SMC-Signal '{side.upper()}' für Kerze {last_candle_timestamp} erkannt. Beginne Trade-Eröffnung.")
-        
+
         p = params['risk']
         current_balance = exchange.fetch_balance_usdt()
         if current_balance <= 0:
@@ -108,61 +108,63 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
 
         ticker = exchange.fetch_ticker(symbol)
         if not ticker or 'last' not in ticker:
-             logger.error("Konnte aktuellen Preis (Ticker) nicht abrufen. Breche Trade ab.")
-             return
+            logger.error("Konnte aktuellen Preis (Ticker) nicht abrufen. Breche Trade ab.")
+            return
         market_entry_price = ticker['last']
         if market_entry_price <= 0:
-             logger.error(f"Ungültiger Entry-Preis ({market_entry_price}) erhalten. Breche Trade ab.")
-             return
+            logger.error(f"Ungültiger Entry-Preis ({market_entry_price}) erhalten. Breche Trade ab.")
+            return
 
         current_atr = last_complete_candle.get('atr')
         if pd.isna(current_atr) or current_atr <= 0:
             logger.error(f"Ungültiger ATR-Wert ({current_atr}) für SL-Berechnung. Breche Trade ab.")
             return
 
-        atr_multiplier_sl = 2.0 
+        # --- ÄNDERUNG: Werte aus p (params['risk']) lesen statt hartcodiert ---
+        # Fallbacks (z.B. 2.0 und 0.5) werden verwendet, falls die Config alt ist
+        atr_multiplier_sl = p.get('atr_multiplier_sl', 2.0) 
+        min_sl_pct = p.get('min_sl_pct', 0.5) / 100.0 # Von % in Dezimal umrechnen
+        # --- ENDE ÄNDERUNG ---
+        
         sl_distance = current_atr * atr_multiplier_sl
-        min_sl_pct = 0.005 
         sl_distance_min = market_entry_price * min_sl_pct
-        sl_distance = max(sl_distance, sl_distance_min) 
+        sl_distance = max(sl_distance, sl_distance_min)
 
         if sl_distance <= 0:
             logger.error(f"Stop-Loss-Distanz ist Null oder negativ ({sl_distance}). Breche Trade ab."); return
 
         sl_distance_pct_equivalent = sl_distance / market_entry_price
         if sl_distance_pct_equivalent <= 1e-6:
-             logger.error(f"Prozentualer SL-Abstand ist Null. Breche Trade ab."); return
-        
+            logger.error(f"Prozentualer SL-Abstand ist Null. Breche Trade ab."); return
+
         notional_value = risk_amount_usd / sl_distance_pct_equivalent
         amount = notional_value / market_entry_price
-        
-        max_allowed_effective_leverage = 10 
+
+        max_allowed_effective_leverage = 10
         absolute_max_notional_value = 1000000
         min_notional = 5.0
-        
+
         max_notional_by_leverage = current_balance * max_allowed_effective_leverage
         notional_value = min(notional_value, max_notional_by_leverage, absolute_max_notional_value)
-        
+
         if notional_value < min_notional:
             logger.warning(f"Berechnete Positionsgröße ({notional_value:.2f} USDT) unter Minimum ({min_notional:.2f} USDT). Überspringe Trade.")
             set_trade_lock(strategy_id, last_candle_timestamp)
             return
-        
+
         amount = notional_value / market_entry_price
-        
+
+        # SL/TP Preise werden jetzt basierend auf der finalen sl_distance berechnet
         stop_loss_price = market_entry_price - sl_distance if side == 'buy' else market_entry_price + sl_distance
         take_profit_price = market_entry_price + sl_distance * p['risk_reward_ratio'] if side == 'buy' else market_entry_price - sl_distance * p['risk_reward_ratio']
 
         try:
-            # *** JAEGERBOT-LOGIK: set_leverage OHNE params['productType'] aufrufen ***
             if not exchange.set_leverage(symbol, p['leverage']):
                 logger.warning(f"Konnte Hebel nicht setzen für {symbol}.")
-            # *** JAEGERBOT-LOGIK: set_margin_mode OHNE params['productType'] aufrufen ***
             if not exchange.set_margin_mode(symbol, p['margin_mode']):
                 logger.warning(f"Konnte Margin Mode nicht setzen für {symbol}.")
 
             logger.info(f"Platziere Market Order: {side.upper()} {amount:.6f} {symbol.split('/')[0]} @ Market (≈${market_entry_price:.4f})")
-            # Market Order braucht productType
             order_params = {'marginMode': p['margin_mode'], 'productType': 'USDT-FUTURES'}
             market_order = exchange.create_market_order(symbol, side, amount, params=order_params)
             if not market_order: raise Exception("Market Order fehlgeschlagen (Antwort war None).")
@@ -187,30 +189,29 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             actual_entry_price = float(final_position.get('entryPrice', market_entry_price))
             logger.info(f"Position bestätigt: {final_position['side']} {final_amount:.6f} @ ${actual_entry_price:.4f}")
 
+            # Neuberechnung der SL/TP-Preise basierend auf dem *tatsächlichen* Einstiegspreis
+            # Verwende dieselben SL-Parameter (atr_multiplier, min_sl_pct) wie zuvor
             sl_distance = current_atr * atr_multiplier_sl
             sl_distance_min = actual_entry_price * min_sl_pct
             sl_distance = max(sl_distance, sl_distance_min)
-            
+
             stop_loss_price = actual_entry_price - sl_distance if side == 'buy' else actual_entry_price + sl_distance
             take_profit_price = actual_entry_price + sl_distance * p['risk_reward_ratio'] if side == 'buy' else actual_entry_price - sl_distance * p['risk_reward_ratio']
 
             sl_rounded = float(exchange.exchange.price_to_precision(symbol, stop_loss_price))
             tp_rounded = float(exchange.exchange.price_to_precision(symbol, take_profit_price))
-            
+
             logger.info(f"Platziere TP @ ${tp_rounded:.4f} und TSL (basierend auf Config) für Amount {final_amount:.6f}")
 
             # --- JAEGERBOT ORDER-LOGIK START (MIT FALLBACK) ---
-
-            # 1. Platziere Take Profit (als normale Trigger-Order, *ohne* planType)
             tp_order = exchange.place_trigger_market_order(
-                symbol, 
-                'sell' if side == 'buy' else 'buy', 
-                final_amount, 
-                tp_rounded, 
-                {'reduceOnly': True, 'productType': 'USDT-FUTURES'} # productType hier ist OK
+                symbol,
+                'sell' if side == 'buy' else 'buy',
+                final_amount,
+                tp_rounded,
+                {'reduceOnly': True, 'productType': 'USDT-FUTURES'}
             )
 
-            # 2. Hole TSL-Parameter
             activation_rr = p.get('trailing_stop_activation_rr', 1.5)
             callback_rate_decimal = p.get('trailing_stop_callback_rate_pct', 0.5) / 100.0
             activation_price = actual_entry_price + sl_distance * activation_rr if side == 'buy' else actual_entry_price - sl_distance * activation_rr
@@ -218,7 +219,6 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
 
             tsl_order = None
             try:
-                # 3. Versuche TSL zu platzieren (mit JaegerBot-Parametern)
                 logger.info(f"Platziere Trailing-Stop: Aktivierung @ {activation_price_rounded}, Callback @ {callback_rate_decimal*100:.2f}%")
                 tsl_order = exchange.place_trailing_stop_order(
                     symbol,
@@ -226,23 +226,21 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                     final_amount,
                     activation_price_rounded,
                     callback_rate_decimal,
-                    {'reduceOnly': True, 'productType': 'USDT-FUTURES'} # productType hier ist OK
+                    {'reduceOnly': True, 'productType': 'USDT-FUTURES'}
                 )
                 if not tsl_order:
-                     raise Exception("place_trailing_stop_order hat None zurückgegeben (wahrscheinlich API-Fehler)")
+                    raise Exception("place_trailing_stop_order hat None zurückgegeben (wahrscheinlich API-Fehler)")
 
             except Exception as tsl_e:
                 logger.error(f"FEHLER: Platzierung des Trailing-Stop fehlgeschlagen: {tsl_e}. Platziere stattdessen fixen SL.")
-                # 4. Fallback: Platziere fixen SL (als normale Trigger-Order)
                 tsl_order = exchange.place_trigger_market_order(
-                    symbol, 
-                    'sell' if side == 'buy' else 'buy', 
-                    final_amount, 
-                    sl_rounded, 
+                    symbol,
+                    'sell' if side == 'buy' else 'buy',
+                    final_amount,
+                    sl_rounded,
                     {'reduceOnly': True, 'productType': 'USDT-FUTURES'}
                 )
-            
-            # 5. Prüfen, ob BEIDE Orders platziert wurden
+
             if not tp_order or not tsl_order:
                 logger.error("Fehler beim Platzieren von TP und/oder SL! Versuche aufzuräumen...")
                 housekeeper_routine(exchange, symbol, logger)
@@ -261,9 +259,9 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             logger.info(f"Trade-Eröffnungsprozess erfolgreich abgeschlossen.")
 
         except ccxt.InsufficientFunds as e:
-             logger.error(f"Fehler 'InsufficientFunds' beim Trade: {e}")
+            logger.error(f"Fehler 'InsufficientFunds' beim Trade: {e}")
         except ccxt.ExchangeError as e:
-             logger.error(f"Börsen-Fehler beim Trade: {e}", exc_info=True)
+            logger.error(f"Börsen-Fehler beim Trade: {e}", exc_info=True)
         except Exception as e:
             logger.error(f"Allgemeiner Fehler beim Eröffnen des Trades: {e}", exc_info=True)
             housekeeper_routine(exchange, symbol, logger)
@@ -280,14 +278,14 @@ def full_trade_cycle(exchange, model, scaler, params, telegram_config, logger):
             housekeeper_routine(exchange, symbol, logger)
             check_and_open_new_position(exchange, model, scaler, params, telegram_config, logger)
     except ccxt.DDoSProtection as e:
-         logger.warning(f"DDoS Protection / Rate Limit: {e}. Warte 10s...")
-         time.sleep(10)
+        logger.warning(f"DDoS Protection / Rate Limit: {e}. Warte 10s...")
+        time.sleep(10)
     except ccxt.RequestTimeout as e:
-         logger.warning(f"Request Timeout: {e}. Netzwerkproblem? Warte 5s...")
-         time.sleep(5)
+        logger.warning(f"Request Timeout: {e}. Netzwerkproblem? Warte 5s...")
+        time.sleep(5)
     except ccxt.NetworkError as e:
-         logger.warning(f"Network Error: {e}. Verbindungsproblem? Warte 10s...")
-         time.sleep(10)
+        logger.warning(f"Network Error: {e}. Verbindungsproblem? Warte 10s...")
+        time.sleep(10)
     except ccxt.AuthenticationError as e:
         logger.critical(f"AUTHENTIFIZIERUNGSFEHLER: {e}. API-Schlüssel ungültig? Bot wird für diesen Account gestoppt!", exc_info=True)
     except Exception as e:
