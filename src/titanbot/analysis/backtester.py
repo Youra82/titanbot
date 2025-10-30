@@ -35,7 +35,7 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
             data_start = data.index.min(); data_end = data.index.max()
             req_start = pd.to_datetime(start_date_str, utc=True); req_end = pd.to_datetime(end_date_str, utc=True)
             if data_start <= req_start and data_end >= req_end:
-                 return data.loc[req_start:req_end]
+                return data.loc[req_start:req_end]
             else: print(f"Info: Cache für {symbol} {timeframe} nicht aktuell/vollständig. Lade neu.")
         except Exception as e:
             print(f"WARNUNG: Fehler beim Lesen der Cache-Datei '{cache_file}': {e}. Lade neu.");
@@ -45,13 +45,13 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
     print(f"Starte Download für {symbol} ({timeframe}) von der Börse...")
     try:
         if secrets_cache is None:
-             with open(os.path.join(PROJECT_ROOT, 'secret.json'), "r") as f: secrets_cache = json.load(f)
+            with open(os.path.join(PROJECT_ROOT, 'secret.json'), "r") as f: secrets_cache = json.load(f)
         if 'jaegerbot' not in secrets_cache or not isinstance(secrets_cache['jaegerbot'], list) or not secrets_cache['jaegerbot']:
-             print("FEHLER: 'jaegerbot' Schlüssel in secret.json fehlt/leer."); return pd.DataFrame()
+            print("FEHLER: 'jaegerbot' Schlüssel in secret.json fehlt/leer."); return pd.DataFrame()
         api_setup = secrets_cache['jaegerbot'][0]
         exchange = Exchange(api_setup)
         if not exchange.markets:
-             print("FEHLER: Exchange konnte nicht initialisiert werden."); return pd.DataFrame()
+            print("FEHLER: Exchange konnte nicht initialisiert werden."); return pd.DataFrame()
         full_data = exchange.fetch_historical_ohlcv(symbol, timeframe, start_date_str, end_date_str)
         if not full_data.empty:
             try:
@@ -59,9 +59,9 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
                 req_start_dt = pd.to_datetime(start_date_str, utc=True); req_end_dt = pd.to_datetime(end_date_str, utc=True)
                 return full_data.loc[req_start_dt:req_end_dt]
             except Exception as e_save:
-                 print(f"FEHLER beim Speichern der Cache-Datei '{cache_file}': {e_save}")
-                 req_start_dt = pd.to_datetime(start_date_str, utc=True); req_end_dt = pd.to_datetime(end_date_str, utc=True)
-                 return full_data.loc[req_start_dt:req_end_dt]
+                print(f"FEHLER beim Speichern der Cache-Datei '{cache_file}': {e_save}")
+                req_start_dt = pd.to_datetime(start_date_str, utc=True); req_end_dt = pd.to_datetime(end_date_str, utc=True)
+                return full_data.loc[req_start_dt:req_end_dt]
         else: return pd.DataFrame()
     except FileNotFoundError: print(f"FEHLER: secret.json nicht gefunden."); return pd.DataFrame()
     except KeyError: print("FEHLER: API-Keys in secret.json nicht gefunden."); return pd.DataFrame()
@@ -76,21 +76,24 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         data['atr'] = atr_indicator.average_true_range()
         data.dropna(subset=['atr'], inplace=True)
         if data.empty:
-             return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
+            return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
     except Exception as e:
         print(f"FEHLER bei ATR-Berechnung: {e}")
         return {"total_pnl_pct": -999, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
 
     risk_reward_ratio = risk_params.get('risk_reward_ratio', 1.5)
-    # *** GEÄNDERT: risk_per_trade_pct wird wieder verwendet ***
     risk_per_trade_pct = risk_params.get('risk_per_trade_pct', 1.0) / 100
-    # *** ENDE ÄNDERUNG ***
     activation_rr = risk_params.get('trailing_stop_activation_rr', 2.0)
     callback_rate = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100
     leverage = risk_params.get('leverage', 10) # Leverage aus Optuna
     fee_pct = 0.05 / 100
-    atr_multiplier_sl = 2.0
-    min_sl_pct = 0.005 # 0.5% min SL
+    
+    # --- ÄNDERUNG: Werte aus risk_params lesen statt hartcodiert ---
+    # Fallbacks (z.B. 2.0 und 0.5) werden verwendet, falls die Config alt ist
+    atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0) 
+    min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0 # Von % in Dezimal umrechnen
+    # --- ENDE ÄNDERUNG ---
+    
     max_allowed_effective_leverage = 10 # Max 10x effektiver Hebel aufs GESAMTKAPITAL
     absolute_max_notional_value = 1000000 # Max 1 Mio USD Positionsgröße
 
@@ -142,8 +145,8 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 position = None
                 peak_capital = max(peak_capital, current_capital)
                 if peak_capital > 0:
-                     drawdown = (peak_capital - current_capital) / peak_capital
-                     max_drawdown_pct = max(max_drawdown_pct, drawdown)
+                    drawdown = (peak_capital - current_capital) / peak_capital
+                    max_drawdown_pct = max(max_drawdown_pct, drawdown)
 
         # --- Einstiegs-Logik ---
         if not position and current_capital > 0:
@@ -154,15 +157,13 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 current_atr = current_candle.get('atr')
                 if pd.isna(current_atr) or current_atr <= 0: continue
 
+                # Diese Zeilen verwenden jetzt die geladenen/optimierten Variablen
                 sl_distance_atr = current_atr * atr_multiplier_sl
                 sl_distance_min = entry_price * min_sl_pct
                 sl_distance = max(sl_distance_atr, sl_distance_min)
                 if sl_distance <= 0: continue
 
-                # *** GEÄNDERT: Risiko basierend auf AKTUELLEM Kapital ***
                 risk_amount_usd = current_capital * risk_per_trade_pct
-                # *** ENDE ÄNDERUNG ***
-
                 sl_distance_pct_equivalent = sl_distance / entry_price
                 if sl_distance_pct_equivalent <= 1e-6: continue
 
@@ -170,7 +171,6 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 max_notional_by_leverage = current_capital * max_allowed_effective_leverage
                 final_notional_value = min(calculated_notional_value, max_notional_by_leverage, absolute_max_notional_value)
 
-                # Berechne benötigte Margin basierend auf finalem Notional und Parameter-Leverage
                 margin_used = math.ceil((final_notional_value / leverage) * 100) / 100
 
                 if margin_used > current_capital or final_notional_value < 1.0: continue
