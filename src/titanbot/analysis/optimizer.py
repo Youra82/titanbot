@@ -41,11 +41,14 @@ def objective(trial):
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.0, 5.0),
         'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.5, 2.0),
-        # *** HIER IST DIE WICHTIGE BEGRENZUNG ***
         'leverage': trial.suggest_int('leverage', 5, 15), # Leverage zwischen 5x und 15x
-        # *** ENDE BEGRENZUNG ***
         'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 4.0),
-        'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 3.0)
+        'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 3.0),
+        
+        # --- NEU: Optimierungs-Parameter für dynamischen SL ---
+        'atr_multiplier_sl': trial.suggest_float('atr_multiplier_sl', 1.0, 4.0),
+        'min_sl_pct': trial.suggest_float('min_sl_pct', 0.3, 2.0) # Als % (0.3% bis 2.0%)
+        # --- ENDE NEU ---
     }
 
     result = run_smc_backtest( HISTORICAL_DATA.copy(), smc_params, risk_params, START_CAPITAL, verbose=False )
@@ -65,7 +68,6 @@ def objective(trial):
 
     return pnl
 
-# --- main() Funktion bleibt unverändert ---
 def main():
     global HISTORICAL_DATA, CURRENT_TIMEFRAME, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
@@ -108,12 +110,11 @@ def main():
         study_name = f"smc_{create_safe_filename(symbol, timeframe)}{CONFIG_SUFFIX}_{OPTIM_MODE}"
 
         study = optuna.create_study(storage=STORAGE_URL, study_name=study_name, direction="maximize", load_if_exists=True)
-        # Optuna wieder starten oder Ergebnisse laden
         try:
-             study.optimize(objective, n_trials=N_TRIALS, n_jobs=args.jobs, show_progress_bar=True)
+            study.optimize(objective, n_trials=N_TRIALS, n_jobs=args.jobs, show_progress_bar=True)
         except Exception as e_opt:
-             print(f"FEHLER während Optuna optimize: {e_opt}")
-             continue # Nächsten Task versuchen
+            print(f"FEHLER während Optuna optimize: {e_opt}")
+            continue # Nächsten Task versuchen
 
         valid_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
         if not valid_trials: print(f"\n❌ FEHLER: Für {symbol} ({timeframe}) konnte keine Konfiguration gefunden werden."); continue
@@ -127,10 +128,17 @@ def main():
 
         strategy_config = { 'swingsLength': best_params['swingsLength'], 'ob_mitigation': best_params['ob_mitigation'] }
         risk_config = {
-            'margin_mode': "isolated", 'risk_per_trade_pct': round(best_params['risk_per_trade_pct'], 2),
-            'risk_reward_ratio': round(best_params['risk_reward_ratio'], 2), 'leverage': best_params['leverage'],
+            'margin_mode': "isolated", 
+            'risk_per_trade_pct': round(best_params['risk_per_trade_pct'], 2),
+            'risk_reward_ratio': round(best_params['risk_reward_ratio'], 2), 
+            'leverage': best_params['leverage'],
             'trailing_stop_activation_rr': round(best_params['trailing_stop_activation_rr'], 2),
-            'trailing_stop_callback_rate_pct': round(best_params['trailing_stop_callback_rate_pct'], 2)
+            'trailing_stop_callback_rate_pct': round(best_params['trailing_stop_callback_rate_pct'], 2),
+            
+            # --- NEU: Parameter in Config speichern ---
+            'atr_multiplier_sl': round(best_params['atr_multiplier_sl'], 2),
+            'min_sl_pct': round(best_params['min_sl_pct'], 2)
+            # --- ENDE NEU ---
         }
         behavior_config = {"use_longs": True, "use_shorts": True}
         config_output = {
