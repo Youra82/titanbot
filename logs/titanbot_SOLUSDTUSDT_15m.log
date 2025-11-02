@@ -1,0 +1,223 @@
+2025-11-01 22:00:04,926 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 22:00:07,266 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.1 @ $179.68. Management durch SL/TP.
+2025-11-01 22:00:07,287 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-01 22:02:36,907 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 22:02:39,049 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.1 @ $179.68. Management durch SL/TP.
+2025-11-01 22:02:39,064 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-01 22:13:34,145 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 22:13:36,521 - INFO - Starte Aufräum-Routine für SOL/USDT:USDT...
+2025-11-01 22:13:37,593 - INFO - Befehl zum Stornieren aller Orders für SOL/USDT:USDT gesendet.
+2025-11-01 22:13:37,594 - INFO - Suche nach neuen SMC-Signalen...
+2025-11-01 22:13:37,894 - INFO - Starte SMCEngine-Analyse für 99 Kerzen...
+2025-11-01 22:13:37,914 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-01 22:15:05,731 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 22:15:08,272 - INFO - Starte Aufräum-Routine für SOL/USDT:USDT...
+2025-11-01 22:15:09,314 - INFO - Befehl zum Stornieren aller Orders für SOL/USDT:USDT gesendet.
+2025-11-01 22:15:09,314 - INFO - Suche nach neuen SMC-Signalen...
+2025-11-01 22:15:09,634 - INFO - Starte SMCEngine-Analyse für 99 Kerzen...
+2025-11-01 22:15:09,640 - INFO - Gültiges SMC-Signal 'BUY' für Kerze 2025-11-01 21:00:00+00:00 erkannt. Beginne Trade-Eröffnung.
+2025-11-01 22:15:09,907 - INFO - Verwende aktuellen Gesamt-Kontostand von 40.99 USDT.
+2025-11-01 22:15:10,771 - INFO - Platziere Market Order: BUY 0.357754 SOL @ Market (≈$186.2850)
+2025-11-01 22:15:11,756 - INFO - Market Order platziert. Warte 2s auf Füllung/Bestätigung...
+2025-11-01 22:15:14,034 - INFO - Position bestätigt: long 0.300000 @ $186.3170
+2025-11-01 22:15:14,035 - INFO - Platziere TP @ $189.5710 und TSL (basierend auf Config) für Amount 0.300000
+2025-11-01 22:15:14,332 - INFO - Platziere Trailing-Stop: Aktivierung @ 192.596, Callback @ 0.58%
+2025-11-01 22:15:14,637 - ERROR - FEHLER: Platzierung des Trailing-Stop fehlgeschlagen: place_trailing_stop_order hat None zurückgegeben (wahrscheinlich API-Fehler). Platziere stattdessen fixen SL.
+2025-11-01 22:15:15,206 - INFO - Trade-Eröffnungsprozess erfolgreich abgeschlossen.
+2025-11-01 22:15:15,244 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-01 22:30:05,571 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 22:30:08,009 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-01 22:30:08,037 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-01 22:45:05,073 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 22:45:07,378 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-01 22:45:07,395 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-01 23:00:04,433 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 23:00:06,612 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-01 23:00:06,640 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-01 23:15:05,126 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 23:15:07,403 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-01 23:15:07,419 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-01 23:30:04,656 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 23:30:07,035 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-01 23:30:07,052 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-01 23:45:05,318 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-01 23:45:07,608 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-01 23:45:07,624 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 00:00:04,866 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 00:00:07,170 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 00:00:07,191 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 00:15:05,299 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 00:15:07,552 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 00:15:07,569 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 00:30:04,844 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 00:30:07,203 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 00:30:07,224 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 00:45:05,382 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 00:45:07,763 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 00:45:07,779 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 01:00:04,899 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 01:00:07,242 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 01:00:07,262 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 01:15:05,386 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 01:15:07,888 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 01:15:07,912 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 01:30:04,933 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 01:30:07,171 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 01:30:07,187 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 01:45:05,400 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 01:45:07,919 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 01:45:07,943 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 02:00:04,835 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 02:00:07,019 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 02:00:07,038 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 02:15:05,252 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 02:15:07,456 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 02:15:07,473 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 02:30:04,826 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 02:30:07,157 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 02:30:07,180 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 02:45:05,460 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 02:45:07,731 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 02:45:07,754 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 03:00:05,035 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 03:00:07,334 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 03:00:07,351 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 03:15:05,530 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 03:15:08,879 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 03:15:08,933 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 03:30:04,944 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 03:30:07,330 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 03:30:07,348 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 03:45:05,411 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 03:45:07,710 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 03:45:07,731 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 04:00:04,928 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 04:00:07,205 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 04:00:07,224 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 04:15:05,439 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 04:15:07,868 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 04:15:07,886 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 04:30:04,957 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 04:30:07,517 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 04:30:07,536 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 04:45:05,585 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 04:45:08,042 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 04:45:08,063 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 05:00:05,027 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 05:00:08,010 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 05:00:08,035 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 05:15:05,607 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 05:15:07,900 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 05:15:07,921 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 05:30:05,044 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 05:30:07,283 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 05:30:07,299 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 05:45:05,579 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 05:45:07,741 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 05:45:07,759 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 06:00:05,035 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 06:00:07,322 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 06:00:07,339 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 06:15:05,526 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 06:15:07,814 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 06:15:07,831 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 06:30:05,094 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 06:30:07,728 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 06:30:07,754 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 06:45:05,441 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 06:45:07,688 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 06:45:07,704 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 07:00:05,074 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 07:00:07,365 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 07:00:07,381 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 07:15:05,482 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 07:15:07,756 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 07:15:07,776 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 07:30:04,923 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 07:30:07,238 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 07:30:07,257 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 07:45:05,437 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 07:45:07,799 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 07:45:07,819 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 08:00:04,944 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 08:00:07,179 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 08:00:07,196 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 08:15:05,484 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 08:15:07,705 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 08:15:07,721 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 08:30:04,970 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 08:30:07,360 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 08:30:07,376 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 08:45:05,492 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 08:45:07,749 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 08:45:07,765 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 09:00:05,020 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 09:00:07,263 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 09:00:07,279 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 09:15:05,484 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 09:15:07,735 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 09:15:07,751 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 09:30:05,096 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 09:30:07,415 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 09:30:07,433 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 09:45:05,446 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 09:45:07,977 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 09:45:07,993 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 10:00:04,946 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 10:00:07,285 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 10:00:07,301 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-02 10:15:05,514 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-02 10:15:07,916 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+2025-11-02 10:15:07,938 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+

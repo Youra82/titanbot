@@ -1,0 +1,2283 @@
+22:00:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+22:00:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+22:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.1 @ $179.68. Management durch SL/TP.
+22:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+22:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+22:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+22:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+22:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+22:00:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+22:00:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+22:00:11 [INFO] AAVE/USDT:USDT|6h: --- Starte TitanBot für AAVE/USDT:USDT (6h) auf Account 'Jurij' ---
+22:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 8.0 @ $2.4414. Management durch SL/TP.
+22:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Starte Bot für: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+22:00:13 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+22:00:14 [INFO] AAVE/USDT:USDT|6h: Starte Aufräum-Routine für AAVE/USDT:USDT...
+22:00:15 [INFO] AAVE/USDT:USDT|6h: Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+22:00:15 [INFO] AAVE/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+22:00:15 [INFO] AAVE/USDT:USDT|6h: Starte SMCEngine-Analyse für 221 Kerzen...
+22:00:15 [INFO] AAVE/USDT:USDT|6h: Gültiges SMC-Signal 'BUY' für Kerze 2025-11-01 12:00:00+00:00 erkannt. Beginne Trade-Eröffnung.
+22:00:15 [INFO] AAVE/USDT:USDT|6h: Verwende aktuellen Gesamt-Kontostand von 38.75 USDT.
+22:00:16 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+22:00:16 [INFO] AAVE/USDT:USDT|6h: Platziere Market Order: BUY 0.090690 AAVE @ Market (≈$223.9700)
+FEHLER beim Erstellen der Market Order (AAVE/USDT:USDT, buy, 0.09069023035565016): bitget amount of AAVE/USDT:USDT must be greater than minimum amount precision of 0.1
+22:00:16 [ERROR] AAVE/USDT:USDT|6h: Allgemeiner Fehler beim Eröffnen des Trades: Market Order fehlgeschlagen (Antwort war None).
+Traceback (most recent call last):
+  File "/home/matola/titanbot/src/titanbot/utils/trade_manager.py", line 183, in check_and_open_new_position
+    if not market_order: raise Exception("Market Order fehlgeschlagen (Antwort war None).")
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exception: Market Order fehlgeschlagen (Antwort war None).
+22:00:16 [INFO] AAVE/USDT:USDT|6h: Starte Aufräum-Routine für AAVE/USDT:USDT...
+22:00:17 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+22:00:17 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+22:00:17 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+22:00:17 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+22:00:17 [INFO] AAVE/USDT:USDT|6h: Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+22:00:17 [INFO] AAVE/USDT:USDT|6h: >>> TitanBot-Lauf für AAVE/USDT:USDT (6h) abgeschlossen <<<
+
+22:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+22:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+22:15:08 [INFO] SOL/USDT:USDT|15m: Starte Aufräum-Routine für SOL/USDT:USDT...
+22:15:09 [INFO] SOL/USDT:USDT|15m: Befehl zum Stornieren aller Orders für SOL/USDT:USDT gesendet.
+22:15:09 [INFO] SOL/USDT:USDT|15m: Suche nach neuen SMC-Signalen...
+22:15:09 [INFO] SOL/USDT:USDT|15m: Starte SMCEngine-Analyse für 99 Kerzen...
+22:15:09 [INFO] SOL/USDT:USDT|15m: Gültiges SMC-Signal 'BUY' für Kerze 2025-11-01 21:00:00+00:00 erkannt. Beginne Trade-Eröffnung.
+22:15:09 [INFO] SOL/USDT:USDT|15m: Verwende aktuellen Gesamt-Kontostand von 40.99 USDT.
+22:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+22:15:10 [INFO] SOL/USDT:USDT|15m: Platziere Market Order: BUY 0.357754 SOL @ Market (≈$186.2850)
+22:15:11 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+22:15:11 [INFO] SOL/USDT:USDT|15m: Market Order platziert. Warte 2s auf Füllung/Bestätigung...
+22:15:12 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+22:15:12 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+22:15:12 [INFO] AAVE/USDT:USDT|6h: --- Starte TitanBot für AAVE/USDT:USDT (6h) auf Account 'Jurij' ---
+22:15:12 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+22:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+22:15:12 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+22:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Starte Bot für: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+22:15:14 [INFO] SOL/USDT:USDT|15m: Position bestätigt: long 0.300000 @ $186.3170
+22:15:14 [INFO] SOL/USDT:USDT|15m: Platziere TP @ $189.5710 und TSL (basierend auf Config) für Amount 0.300000
+22:15:14 [INFO] SOL/USDT:USDT|15m: Platziere Trailing-Stop: Aktivierung @ 192.596, Callback @ 0.58%
+FEHLER beim Platzieren des Trailing Stop (SOL/USDT:USDT, sell): bitget {"code":"400172","msg":"planType Illegal type","requestTime":1762031714467,"data":null} | Params: {'reduceOnly': True, 'productType': 'USDT-FUTURES', 'planType': 'trailing_stop', 'triggerPrice': 192.596, 'callbackRate': '0.58', 'triggerPriceType': 'market_price'}
+Traceback (most recent call last):
+  File "/home/matola/titanbot/.venv/lib/python3.12/site-packages/ccxt/base/exchange.py", line 629, in fetch
+    response.raise_for_status()
+  File "/home/matola/titanbot/.venv/lib/python3.12/site-packages/requests/models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://api.bitget.com/api/v2/mix/order/place-plan-order
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/matola/titanbot/src/titanbot/utils/exchange.py", line 318, in place_trailing_stop_order
+    return self.exchange.create_order(symbol, 'market', side, rounded_amount, params=order_params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matola/titanbot/.venv/lib/python3.12/site-packages/ccxt/bitget.py", line 4007, in create_order
+    response = self.privateMixPostV2MixOrderPlacePlanOrder(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matola/titanbot/.venv/lib/python3.12/site-packages/ccxt/base/types.py", line 35, in unbound_method
+    return _self.request(self.path, self.api, self.method, params, config=self.config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matola/titanbot/.venv/lib/python3.12/site-packages/ccxt/base/exchange.py", line 3654, in request
+    return self.fetch2(path, api, method, params, headers, body, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matola/titanbot/.venv/lib/python3.12/site-packages/ccxt/base/exchange.py", line 3651, in fetch2
+    return self.fetch(request['url'], request['method'], request['headers'], request['body'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matola/titanbot/.venv/lib/python3.12/site-packages/ccxt/base/exchange.py", line 645, in fetch
+    skip_further_error_handling = self.handle_errors(http_status_code, http_status_text, url, method, headers, http_response, json_response, request_headers, request_body)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matola/titanbot/.venv/lib/python3.12/site-packages/ccxt/bitget.py", line 8155, in handle_errors
+    raise ExchangeError(feedback)  # unknown message
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ccxt.base.errors.ExchangeError: bitget {"code":"400172","msg":"planType Illegal type","requestTime":1762031714467,"data":null}
+22:15:14 [ERROR] SOL/USDT:USDT|15m: FEHLER: Platzierung des Trailing-Stop fehlgeschlagen: place_trailing_stop_order hat None zurückgegeben (wahrscheinlich API-Fehler). Platziere stattdessen fixen SL.
+22:15:14 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+22:15:15 [INFO] SOL/USDT:USDT|15m: Trade-Eröffnungsprozess erfolgreich abgeschlossen.
+22:15:15 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+22:15:15 [INFO] AAVE/USDT:USDT|6h: Starte Aufräum-Routine für AAVE/USDT:USDT...
+22:15:16 [INFO] AAVE/USDT:USDT|6h: Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+22:15:16 [INFO] AAVE/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+22:15:16 [INFO] AAVE/USDT:USDT|6h: Starte SMCEngine-Analyse für 221 Kerzen...
+22:15:16 [INFO] AAVE/USDT:USDT|6h: Gültiges SMC-Signal 'BUY' für Kerze 2025-11-01 12:00:00+00:00 erkannt. Beginne Trade-Eröffnung.
+22:15:17 [INFO] AAVE/USDT:USDT|6h: Verwende aktuellen Gesamt-Kontostand von 37.23 USDT.
+22:15:17 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+22:15:18 [INFO] AAVE/USDT:USDT|6h: Platziere Market Order: BUY 0.087114 AAVE @ Market (≈$223.3600)
+FEHLER beim Erstellen der Market Order (AAVE/USDT:USDT, buy, 0.08711357601197321): bitget amount of AAVE/USDT:USDT must be greater than minimum amount precision of 0.1
+22:15:18 [ERROR] AAVE/USDT:USDT|6h: Allgemeiner Fehler beim Eröffnen des Trades: Market Order fehlgeschlagen (Antwort war None).
+Traceback (most recent call last):
+  File "/home/matola/titanbot/src/titanbot/utils/trade_manager.py", line 183, in check_and_open_new_position
+    if not market_order: raise Exception("Market Order fehlgeschlagen (Antwort war None).")
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exception: Market Order fehlgeschlagen (Antwort war None).
+22:15:18 [INFO] AAVE/USDT:USDT|6h: Starte Aufräum-Routine für AAVE/USDT:USDT...
+22:15:18 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+22:15:18 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+22:15:19 [INFO] AAVE/USDT:USDT|6h: Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+22:15:19 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+22:15:19 [INFO] AAVE/USDT:USDT|6h: >>> TitanBot-Lauf für AAVE/USDT:USDT (6h) abgeschlossen <<<
+
+22:15:19 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+22:30:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+22:30:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+22:30:08 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+22:30:08 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+22:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+22:30:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+22:30:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+22:30:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+22:30:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+22:30:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+22:30:12 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+22:30:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+22:30:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+22:30:15 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+22:30:16 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+22:30:16 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+22:30:16 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+22:30:16 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+22:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+22:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+22:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+22:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+22:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+22:45:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+22:45:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+22:45:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+22:45:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+22:45:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+22:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+22:45:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+22:45:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+22:45:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+22:45:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+22:45:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+22:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+22:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+23:00:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+23:00:06 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+23:00:06 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+23:00:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+23:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+23:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+23:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+23:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+23:00:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+23:00:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+23:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+23:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+23:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+23:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+23:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+23:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+23:00:14 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+23:00:14 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+23:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+23:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+23:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+23:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+23:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+23:15:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+23:15:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+23:15:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+23:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+23:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+23:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+23:15:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+23:15:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+23:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+23:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+23:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+23:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+23:15:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+23:30:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+23:30:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+23:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+23:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+23:30:08 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+23:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+23:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+23:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+23:30:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+23:30:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+23:30:10 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+23:30:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+23:30:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+23:30:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+23:30:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+23:30:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+23:30:14 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+23:30:14 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+23:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+23:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+23:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+23:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+23:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+23:45:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+23:45:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+23:45:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+23:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+23:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+23:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+23:45:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+23:45:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+23:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+23:45:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+23:45:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+23:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+23:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+00:00:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+00:00:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+00:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+00:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+00:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+00:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+00:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+00:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+00:00:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+00:00:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+00:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+00:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+00:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+00:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+00:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+00:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+00:00:14 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+00:00:14 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+00:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+00:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+00:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+00:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+00:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+00:15:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+00:15:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+00:15:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+00:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+00:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+00:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+00:15:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+00:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+00:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+00:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+00:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+00:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+00:15:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+00:30:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+00:30:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+00:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+00:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+00:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+00:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+00:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+00:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+00:30:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+00:30:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+00:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+00:30:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+00:30:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+00:30:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+00:30:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+00:30:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+00:30:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+00:30:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+00:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+00:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+00:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+00:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+00:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+00:45:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+00:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+00:45:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+00:45:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+00:45:12 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+00:45:12 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+00:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+00:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+00:45:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+00:45:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+00:45:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+00:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+00:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+01:00:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+01:00:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+01:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+01:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+01:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+01:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+01:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+01:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+01:00:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+01:00:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+01:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+01:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+01:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+01:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+01:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+01:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+01:00:14 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+01:00:14 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+01:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+01:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+01:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+01:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+01:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+01:15:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+01:15:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+01:15:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+01:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+01:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+01:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+01:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+01:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+01:15:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+01:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+01:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+01:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+01:15:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+01:30:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+01:30:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+01:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+01:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+01:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+01:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+01:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+01:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+01:30:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+01:30:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+01:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+01:30:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+01:30:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+01:30:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+01:30:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+01:30:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+01:30:14 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+01:30:14 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+01:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+01:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+01:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+01:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+01:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+01:45:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+01:45:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+01:45:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+01:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+01:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+01:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+01:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+01:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+01:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+01:45:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+01:45:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+01:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+01:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+02:00:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+02:00:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+02:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+02:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+02:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+02:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+02:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+02:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+02:00:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+02:00:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+02:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+02:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+02:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+02:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+02:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+02:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+02:00:14 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+02:00:14 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+02:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+02:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+02:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+02:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+02:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+02:15:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+02:15:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+02:15:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+02:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+02:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+02:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+02:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+02:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+02:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+02:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+02:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+02:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+02:15:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+02:30:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+02:30:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+02:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+02:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+02:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+02:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+02:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+02:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+02:30:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+02:30:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+02:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+02:30:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+02:30:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+02:30:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+02:30:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+02:30:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+02:30:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+02:30:16 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+02:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+02:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+02:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+02:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+02:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+02:45:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+02:45:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+02:45:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+02:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+02:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+02:45:12 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+02:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+02:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+02:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+02:45:16 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+02:45:16 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+02:45:16 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+02:45:16 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+03:00:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+03:00:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+03:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+03:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+03:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+03:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+03:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+03:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+03:00:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+03:00:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+03:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+03:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+03:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+03:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+03:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+03:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+03:00:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+03:00:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+03:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+03:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+03:15:08 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+03:15:08 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+03:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+03:15:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+03:15:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+03:15:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+03:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+03:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+03:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+03:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+03:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+03:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+03:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+03:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+03:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+03:15:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+03:30:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+03:30:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+03:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+03:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+03:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+03:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+03:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+03:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+03:30:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+03:30:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+03:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+03:30:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+03:30:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+03:30:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+03:30:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+03:30:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+03:30:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+03:30:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+03:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+03:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+03:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+03:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+03:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+03:45:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+03:45:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+03:45:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+03:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+03:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+03:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+03:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+03:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+03:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+03:45:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+03:45:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+03:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+03:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+04:00:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+04:00:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+04:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+04:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+04:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+04:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+04:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+04:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+04:00:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+04:00:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+04:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+04:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+04:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+04:00:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+04:00:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+04:00:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+04:00:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+04:00:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+04:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+04:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+04:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+04:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+04:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+04:15:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+04:15:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+04:15:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+04:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+04:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+04:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+04:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+04:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+04:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+04:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+04:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+04:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+04:15:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+04:30:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+04:30:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+04:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+04:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+04:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+04:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+04:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+04:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+04:30:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+04:30:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+04:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+04:30:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+04:30:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+04:30:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+04:30:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+04:30:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+04:30:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+04:30:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+04:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+04:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+04:45:08 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+04:45:08 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+04:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+04:45:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+04:45:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+04:45:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+04:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+04:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+04:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+04:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+04:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+04:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+04:45:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+04:45:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+04:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+04:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+05:00:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+05:00:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+05:00:08 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+05:00:08 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+05:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+05:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+05:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+05:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+05:00:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+05:00:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+05:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+05:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+05:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+05:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+05:00:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+05:00:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+05:00:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+05:00:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+05:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+05:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+05:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+05:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+05:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+05:15:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+05:15:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+05:15:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+05:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+05:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+05:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+05:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+05:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+05:15:15 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+05:15:16 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+05:15:16 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+05:15:16 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+05:15:16 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+05:30:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+05:30:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+05:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+05:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+05:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+05:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+05:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+05:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+05:30:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+05:30:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+05:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+05:30:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+05:30:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+05:30:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+05:30:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+05:30:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+05:30:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+05:30:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+05:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+05:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+05:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+05:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+05:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+05:45:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+05:45:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+05:45:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+05:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+05:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+05:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+05:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+05:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+05:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+05:45:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+05:45:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+05:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+05:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+06:00:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+06:00:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+06:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+06:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+06:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+06:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+06:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+06:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+06:00:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+06:00:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+06:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+06:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+06:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+06:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+06:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+06:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+06:00:14 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+06:00:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+06:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+06:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+06:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+06:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+06:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+06:15:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+06:15:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+06:15:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+06:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+06:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+06:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+06:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+06:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+06:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+06:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+06:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+06:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+06:15:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+06:30:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+06:30:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+06:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+06:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+06:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+06:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+06:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+06:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+06:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+06:30:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+06:30:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+06:30:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+06:30:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+06:30:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+06:30:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+06:30:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+06:30:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+06:30:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+06:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+06:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+06:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+06:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+06:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+06:45:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+06:45:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+06:45:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+06:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+06:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+06:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+06:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+06:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+06:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+06:45:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+06:45:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+06:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+06:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+07:00:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+07:00:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+07:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+07:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+07:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+07:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+07:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+07:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+07:00:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+07:00:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+07:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+07:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+07:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+07:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+07:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+07:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+07:00:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+07:00:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+07:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+07:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+07:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+07:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+07:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+07:15:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+07:15:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+07:15:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+07:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+07:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+07:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+07:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+07:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+07:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+07:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+07:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+07:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+07:15:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+07:30:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+07:30:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+07:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+07:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+07:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+07:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+07:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+07:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+07:30:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+07:30:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+07:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+07:30:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+07:30:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+07:30:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+07:30:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+07:30:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+07:30:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+07:30:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+07:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+07:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+07:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+07:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+07:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+07:45:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+07:45:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+07:45:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+07:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+07:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+07:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+07:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+07:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+07:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+07:45:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+07:45:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+07:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+07:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+08:00:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+08:00:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+08:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+08:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+08:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+08:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+08:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+08:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+08:00:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+08:00:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+08:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+08:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+08:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+08:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+08:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+08:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+08:00:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+08:00:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+08:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+08:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+08:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+08:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+08:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+08:15:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+08:15:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+08:15:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+08:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+08:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+08:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+08:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+08:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+08:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+08:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+08:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+08:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+08:15:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+08:30:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+08:30:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+08:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+08:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+08:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+08:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+08:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+08:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+08:30:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+08:30:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+08:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+08:30:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+08:30:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+08:30:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+08:30:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+08:30:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+08:30:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+08:30:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+08:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+08:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+08:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+08:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+08:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+08:45:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+08:45:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+08:45:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+08:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+08:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+08:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+08:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+08:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+08:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+08:45:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+08:45:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+08:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+08:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+09:00:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+09:00:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+09:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+09:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+09:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+09:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+09:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+09:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+09:00:10 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+09:00:10 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+09:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+09:00:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+09:00:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+09:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+09:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+09:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+09:00:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+09:00:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+09:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+09:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+09:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+09:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+09:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+09:15:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+09:15:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+09:15:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+09:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+09:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+09:15:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+09:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+09:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+09:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+09:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+09:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+09:15:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+09:15:16 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+09:30:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+09:30:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+09:30:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+09:30:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+09:30:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+09:30:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+09:30:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+09:30:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+09:30:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+09:30:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+09:30:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+09:30:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+09:30:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+09:30:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+09:30:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+09:30:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+09:30:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+09:30:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+09:45:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+09:45:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+09:45:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+09:45:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+09:45:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+09:45:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+09:45:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+09:45:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+09:45:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+09:45:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+09:45:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+09:45:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+09:45:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+09:45:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+09:45:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+09:45:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+09:45:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+09:45:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+10:00:04 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+10:00:06 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+10:00:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+10:00:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+10:00:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+10:00:09 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+10:00:10 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+10:00:10 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+10:00:11 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+10:00:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+10:00:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+10:00:11 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+10:00:11 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+10:00:13 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+10:00:14 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+10:00:14 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+10:00:15 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+10:00:15 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+
+10:15:05 [INFO] SOL/USDT:USDT|15m: --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+10:15:07 [INFO] ADA/USDT:USDT|6h: --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+10:15:07 [INFO] SOL/USDT:USDT|15m: Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
+10:15:07 [INFO] SOL/USDT:USDT|15m: >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+10:15:09 [INFO] XRP/USDT:USDT|30m: --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+10:15:10 [INFO] ADA/USDT:USDT|6h: Starte Aufräum-Routine für ADA/USDT:USDT...
+10:15:11 [INFO] ADA/USDT:USDT|6h: Befehl zum Stornieren aller Orders für ADA/USDT:USDT gesendet.
+10:15:11 [INFO] ADA/USDT:USDT|6h: Suche nach neuen SMC-Signalen...
+10:15:11 [INFO] ADA/USDT:USDT|6h: Starte SMCEngine-Analyse für 158 Kerzen...
+10:15:11 [INFO] ADA/USDT:USDT|6h: >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Frage Kontostand für Account 'Jurij' ab...
+Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
+=======================================================
+
+--- Starte Bot für: SOL/USDT:USDT (15m) ---
+
+--- Starte Bot für: ADA/USDT:USDT (6h) ---
+
+--- Starte Bot für: XRP/USDT:USDT (30m) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (6h) ---
+
+--- Starte Bot für: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: DOGE/USDT:USDT (1d) ---
+
+--- Überspringe inaktive Strategie: ETH/USDT:USDT (6h) ---
+
+--- Überspringe inaktive Strategie: AAVE/USDT:USDT (1h) ---
+10:15:12 [INFO] DOGE/USDT:USDT|1d: --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+10:15:12 [INFO] XRP/USDT:USDT|30m: Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+10:15:12 [INFO] XRP/USDT:USDT|30m: >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+10:15:14 [INFO] DOGE/USDT:USDT|1d: Starte Aufräum-Routine für DOGE/USDT:USDT...
+10:15:15 [INFO] DOGE/USDT:USDT|1d: Befehl zum Stornieren aller Orders für DOGE/USDT:USDT gesendet.
+10:15:15 [INFO] DOGE/USDT:USDT|1d: Suche nach neuen SMC-Signalen...
+10:15:16 [INFO] DOGE/USDT:USDT|1d: Starte SMCEngine-Analyse für 89 Kerzen...
+10:15:16 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+

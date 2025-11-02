@@ -1,0 +1,220 @@
+2025-11-01 22:00:09,096 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 22:00:11,767 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 8.0 @ $2.4414. Management durch SL/TP.
+2025-11-01 22:00:11,794 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-01 22:02:40,815 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 22:02:42,969 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 8.0 @ $2.4414. Management durch SL/TP.
+2025-11-01 22:02:42,984 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-01 22:13:38,050 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 22:13:40,309 - INFO - Starte Aufräum-Routine für XRP/USDT:USDT...
+2025-11-01 22:13:41,362 - INFO - Befehl zum Stornieren aller Orders für XRP/USDT:USDT gesendet.
+2025-11-01 22:13:41,362 - INFO - Suche nach neuen SMC-Signalen...
+2025-11-01 22:13:41,667 - INFO - Starte SMCEngine-Analyse für 99 Kerzen...
+2025-11-01 22:13:41,669 - INFO - Gültiges SMC-Signal 'BUY' für Kerze 2025-11-01 20:30:00+00:00 erkannt. Beginne Trade-Eröffnung.
+2025-11-01 22:13:41,933 - INFO - Verwende aktuellen Gesamt-Kontostand von 44.19 USDT.
+2025-11-01 22:13:42,740 - INFO - Platziere Market Order: BUY 19.624488 XRP @ Market (≈$2.5048)
+2025-11-01 22:13:43,763 - INFO - Market Order platziert. Warte 2s auf Füllung/Bestätigung...
+2025-11-01 22:13:46,060 - INFO - Position bestätigt: long 19.000000 @ $2.5049
+2025-11-01 22:13:46,060 - INFO - Platziere TP @ $2.5591 und TSL (basierend auf Config) für Amount 19.000000
+2025-11-01 22:13:46,345 - INFO - Platziere Trailing-Stop: Aktivierung @ 2.5862, Callback @ 0.87%
+2025-11-01 22:13:46,619 - ERROR - FEHLER: Platzierung des Trailing-Stop fehlgeschlagen: place_trailing_stop_order hat None zurückgegeben (wahrscheinlich API-Fehler). Platziere stattdessen fixen SL.
+2025-11-01 22:13:47,138 - INFO - Trade-Eröffnungsprozess erfolgreich abgeschlossen.
+2025-11-01 22:13:47,156 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-01 22:15:09,991 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 22:15:12,721 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-01 22:15:12,759 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-01 22:30:09,887 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 22:30:12,589 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-01 22:30:12,620 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-01 22:45:09,258 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 22:45:11,684 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-01 22:45:11,713 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-01 23:00:09,064 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 23:00:11,619 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-01 23:00:11,648 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-01 23:15:09,417 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 23:15:11,964 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-01 23:15:11,992 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-01 23:30:08,951 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 23:30:11,659 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-01 23:30:11,684 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-01 23:45:09,581 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-01 23:45:11,929 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-01 23:45:11,958 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 00:00:09,187 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 00:00:11,636 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 00:00:11,660 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 00:15:09,587 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 00:15:11,987 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 00:15:12,015 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 00:30:09,155 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 00:30:11,632 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 00:30:11,655 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 00:45:09,536 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 00:45:12,300 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 00:45:12,327 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 01:00:09,138 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 01:00:11,646 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 01:00:11,669 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 01:15:09,703 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 01:15:12,227 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 01:15:12,253 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 01:30:09,247 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 01:30:11,701 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 01:30:11,725 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 01:45:09,748 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 01:45:12,239 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 01:45:12,274 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 02:00:09,157 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 02:00:11,711 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 02:00:11,736 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 02:15:09,457 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 02:15:12,092 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 02:15:12,120 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 02:30:09,354 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 02:30:12,054 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 02:30:12,082 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 02:45:09,799 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 02:45:12,384 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 02:45:12,413 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 03:00:09,238 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 03:00:11,875 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 03:00:11,899 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 03:15:09,963 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 03:15:12,358 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 03:15:12,388 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 03:30:09,353 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 03:30:11,742 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 03:30:11,768 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 03:45:09,586 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 03:45:12,006 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 03:45:12,041 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 04:00:09,116 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 04:00:11,514 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 04:00:11,540 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 04:15:09,823 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 04:15:12,481 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 04:15:12,510 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 04:30:09,251 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 04:30:11,686 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 04:30:11,715 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 04:45:09,902 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 04:45:12,380 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 04:45:12,407 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 05:00:09,410 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 05:00:11,857 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 05:00:11,883 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 05:15:09,732 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 05:15:12,098 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 05:15:12,121 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 05:30:09,306 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 05:30:11,955 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 05:30:11,982 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 05:45:09,805 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 05:45:12,559 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 05:45:12,589 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 06:00:09,310 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 06:00:11,902 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 06:00:11,927 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 06:15:09,852 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 06:15:12,335 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 06:15:12,367 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 06:30:09,356 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 06:30:11,759 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 06:30:11,786 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 06:45:09,577 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 06:45:12,326 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 06:45:12,347 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 07:00:09,253 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 07:00:11,708 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 07:00:11,732 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 07:15:09,730 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 07:15:12,216 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 07:15:12,242 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 07:30:09,175 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 07:30:11,618 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 07:30:11,662 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 07:45:09,709 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 07:45:12,060 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 07:45:12,085 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 08:00:09,179 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 08:00:11,916 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 08:00:11,947 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 08:15:09,724 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 08:15:12,194 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 08:15:12,227 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 08:30:09,235 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 08:30:11,576 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 08:30:11,605 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 08:45:09,774 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 08:45:12,248 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 08:45:12,279 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 09:00:09,373 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 09:00:12,479 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 09:00:12,533 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 09:15:09,622 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 09:15:12,246 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 09:15:12,273 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 09:30:09,362 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 09:30:12,344 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 09:30:12,368 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 09:45:09,583 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 09:45:12,081 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 09:45:12,105 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 10:00:09,260 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 10:00:11,934 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 10:00:11,962 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+
+2025-11-02 10:15:09,757 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-02 10:15:12,626 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
+2025-11-02 10:15:12,651 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+

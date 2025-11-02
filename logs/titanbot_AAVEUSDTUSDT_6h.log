@@ -1,0 +1,72 @@
+2025-11-01 22:00:11,418 - INFO - --- Starte TitanBot für AAVE/USDT:USDT (6h) auf Account 'Jurij' ---
+2025-11-01 22:00:14,083 - INFO - Starte Aufräum-Routine für AAVE/USDT:USDT...
+2025-11-01 22:00:15,151 - INFO - Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+2025-11-01 22:00:15,151 - INFO - Suche nach neuen SMC-Signalen...
+2025-11-01 22:00:15,605 - INFO - Starte SMCEngine-Analyse für 221 Kerzen...
+2025-11-01 22:00:15,613 - INFO - Gültiges SMC-Signal 'BUY' für Kerze 2025-11-01 12:00:00+00:00 erkannt. Beginne Trade-Eröffnung.
+2025-11-01 22:00:15,888 - INFO - Verwende aktuellen Gesamt-Kontostand von 38.75 USDT.
+2025-11-01 22:00:16,753 - INFO - Platziere Market Order: BUY 0.090690 AAVE @ Market (≈$223.9700)
+2025-11-01 22:00:16,754 - ERROR - Allgemeiner Fehler beim Eröffnen des Trades: Market Order fehlgeschlagen (Antwort war None).
+Traceback (most recent call last):
+  File "/home/matola/titanbot/src/titanbot/utils/trade_manager.py", line 183, in check_and_open_new_position
+    if not market_order: raise Exception("Market Order fehlgeschlagen (Antwort war None).")
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exception: Market Order fehlgeschlagen (Antwort war None).
+2025-11-01 22:00:16,755 - INFO - Starte Aufräum-Routine für AAVE/USDT:USDT...
+2025-11-01 22:00:17,828 - INFO - Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+2025-11-01 22:00:17,848 - INFO - >>> TitanBot-Lauf für AAVE/USDT:USDT (6h) abgeschlossen <<<
+
+2025-11-01 22:02:42,934 - INFO - --- Starte TitanBot für AAVE/USDT:USDT (6h) auf Account 'Jurij' ---
+2025-11-01 22:02:44,985 - INFO - Starte Aufräum-Routine für AAVE/USDT:USDT...
+2025-11-01 22:02:46,026 - INFO - Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+2025-11-01 22:02:46,027 - INFO - Suche nach neuen SMC-Signalen...
+2025-11-01 22:02:46,322 - INFO - Starte SMCEngine-Analyse für 221 Kerzen...
+2025-11-01 22:02:46,326 - INFO - Gültiges SMC-Signal 'BUY' für Kerze 2025-11-01 12:00:00+00:00 erkannt. Beginne Trade-Eröffnung.
+2025-11-01 22:02:46,610 - INFO - Verwende aktuellen Gesamt-Kontostand von 38.75 USDT.
+2025-11-01 22:02:47,423 - INFO - Platziere Market Order: BUY 0.090690 AAVE @ Market (≈$223.9800)
+2025-11-01 22:02:47,424 - ERROR - Allgemeiner Fehler beim Eröffnen des Trades: Market Order fehlgeschlagen (Antwort war None).
+Traceback (most recent call last):
+  File "/home/matola/titanbot/src/titanbot/utils/trade_manager.py", line 183, in check_and_open_new_position
+    if not market_order: raise Exception("Market Order fehlgeschlagen (Antwort war None).")
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exception: Market Order fehlgeschlagen (Antwort war None).
+2025-11-01 22:02:47,425 - INFO - Starte Aufräum-Routine für AAVE/USDT:USDT...
+2025-11-01 22:02:48,529 - INFO - Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+2025-11-01 22:02:48,548 - INFO - >>> TitanBot-Lauf für AAVE/USDT:USDT (6h) abgeschlossen <<<
+
+2025-11-01 22:13:40,076 - INFO - --- Starte TitanBot für AAVE/USDT:USDT (6h) auf Account 'Jurij' ---
+2025-11-01 22:13:42,228 - INFO - Starte Aufräum-Routine für AAVE/USDT:USDT...
+2025-11-01 22:13:43,267 - INFO - Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+2025-11-01 22:13:43,268 - INFO - Suche nach neuen SMC-Signalen...
+2025-11-01 22:13:43,553 - INFO - Starte SMCEngine-Analyse für 221 Kerzen...
+2025-11-01 22:13:43,558 - INFO - Gültiges SMC-Signal 'BUY' für Kerze 2025-11-01 12:00:00+00:00 erkannt. Beginne Trade-Eröffnung.
+2025-11-01 22:13:43,825 - INFO - Verwende aktuellen Gesamt-Kontostand von 40.99 USDT.
+2025-11-01 22:13:44,669 - INFO - Platziere Market Order: BUY 0.095912 AAVE @ Market (≈$223.5000)
+2025-11-01 22:13:44,670 - ERROR - Allgemeiner Fehler beim Eröffnen des Trades: Market Order fehlgeschlagen (Antwort war None).
+Traceback (most recent call last):
+  File "/home/matola/titanbot/src/titanbot/utils/trade_manager.py", line 183, in check_and_open_new_position
+    if not market_order: raise Exception("Market Order fehlgeschlagen (Antwort war None).")
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exception: Market Order fehlgeschlagen (Antwort war None).
+2025-11-01 22:13:44,676 - INFO - Starte Aufräum-Routine für AAVE/USDT:USDT...
+2025-11-01 22:13:45,730 - INFO - Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+2025-11-01 22:13:45,750 - INFO - >>> TitanBot-Lauf für AAVE/USDT:USDT (6h) abgeschlossen <<<
+
+2025-11-01 22:15:12,493 - INFO - --- Starte TitanBot für AAVE/USDT:USDT (6h) auf Account 'Jurij' ---
+2025-11-01 22:15:15,552 - INFO - Starte Aufräum-Routine für AAVE/USDT:USDT...
+2025-11-01 22:15:16,665 - INFO - Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+2025-11-01 22:15:16,665 - INFO - Suche nach neuen SMC-Signalen...
+2025-11-01 22:15:16,973 - INFO - Starte SMCEngine-Analyse für 221 Kerzen...
+2025-11-01 22:15:16,981 - INFO - Gültiges SMC-Signal 'BUY' für Kerze 2025-11-01 12:00:00+00:00 erkannt. Beginne Trade-Eröffnung.
+2025-11-01 22:15:17,281 - INFO - Verwende aktuellen Gesamt-Kontostand von 37.23 USDT.
+2025-11-01 22:15:18,115 - INFO - Platziere Market Order: BUY 0.087114 AAVE @ Market (≈$223.3600)
+2025-11-01 22:15:18,116 - ERROR - Allgemeiner Fehler beim Eröffnen des Trades: Market Order fehlgeschlagen (Antwort war None).
+Traceback (most recent call last):
+  File "/home/matola/titanbot/src/titanbot/utils/trade_manager.py", line 183, in check_and_open_new_position
+    if not market_order: raise Exception("Market Order fehlgeschlagen (Antwort war None).")
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exception: Market Order fehlgeschlagen (Antwort war None).
+2025-11-01 22:15:18,118 - INFO - Starte Aufräum-Routine für AAVE/USDT:USDT...
+2025-11-01 22:15:19,162 - INFO - Befehl zum Stornieren aller Orders für AAVE/USDT:USDT gesendet.
+2025-11-01 22:15:19,251 - INFO - >>> TitanBot-Lauf für AAVE/USDT:USDT (6h) abgeschlossen <<<
+
