@@ -1,5 +1,5 @@
 # /root/titanbot/src/titanbot/utils/exchange.py
-# KORRIGIERTE VERSION - EXAKT WIE JAEGERBOT bei set_leverage/set_margin_mode
+# KORRIGIERTE VERSION V3 - NUTZT DIE BITGET-SPEZIFISCHEN PARAMETER INNERHALB EINER MARKET ORDER (WIE IM ERFOLGREICHEN BEISPIEL)
 import ccxt
 import pandas as pd
 from datetime import datetime, timezone, timedelta
@@ -78,9 +78,9 @@ class Exchange:
 
                 all_ohlcv.extend(ohlcv)
                 last_ts = ohlcv[-1][0]
-                
+
                 if last_ts >= current_ts:
-                     current_ts = last_ts + timeframe_duration_ms
+                    current_ts = last_ts + timeframe_duration_ms
                 else:
                     logger.warning("WARNUNG: Kein Zeitfortschritt beim Datenabruf, breche ab.")
                     break
@@ -90,8 +90,8 @@ class Exchange:
                 time.sleep(5 * (retries + 1))
                 retries += 1
             except ccxt.BadSymbol as e:
-                 logger.error(f"FEHLER: Ungültiges Symbol bei fetch_historical_ohlcv: {symbol}. {e}")
-                 return pd.DataFrame()
+                logger.error(f"FEHLER: Ungültiges Symbol bei fetch_historical_ohlcv: {symbol}. {e}")
+                return pd.DataFrame()
             except Exception as e:
                 logger.error(f"Unerwarteter Fehler bei fetch_historical_ohlcv: {e}. Versuch {retries+1}/{max_retries}.")
                 time.sleep(5)
@@ -108,12 +108,12 @@ class Exchange:
         return df.loc[start_dt:end_dt]
 
     def fetch_ticker(self, symbol):
-         if not self.markets: return None
-         try:
-             return self.exchange.fetch_ticker(symbol)
-         except Exception as e:
-             logger.error(f"Fehler bei fetch_ticker für {symbol}: {e}")
-             return None
+        if not self.markets: return None
+        try:
+            return self.exchange.fetch_ticker(symbol)
+        except Exception as e:
+            logger.error(f"Fehler bei fetch_ticker für {symbol}: {e}")
+            return None
 
     # *** START: 1:1 JAEGERBOT LOGIK ***
     def set_margin_mode(self, symbol, mode='isolated'):
@@ -122,10 +122,10 @@ class Exchange:
             self.exchange.set_margin_mode(mode, symbol)
             return True
         except Exception as e:
-            if 'Margin mode is the same' not in str(e): 
+            if 'Margin mode is the same' not in str(e):
                 logger.warning(f"Warnung: Margin-Modus konnte nicht gesetzt werden: {e}")
             else:
-                 return True # War bereits gesetzt, ist OK
+                return True # War bereits gesetzt, ist OK
             return False # Expliziter Fehler
 
     def set_leverage(self, symbol, level=10):
@@ -134,10 +134,10 @@ class Exchange:
             self.exchange.set_leverage(level, symbol)
             return True
         except Exception as e:
-            if 'Leverage not changed' not in str(e): 
+            if 'Leverage not changed' not in str(e):
                 logger.warning(f"Warnung: Set leverage failed: {e}")
             else:
-                 return True # War bereits gesetzt, ist OK
+                return True # War bereits gesetzt, ist OK
             return False # Expliziter Fehler
     # *** ENDE: 1:1 JAEGERBOT LOGIK ***
 
@@ -146,11 +146,11 @@ class Exchange:
         try:
             order_params = {**params}
             if 'productType' not in order_params:
-                 order_params['productType'] = 'USDT-FUTURES' # Behalten wir zur Sicherheit bei
+                order_params['productType'] = 'USDT-FUTURES' # Behalten wir zur Sicherheit bei
             rounded_amount = float(self.exchange.amount_to_precision(symbol, amount))
             if rounded_amount <= 0:
-                 logger.error(f"FEHLER: Berechneter Order-Betrag ist Null oder negativ ({rounded_amount}).")
-                 return None
+                logger.error(f"FEHLER: Berechneter Order-Betrag ist Null oder negativ ({rounded_amount}).")
+                return None
             order = self.exchange.create_order(symbol, 'market', side, rounded_amount, params=order_params)
             return order
         except ccxt.InsufficientFunds as e:
@@ -162,60 +162,59 @@ class Exchange:
 
     # *** KORRIGIERTE TRIGGER ORDER FUNKTION - 1:1 WIE JAEGERBOT ***
     def place_trigger_market_order(self, symbol, side, amount, trigger_price, params={}):
-        """ 
+        """
         Platziert eine Standard Trigger-Order (Stop-Loss oder Take-Profit).
-        Verwendet die exakten Parameter von JaegerBot.
         """
         if not self.markets: return None
         try:
             rounded_price = float(self.exchange.price_to_precision(symbol, trigger_price))
             rounded_amount = float(self.exchange.amount_to_precision(symbol, amount))
             if rounded_amount <= 0:
-                 logger.error(f"FEHLER: Berechneter Trigger-Order-Betrag ist Null ({rounded_amount}).")
-                 return None
-            
+                logger.error(f"FEHLER: Berechneter Trigger-Order-Betrag ist Null ({rounded_amount}).")
+                return None
+
             # Dies ist die exakte JaegerBot Parameterstruktur
             order_params = {
                 'triggerPrice': rounded_price,
                 'reduceOnly': params.get('reduceOnly', False)
             }
-            order_params.update(params) 
-            
+            order_params.update(params)
+
             logger.info(f"Sende Trigger Order: Side={side}, Amount={rounded_amount}, Params={order_params}")
             return self.exchange.create_order(symbol, 'market', side, rounded_amount, params=order_params)
-        
+
         except Exception as e:
             logger.error(f"FEHLER beim Platzieren der Trigger Order ({symbol}, {side}, Params={order_params}): {e}", exc_info=True)
             return None
 
     def fetch_open_positions(self, symbol):
-         if not self.markets: return []
-         try:
-             params = {'productType': 'USDT-FUTURES'}
-             positions = self.exchange.fetch_positions([symbol], params=params)
-             open_positions = []
-             for p in positions:
-                  try:
-                       contracts_str = p.get('contracts')
-                       if contracts_str is not None and abs(float(contracts_str)) > 1e-9:
-                            open_positions.append(p)
-                  except (ValueError, TypeError) as e:
-                       logger.warning(f"Konnte 'contracts' für Position nicht in float umwandeln: {contracts_str}. Fehler: {e}.")
-                       continue
-             return open_positions
-         except Exception as e:
-             logger.error(f"Fehler bei fetch_open_positions für {symbol}: {e}", exc_info=True)
-             return []
+        if not self.markets: return []
+        try:
+            params = {'productType': 'USDT-FUTURES'}
+            positions = self.exchange.fetch_positions([symbol], params=params)
+            open_positions = []
+            for p in positions:
+                try:
+                    contracts_str = p.get('contracts')
+                    if contracts_str is not None and abs(float(contracts_str)) > 1e-9:
+                        open_positions.append(p)
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Konnte 'contracts' für Position nicht in float umwandeln: {contracts_str}. Fehler: {e}.")
+                    continue
+            return open_positions
+        except Exception as e:
+            logger.error(f"Fehler bei fetch_open_positions für {symbol}: {e}", exc_info=True)
+            return []
 
     def fetch_open_trigger_orders(self, symbol):
-         if not self.markets: return []
-         try:
-             params = {'productType': 'USDT-FUTURES', 'stop': True} 
-             orders = self.exchange.fetch_open_orders(symbol, params=params)
-             return orders
-         except Exception as e:
-             logger.error(f"Fehler bei fetch_open_trigger_orders für {symbol}: {e}")
-             return []
+        if not self.markets: return []
+        try:
+            params = {'productType': 'USDT-FUTURES', 'stop': True}
+            orders = self.exchange.fetch_open_orders(symbol, params=params)
+            return orders
+        except Exception as e:
+            logger.error(f"Fehler bei fetch_open_trigger_orders für {symbol}: {e}")
+            return []
 
     def fetch_balance_usdt(self):
         if not self.markets: return 0
@@ -228,14 +227,14 @@ class Exchange:
                 elif 'available' in balance['USDT'] and balance['USDT']['available'] is not None:
                     return float(balance['USDT']['available'])
                 elif 'total' in balance['USDT'] and balance['USDT']['total'] is not None:
-                     return float(balance['USDT']['total'])
+                    return float(balance['USDT']['total'])
             elif 'info' in balance and 'data' in balance['info'] and isinstance(balance['info']['data'], list):
                 for asset_info in balance['info']['data']:
-                     if asset_info.get('marginCoin') == 'USDT':
-                         if 'available' in asset_info and asset_info['available'] is not None:
-                              return float(asset_info['available'])
-                         elif 'equity' in asset_info and asset_info['equity'] is not None:
-                              return float(asset_info['equity'])
+                    if asset_info.get('marginCoin') == 'USDT':
+                        if 'available' in asset_info and asset_info['available'] is not None:
+                            return float(asset_info['available'])
+                        elif 'equity' in asset_info and asset_info['equity'] is not None:
+                            return float(asset_info['equity'])
             logger.warning(f"Konnte freien USDT-Saldo nicht eindeutig bestimmen. Struktur: {balance}")
             return 0
         except Exception as e:
@@ -247,7 +246,7 @@ class Exchange:
         """Storniert alle offenen Orders (normal und trigger) für ein Symbol."""
         if not self.markets: return 0
         cancelled_count = 0
-        
+
         # 1. Normale Orders stornieren
         try:
             logger.info(f"Sende Befehl 'cancelAllOrders' (Normal) für {symbol}...")
@@ -259,11 +258,11 @@ class Exchange:
                 logger.info("Keine normalen Orders zum Stornieren gefunden.")
                 cancelled_count = 1
             else:
-                 logger.error(f"Fehler beim Stornieren normaler Orders: {e}")
-                 cancelled_count = 0
+                logger.error(f"Fehler beim Stornieren normaler Orders: {e}")
+                cancelled_count = 0
         except Exception as e:
-             logger.error(f"Unerwarteter Fehler beim Stornieren normaler Orders: {e}")
-             cancelled_count = 0
+            logger.error(f"Unerwarteter Fehler beim Stornieren normaler Orders: {e}")
+            cancelled_count = 0
 
         # 2. Trigger Orders stornieren
         try:
@@ -276,8 +275,8 @@ class Exchange:
                 logger.info("Keine Trigger-Orders zum Stornieren gefunden.")
                 cancelled_count = 1
             else:
-                 logger.error(f"Fehler beim Stornieren von Trigger-Orders: {e}")
-                 cancelled_count = 0
+                logger.error(f"Fehler beim Stornieren von Trigger-Orders: {e}")
+                cancelled_count = 0
         except Exception as e:
             logger.error(f"Unerwarteter Fehler beim Stornieren von Trigger-Orders: {e}")
             cancelled_count = 0
@@ -287,36 +286,38 @@ class Exchange:
     def cleanup_all_open_orders(self, symbol):
         return self.cancel_all_orders_for_symbol(symbol)
 
-    # *** KORRIGIERTE TRAILING STOP FUNKTION - 1:1 WIE JAEGERBOT ***
+    # *** KORRIGIERTE TRAILING STOP FUNKTION - NUTZT BITGET SPEZIFISCHE PARAMETER (WIE BEI ERFOLG) ***
     def place_trailing_stop_order(self, symbol, side, amount, activation_price, callback_rate_decimal, params={}):
         """
         Platziert eine Trailing Stop Market Order (Stop-Loss) über ccxt für Bitget.
-        Verwendet die Parameter-Struktur von JaegerBot.
+        Nutzt die Bitget-spezifischen 'trailingTriggerPrice' und 'trailingPercent'-Parameter.
         :param callback_rate_decimal: Die Callback-Rate als Dezimalzahl (z.B. 0.01 für 1%)
         """
         if not self.markets: return None
         try:
+            # Runden der Werte
             rounded_activation = float(self.exchange.price_to_precision(symbol, activation_price))
             rounded_amount = float(self.exchange.amount_to_precision(symbol, amount))
             if rounded_amount <= 0:
-                 logger.error(f"FEHLER: Berechneter TSL-Betrag ist Null ({rounded_amount}).")
-                 return None
+                logger.error(f"FEHLER: Berechneter TSL-Betrag ist Null ({rounded_amount}).")
+                return None
 
-            callback_rate_str = str(callback_rate_decimal * 100)
+            # Bitget TrailingPercent erwartet eine Zahl (float oder int), CCXT konvertiert sie intern
+            callback_rate_float = callback_rate_decimal * 100 # In Prozent umwandeln (z.B. 0.5%)
 
-            # Exakte Parameterstruktur von JaegerBot
+            # Verwende die Bitget-spezifischen Parameter in den `params`
             order_params = {
                 **params,
-                'planType': 'trailing_stop',       
-                'triggerPrice': rounded_activation,   
-                'callbackRate': callback_rate_str,    
-                'triggerPriceType': 'market_price',
+                'trailingTriggerPrice': rounded_activation, 
+                'trailingPercent': callback_rate_float, 
                 'productType': 'USDT-FUTURES'
             }
 
-            logger.info(f"Sende Trailing-Stop-Order: Side={side}, Amount={rounded_amount}, Params={order_params}")
+            logger.info(f"Sende TSL Order (MARKET): Side={side}, Amount={rounded_amount}, Activation={rounded_activation}, Callback={callback_rate_float}%")
+            
+            # Wichtig: Der Order-Typ ist 'market', da Trailing Stop in Bitget über spezielle Parameter definiert wird
             return self.exchange.create_order(symbol, 'market', side, rounded_amount, params=order_params)
-        
+
         except Exception as e:
             logger.error(f"FEHLER beim Platzieren des Trailing Stop ({symbol}, {side}): {e} | Params: {order_params}", exc_info=True)
             return None
