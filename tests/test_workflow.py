@@ -127,7 +127,7 @@ def test_full_titanbot_workflow_on_bitget(test_setup):
 
     trigger_orders = exchange.fetch_open_trigger_orders(symbol)
     # 1. Prüfe auf SL/TP (Trigger-Orders)
-    assert len(trigger_orders) >= 2, f"SL/TP fehlen! Gefunden: {len(trigger_orders)}"
+    assert len(trigger_orders) >= 1, f"SL fehlt! Gefunden: {len(trigger_orders)}"
     
     # 2. Prüfe auf TSL (Ignoriere CCXT/Bitget-Inkonsistenzen)
     tsl_orders = [o for o in trigger_orders if 'trailingPercent' in o.get('info', {})]

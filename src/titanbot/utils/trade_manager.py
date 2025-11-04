@@ -191,7 +191,6 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         tp_rounded = float(exchange.exchange.price_to_precision(symbol, tp_price))
 
         exchange.place_trigger_market_order(symbol, tsl_side, contracts, sl_rounded, {'reduceOnly': True})
-        exchange.place_trigger_market_order(symbol, tsl_side, contracts, tp_rounded, {'reduceOnly': True})
 
         # --------------------------------------------------- #
         # 6. Trailing-Stop-Loss
