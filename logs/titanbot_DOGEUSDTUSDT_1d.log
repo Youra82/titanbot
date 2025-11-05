@@ -362,3 +362,10 @@
 2025-11-02 10:15:16,189 - INFO - Starte SMCEngine-Analyse für 89 Kerzen...
 2025-11-02 10:15:16,228 - INFO - >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
 
+2025-11-05 21:24:17,808 - INFO - --- Starte TitanBot für DOGE/USDT:USDT (1d) auf Account 'Jurij' ---
+2025-11-05 21:24:21,087 - INFO - Housekeeper: Starte Aufräumroutine für DOGE/USDT:USDT...
+2025-11-05 21:24:24,823 - INFO - Housekeeper: DOGE/USDT:USDT ist jetzt sauber.
+2025-11-05 21:24:24,823 - INFO - Prüfe Signal für DOGE/USDT:USDT (1d)...
+2025-11-05 21:24:25,125 - WARNING - Nicht genügend OHLCV-Daten für SMC/Indikatoren – überspringe.
+2025-11-05 21:24:25,133 - INFO - >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
+

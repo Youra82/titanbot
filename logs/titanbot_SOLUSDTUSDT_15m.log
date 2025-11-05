@@ -221,3 +221,12 @@
 2025-11-02 10:15:07,916 - INFO - Offene Position für SOL/USDT:USDT gefunden: long 0.3 @ $186.317. Management durch SL/TP.
 2025-11-02 10:15:07,938 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
 
+2025-11-05 21:24:12,263 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-05 21:24:20,740 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-05 21:24:24,915 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-05 21:24:24,915 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-05 21:24:27,815 - INFO - Eröffne BUY-Position: 0.329142 Contracts @ $163.303000 | Risk: 0.66 USDT
+2025-11-05 21:24:32,786 - INFO - Trailing-Stop platziert.
+2025-11-05 21:24:32,938 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-05 21:24:32,947 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+

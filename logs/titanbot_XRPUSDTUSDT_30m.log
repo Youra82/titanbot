@@ -218,3 +218,12 @@
 2025-11-02 10:15:12,626 - INFO - Offene Position für XRP/USDT:USDT gefunden: long 19.0 @ $2.5049. Management durch SL/TP.
 2025-11-02 10:15:12,651 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
 
+2025-11-05 21:24:15,829 - INFO - --- Starte TitanBot für XRP/USDT:USDT (30m) auf Account 'Jurij' ---
+2025-11-05 21:24:19,500 - INFO - Housekeeper: Starte Aufräumroutine für XRP/USDT:USDT...
+2025-11-05 21:24:23,272 - INFO - Housekeeper: XRP/USDT:USDT ist jetzt sauber.
+2025-11-05 21:24:23,273 - INFO - Prüfe Signal für XRP/USDT:USDT (30m)...
+2025-11-05 21:24:25,087 - INFO - Eröffne SELL-Position: 16.797875 Contracts @ $2.357700 | Risk: 0.67 USDT
+2025-11-05 21:24:29,044 - INFO - Trailing-Stop platziert.
+2025-11-05 21:24:29,181 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-05 21:24:29,190 - INFO - >>> TitanBot-Lauf für XRP/USDT:USDT (30m) abgeschlossen <<<
+

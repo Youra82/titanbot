@@ -6,23 +6,23 @@ def get_titan_signal(smc_results: dict, current_candle: pd.Series, params: dict)
     """
     Hier kommt deine eigentliche Handelslogik hinein.
     Diese Funktion entscheidet, ob ein Trade eröffnet werden soll.
-    
+
     NEU: Enthält jetzt einen ADX-Trendstärkefilter.
-    
+
     Rückgabewerte:
     - (side, entry_price): z.B. ("buy", 123.45) oder ("sell", 123.45)
     - (None, None): Wenn kein Signal vorhanden ist oder der ADX-Filter es blockiert.
     """
 
     # --- 1. Lade ADX-Filtereinstellungen aus den Parametern ---
-    # params enthält {"strategy": {...}, "risk": {...}}
     strategy_params = params.get('strategy', {})
     use_adx_filter = strategy_params.get('use_adx_filter', False) # Standard: Aus
     adx_threshold = strategy_params.get('adx_threshold', 25) # Standard: 25
-    
+
     # --- 2. Führe die Standard-Signallogik aus ---
+    # Die SMC-Ergebnisse kommen jetzt vom korrigierten trade_manager
     unmitigated_fvgs = smc_results.get("unmitigated_fvgs", [])
-    unmitigated_obs = smc_results.get("unmitigated_internal_obs", []) 
+    unmitigated_obs = smc_results.get("unmitigated_internal_obs", [])
 
     signal_side = None
     signal_price = None
@@ -46,7 +46,7 @@ def get_titan_signal(smc_results: dict, current_candle: pd.Series, params: dict)
     # --- 3. Wende den ADX-Filter an (falls Signal gefunden wurde) ---
     if signal_side and use_adx_filter:
         try:
-            # Hole ADX-Werte aus der aktuellen Kerze (wurden im trade_manager/backtester hinzugefügt)
+            # Hole ADX-Werte aus der aktuellen Kerze (wurden jetzt in trade_manager berechnet)
             adx = current_candle.get('adx')
             adx_pos = current_candle.get('adx_pos')
             adx_neg = current_candle.get('adx_neg')
@@ -57,7 +57,6 @@ def get_titan_signal(smc_results: dict, current_candle: pd.Series, params: dict)
                 return None, None # Blockiere, wenn ADX nicht berechnet werden konnte
 
             # --- Die eigentliche Filterlogik ---
-            
             # 1. Prüfe auf Trendstärke
             if adx < adx_threshold:
                 # print(f"DEBUG: ADX-Filter blockiert Signal (ADX {adx:.2f} < {adx_threshold}) bei {current_candle.name}")
@@ -74,7 +73,7 @@ def get_titan_signal(smc_results: dict, current_candle: pd.Series, params: dict)
 
             # Wenn alle Filter bestanden wurden, fahre fort
             # print(f"DEBUG: ADX-Filter BESTANDEN für {signal_side} bei {current_candle.name}")
-            
+
         except Exception as e:
             # print(f"FEHLER im ADX-Filter: {e}. Blockiere Trade zur Sicherheit.")
             return None, None # Bei Fehlern im Filter lieber keinen Trade eingehen
@@ -82,6 +81,6 @@ def get_titan_signal(smc_results: dict, current_candle: pd.Series, params: dict)
     # --- 4. Gib das gefilterte (oder ungefilterte) Signal zurück ---
     if signal_side:
         return signal_side, signal_price
-    
+
     # Kein Signal gefunden
     return None, None

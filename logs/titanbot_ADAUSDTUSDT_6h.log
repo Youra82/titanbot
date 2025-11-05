@@ -362,3 +362,12 @@
 2025-11-02 10:15:11,843 - INFO - Starte SMCEngine-Analyse für 158 Kerzen...
 2025-11-02 10:15:11,872 - INFO - >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
 
+2025-11-05 21:24:13,813 - INFO - --- Starte TitanBot für ADA/USDT:USDT (6h) auf Account 'Jurij' ---
+2025-11-05 21:24:16,020 - INFO - Housekeeper: Starte Aufräumroutine für ADA/USDT:USDT...
+2025-11-05 21:24:19,647 - INFO - Housekeeper: ADA/USDT:USDT ist jetzt sauber.
+2025-11-05 21:24:19,648 - INFO - Prüfe Signal für ADA/USDT:USDT (6h)...
+2025-11-05 21:24:21,875 - INFO - Eröffne BUY-Position: 31.975042 Contracts @ $0.545300 | Risk: 0.74 USDT
+2025-11-05 21:24:25,853 - INFO - Trailing-Stop platziert.
+2025-11-05 21:24:26,017 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-05 21:24:26,025 - INFO - >>> TitanBot-Lauf für ADA/USDT:USDT (6h) abgeschlossen <<<
+
