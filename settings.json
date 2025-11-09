@@ -30,7 +30,7 @@
                 "symbol": "DOGE/USDT:USDT",
                 "timeframe": "1d",
                 "use_macd_filter": false,
-                "active": true
+                "active": false
             },
             {
                 "symbol": "DOGE/USDT:USDT",
