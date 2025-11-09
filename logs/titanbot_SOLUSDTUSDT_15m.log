@@ -230,3 +230,1697 @@
 2025-11-05 21:24:32,938 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
 2025-11-05 21:24:32,947 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
 
+2025-11-05 22:00:23,617 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-05 22:00:28,633 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-05 22:00:28,656 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-05 22:15:06,466 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-05 22:15:11,282 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-05 22:15:15,294 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-05 22:15:15,296 - INFO - Trade für SOL-USDT:USDT_15m gesperrt – überspringe.
+2025-11-05 22:15:15,324 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-05 22:30:07,044 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-05 22:30:10,169 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-05 22:30:13,900 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-05 22:30:13,902 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-05 22:30:14,287 - INFO - Kein Signal – überspringe.
+2025-11-05 22:30:14,333 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-05 22:45:07,418 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-05 22:45:10,583 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-05 22:45:14,280 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-05 22:45:14,282 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-05 22:45:14,635 - INFO - Kein Signal – überspringe.
+2025-11-05 22:45:14,660 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-05 23:00:06,772 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-05 23:00:09,672 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-05 23:00:13,296 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-05 23:00:13,298 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-05 23:00:15,066 - INFO - Eröffne BUY-Position: 0.326028 Contracts @ $161.773000 | Risk: 0.65 USDT
+2025-11-05 23:00:18,952 - INFO - Trailing-Stop platziert.
+2025-11-05 23:00:19,101 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-05 23:00:19,117 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-05 23:15:07,082 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-05 23:15:09,710 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-05 23:15:09,739 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-05 23:30:06,299 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-05 23:30:09,358 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-05 23:30:09,393 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-05 23:45:06,726 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-05 23:45:09,324 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-05 23:45:09,363 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 00:00:07,461 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 00:00:10,180 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 00:00:10,231 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 00:15:06,790 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 00:15:09,504 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 00:15:09,550 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 00:30:06,742 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 00:30:09,612 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 00:30:09,668 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 00:45:07,010 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 00:45:10,389 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 00:45:10,411 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 01:00:06,596 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 01:00:09,798 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 01:00:09,826 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 01:15:06,896 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 01:15:10,546 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 01:15:10,608 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 01:30:07,606 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 01:30:11,430 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 01:30:11,457 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 01:45:06,963 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 01:45:10,297 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 01:45:10,342 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 02:00:07,292 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 02:00:10,257 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 02:00:10,286 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 02:15:06,806 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 02:15:10,023 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 02:15:10,047 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 02:30:06,880 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 02:30:10,003 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 02:30:13,633 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 02:30:13,635 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 02:30:13,994 - INFO - Kein Signal – überspringe.
+2025-11-06 02:30:14,026 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 02:45:07,422 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 02:45:10,724 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 02:45:14,353 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 02:45:14,355 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 02:45:16,125 - INFO - Eröffne SELL-Position: 0.321396 Contracts @ $160.842000 | Risk: 0.64 USDT
+2025-11-06 02:45:19,991 - INFO - Trailing-Stop platziert.
+2025-11-06 02:45:20,157 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-06 02:45:20,175 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 03:00:06,699 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 03:00:10,376 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 03:00:10,401 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 03:15:06,987 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 03:15:11,249 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 03:15:11,272 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 03:30:07,308 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 03:30:10,497 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 03:30:10,525 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 03:45:06,881 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 03:45:10,348 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 03:45:10,397 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 04:00:07,420 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 04:00:11,207 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 04:00:11,230 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 04:15:06,770 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 04:15:09,488 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 04:15:09,521 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 04:30:07,175 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 04:30:11,263 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 04:30:14,895 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 04:30:14,897 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 04:30:16,656 - INFO - Eröffne SELL-Position: 0.311053 Contracts @ $162.060000 | Risk: 0.62 USDT
+2025-11-06 04:30:20,558 - INFO - Trailing-Stop platziert.
+2025-11-06 04:30:20,728 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-06 04:30:20,747 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 04:45:07,449 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 04:45:10,630 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 04:45:10,657 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 05:00:06,687 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 05:00:10,591 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 05:00:10,615 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 05:15:07,267 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 05:15:10,692 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 05:15:10,726 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 05:30:06,363 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 05:30:09,420 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 05:30:09,444 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 05:45:06,842 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 05:45:10,488 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 05:45:10,519 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 06:00:07,140 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 06:00:10,547 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 06:00:10,580 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 06:15:07,294 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 06:15:10,906 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 06:15:10,954 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 06:30:06,830 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 06:30:10,500 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 06:30:10,526 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 06:45:07,371 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 06:45:10,576 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 06:45:10,604 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 07:00:06,707 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 07:00:10,324 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 07:00:10,350 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 07:15:07,031 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 07:15:10,236 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 07:15:10,259 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 07:30:07,560 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 07:30:10,751 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 07:30:10,777 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 07:45:07,008 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 07:45:09,828 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 07:45:09,873 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 08:00:07,331 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 08:00:10,758 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 08:00:10,783 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 08:15:06,895 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 08:15:09,791 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 08:15:09,817 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 08:30:07,443 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 08:30:10,351 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 08:30:10,379 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 08:45:06,688 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 08:45:09,824 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 08:45:09,848 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 09:00:07,183 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 09:00:10,325 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 09:00:10,351 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 09:15:07,435 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 09:15:10,577 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 09:15:10,603 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 09:30:06,910 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 09:30:09,805 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 09:30:09,830 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 09:45:07,447 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 09:45:10,683 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 09:45:10,713 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 10:00:06,827 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 10:00:10,200 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 10:00:10,264 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 10:15:07,082 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 10:15:10,285 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 10:15:10,311 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 10:30:07,508 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 10:30:10,752 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 10:30:10,779 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 10:45:06,688 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 10:45:12,580 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 10:45:12,633 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 11:00:07,871 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 11:00:12,292 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 11:00:12,340 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 11:15:06,570 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 11:15:11,586 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 11:15:11,611 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 11:30:07,049 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 11:30:10,623 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 11:30:10,680 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 11:45:07,448 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 11:45:11,544 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 11:45:11,567 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 12:00:06,760 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 12:00:10,386 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 12:00:10,413 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 12:15:07,108 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 12:15:11,213 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 12:15:11,239 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 12:30:06,543 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 12:30:10,716 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 12:30:10,737 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 12:45:06,920 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 12:45:10,396 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 12:45:10,442 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 13:00:07,530 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 13:00:11,296 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 13:00:11,329 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 13:15:06,619 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 13:15:10,355 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 13:15:10,392 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 13:30:07,352 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 13:30:10,463 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 13:30:10,488 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 13:45:06,712 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 13:45:10,452 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 13:45:10,479 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 14:00:07,086 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 14:00:11,414 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 14:00:11,450 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 14:15:07,237 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 14:15:10,770 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 14:15:10,797 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 14:30:06,811 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 14:30:10,132 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 14:30:10,156 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 14:45:07,190 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 14:45:10,483 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 14:45:10,506 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 15:00:07,683 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 15:00:11,343 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 15:00:11,369 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 15:15:06,912 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 15:15:10,062 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 15:15:10,093 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 15:30:07,246 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 15:30:10,516 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 15:30:10,541 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 15:45:06,640 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 15:45:09,880 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 15:45:09,908 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 16:00:06,893 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 16:00:10,150 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 16:00:10,183 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 16:15:07,523 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 16:15:10,576 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 16:15:10,604 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 16:30:07,041 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 16:30:10,316 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 16:30:10,343 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 16:45:07,258 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 16:45:10,488 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 16:45:10,515 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 17:00:06,971 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 17:00:10,232 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 17:00:10,273 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 17:15:06,968 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 17:15:10,346 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 17:15:13,971 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 17:15:13,973 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 17:15:14,305 - INFO - Kein Signal – überspringe.
+2025-11-06 17:15:14,357 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 17:30:07,507 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 17:30:10,431 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 17:30:14,061 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 17:30:14,063 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 17:30:14,425 - INFO - Kein Signal – überspringe.
+2025-11-06 17:30:14,453 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 17:45:06,823 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 17:45:09,735 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 17:45:13,389 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 17:45:13,390 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 17:45:13,748 - INFO - Kein Signal – überspringe.
+2025-11-06 17:45:13,773 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 18:00:07,412 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 18:00:10,659 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 18:00:14,327 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 18:00:14,328 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 18:00:14,682 - INFO - Kein Signal – überspringe.
+2025-11-06 18:00:14,709 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 18:15:06,917 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 18:15:10,220 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 18:15:13,860 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 18:15:13,862 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 18:15:14,194 - INFO - Kein Signal – überspringe.
+2025-11-06 18:15:14,218 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 18:30:07,466 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 18:30:11,075 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 18:30:14,751 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 18:30:14,753 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 18:30:15,123 - INFO - Kein Signal – überspringe.
+2025-11-06 18:30:15,148 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 18:45:06,930 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 18:45:10,115 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 18:45:13,766 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 18:45:13,768 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 18:45:14,121 - INFO - Kein Signal – überspringe.
+2025-11-06 18:45:14,147 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 19:00:07,355 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 19:00:10,722 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 19:00:14,383 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 19:00:14,384 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 19:00:16,239 - INFO - Eröffne BUY-Position: 0.369371 Contracts @ $157.194000 | Risk: 0.71 USDT
+2025-11-06 19:00:20,150 - INFO - Trailing-Stop platziert.
+2025-11-06 19:00:20,314 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-06 19:00:20,331 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 19:15:06,856 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 19:15:10,007 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 19:15:10,029 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 19:30:07,480 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 19:30:10,452 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 19:30:10,491 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 19:45:06,830 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 19:45:10,018 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 19:45:10,044 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 20:00:07,306 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 20:00:10,671 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 20:00:10,698 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 20:15:06,961 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 20:15:11,404 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 20:15:11,425 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 20:30:07,603 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 20:30:10,988 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 20:30:11,013 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 20:45:07,043 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 20:45:10,715 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 20:45:10,745 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 21:00:06,884 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 21:00:10,411 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 21:00:10,448 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 21:15:07,272 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 21:15:11,429 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 21:15:11,454 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 21:30:06,700 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 21:30:10,036 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 21:30:10,089 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 21:45:07,104 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 21:45:10,187 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 21:45:13,807 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 21:45:13,808 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 21:45:14,138 - INFO - Kein Signal – überspringe.
+2025-11-06 21:45:14,164 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 22:00:07,255 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 22:00:10,439 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 22:00:14,104 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 22:00:14,105 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 22:00:14,543 - INFO - Kein Signal – überspringe.
+2025-11-06 22:00:14,573 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 22:15:07,828 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 22:15:10,768 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 22:15:14,412 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 22:15:14,414 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 22:15:14,818 - INFO - Kein Signal – überspringe.
+2025-11-06 22:15:14,856 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 22:30:06,538 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 22:30:09,973 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 22:30:13,569 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 22:30:13,570 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 22:30:13,912 - INFO - Kein Signal – überspringe.
+2025-11-06 22:30:13,940 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 22:45:07,189 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 22:45:09,795 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 22:45:13,406 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 22:45:13,408 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-06 22:45:15,154 - INFO - Eröffne BUY-Position: 0.338405 Contracts @ $156.330000 | Risk: 0.65 USDT
+2025-11-06 22:45:19,052 - INFO - Trailing-Stop platziert.
+2025-11-06 22:45:19,203 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-06 22:45:19,222 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 23:00:06,695 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 23:00:09,296 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 23:00:09,349 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 23:15:07,284 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 23:15:10,391 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 23:15:10,418 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 23:30:06,782 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 23:30:09,872 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-06 23:30:09,896 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-06 23:45:07,121 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-06 23:45:10,393 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-06 23:45:13,994 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-06 23:45:13,996 - INFO - Trade für SOL-USDT:USDT_15m gesperrt – überspringe.
+2025-11-06 23:45:14,025 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 00:00:07,580 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 00:00:10,431 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 00:00:14,079 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 00:00:14,081 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 00:00:14,478 - INFO - Kein Signal – überspringe.
+2025-11-07 00:00:14,516 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 00:15:06,980 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 00:15:10,125 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 00:15:13,736 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 00:15:13,742 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 00:15:15,511 - INFO - Eröffne SELL-Position: 0.335818 Contracts @ $154.493000 | Risk: 0.64 USDT
+2025-11-07 00:15:19,399 - INFO - Trailing-Stop platziert.
+2025-11-07 00:15:19,587 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-07 00:15:19,609 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 00:30:07,251 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 00:30:10,572 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 00:30:10,598 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 00:45:06,939 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 00:45:09,512 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 00:45:09,541 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 01:00:07,464 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 01:00:10,056 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 01:00:10,092 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 01:15:07,027 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 01:15:09,605 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 01:15:09,633 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 01:30:07,424 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 01:30:10,079 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 01:30:13,708 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 01:30:13,709 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 01:30:14,054 - INFO - Kein Signal – überspringe.
+2025-11-07 01:30:14,090 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 01:45:06,794 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 01:45:09,275 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 01:45:12,888 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 01:45:12,890 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 01:45:13,219 - INFO - Kein Signal – überspringe.
+2025-11-07 01:45:13,241 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 02:00:07,416 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 02:00:09,948 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 02:00:13,563 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 02:00:13,564 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 02:00:14,033 - INFO - Kein Signal – überspringe.
+2025-11-07 02:00:14,093 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 02:15:06,739 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 02:15:09,311 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 02:15:13,055 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 02:15:13,057 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 02:15:13,435 - INFO - Kein Signal – überspringe.
+2025-11-07 02:15:13,476 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 02:30:07,259 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 02:30:10,001 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 02:30:13,587 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 02:30:13,589 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 02:30:13,922 - INFO - Kein Signal – überspringe.
+2025-11-07 02:30:13,951 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 02:45:06,830 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 02:45:09,355 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 02:45:13,080 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 02:45:13,081 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 02:45:13,421 - INFO - Kein Signal – überspringe.
+2025-11-07 02:45:13,449 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 03:00:07,330 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 03:00:09,976 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 03:00:13,615 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 03:00:13,616 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 03:00:15,387 - INFO - Eröffne BUY-Position: 0.323585 Contracts @ $157.148000 | Risk: 0.63 USDT
+2025-11-07 03:00:19,338 - INFO - Trailing-Stop platziert.
+2025-11-07 03:00:19,535 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-07 03:00:19,557 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 03:15:07,390 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 03:15:10,847 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 03:15:10,889 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 03:30:07,022 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 03:30:09,956 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 03:30:09,982 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 03:45:07,212 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 03:45:09,844 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 03:45:09,878 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 04:00:06,705 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 04:00:09,237 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 04:00:09,261 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 04:15:07,071 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 04:15:09,800 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 04:15:09,826 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 04:30:07,632 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 04:30:10,186 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 04:30:10,213 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 04:45:07,086 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 04:45:09,783 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 04:45:09,809 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 05:00:07,485 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 05:00:10,269 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 05:00:10,297 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 05:15:06,987 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 05:15:09,677 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 05:15:09,700 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 05:30:07,498 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 05:30:10,232 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 05:30:10,275 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 05:45:06,939 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 05:45:09,564 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 05:45:09,620 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 06:00:07,138 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 06:00:09,740 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 06:00:09,774 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 06:15:07,636 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 06:15:10,352 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 06:15:10,384 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 06:30:07,174 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 06:30:09,768 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 06:30:09,813 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 06:45:07,540 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 06:45:10,242 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 06:45:10,270 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 07:00:06,663 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 07:00:09,222 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 07:00:09,251 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 07:15:07,100 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 07:15:09,592 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 07:15:09,617 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 07:30:06,752 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 07:30:09,351 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 07:30:09,387 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 07:45:07,166 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 07:45:09,642 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 07:45:09,672 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 08:00:07,526 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 08:00:10,468 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 08:00:10,492 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 08:15:07,528 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 08:15:10,505 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 08:15:10,532 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 08:30:07,712 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 08:30:10,264 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 08:30:10,289 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 08:45:07,010 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 08:45:09,622 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 08:45:09,659 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 09:00:07,443 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 09:00:10,068 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 09:00:10,118 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 09:15:06,811 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 09:15:09,420 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 09:15:09,464 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 09:30:07,285 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 09:30:09,846 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 09:30:09,874 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 09:45:06,662 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 09:45:09,279 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 09:45:09,318 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 10:00:07,097 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 10:00:09,698 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 10:00:09,727 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 10:15:07,665 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 10:15:10,275 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 10:15:10,309 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 10:30:07,087 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 10:30:09,629 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 10:30:13,245 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 10:30:13,247 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 10:30:13,636 - INFO - Kein Signal – überspringe.
+2025-11-07 10:30:13,665 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 10:45:07,528 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 10:45:10,443 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 10:45:14,134 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 10:45:14,136 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 10:45:14,609 - INFO - Kein Signal – überspringe.
+2025-11-07 10:45:14,633 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 11:00:06,986 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 11:00:10,087 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 11:00:13,845 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 11:00:13,847 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 11:00:14,289 - INFO - Kein Signal – überspringe.
+2025-11-07 11:00:14,345 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 11:15:07,016 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 11:15:09,652 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 11:15:13,278 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 11:15:13,280 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 11:15:15,073 - INFO - Eröffne BUY-Position: 0.305696 Contracts @ $154.877000 | Risk: 0.58 USDT
+2025-11-07 11:15:19,019 - INFO - Trailing-Stop platziert.
+2025-11-07 11:15:19,287 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-07 11:15:19,325 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 11:30:07,588 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 11:30:10,216 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 11:30:10,263 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 11:45:07,064 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 11:45:09,750 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 11:45:09,776 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 12:00:07,382 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 12:00:10,111 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 12:00:10,148 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 12:15:06,857 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 12:15:09,528 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 12:15:13,173 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 12:15:13,175 - INFO - Trade für SOL-USDT:USDT_15m gesperrt – überspringe.
+2025-11-07 12:15:13,197 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 12:30:07,233 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 12:30:10,042 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 12:30:13,647 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 12:30:13,648 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 12:30:15,420 - INFO - Eröffne BUY-Position: 0.297575 Contracts @ $152.219000 | Risk: 0.56 USDT
+2025-11-07 12:30:19,358 - INFO - Trailing-Stop platziert.
+2025-11-07 12:30:19,523 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-07 12:30:19,548 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 12:45:06,656 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 12:45:09,448 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 12:45:09,475 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 13:00:07,064 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 13:00:10,278 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 13:00:10,304 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 13:15:07,454 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 13:15:10,000 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 13:15:10,025 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 13:30:06,852 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 13:30:09,459 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 13:30:09,509 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 13:45:07,389 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 13:45:10,528 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 13:45:10,555 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 14:00:06,766 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 14:00:09,327 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 14:00:09,393 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 14:15:07,203 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 14:15:10,003 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 14:15:10,032 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 14:30:07,018 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 14:30:09,660 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 14:30:09,706 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 14:45:07,318 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 14:45:10,075 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 14:45:10,119 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 15:00:06,815 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 15:00:10,072 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 15:00:10,100 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 15:15:07,274 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 15:15:10,518 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 15:15:10,542 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 15:30:06,828 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 15:30:09,782 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 15:30:09,807 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 15:45:07,100 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 15:45:09,675 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 15:45:13,349 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 15:45:13,351 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 15:45:15,140 - INFO - Eröffne BUY-Position: 0.308073 Contracts @ $153.384000 | Risk: 0.58 USDT
+2025-11-07 15:45:19,143 - INFO - Trailing-Stop platziert.
+2025-11-07 15:45:19,302 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-07 15:45:19,321 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 16:00:06,704 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 16:00:09,333 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 16:00:09,363 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 16:15:07,227 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 16:15:09,880 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 16:15:09,942 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 16:30:06,734 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 16:30:09,685 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 16:30:09,712 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 16:45:07,058 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 16:45:09,712 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 16:45:09,751 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 17:00:07,642 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 17:00:11,141 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 17:00:11,163 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 17:15:06,943 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 17:15:09,938 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 17:15:09,964 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 17:30:07,620 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 17:30:10,702 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 17:30:10,729 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 17:45:07,174 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 17:45:10,073 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 17:45:10,100 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 18:00:07,617 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 18:00:10,603 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 18:00:10,629 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 18:15:07,067 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 18:15:09,876 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 18:15:09,911 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 18:30:07,561 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 18:30:10,783 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 18:30:10,810 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 18:45:07,111 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 18:45:10,072 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 18:45:13,743 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 18:45:13,744 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 18:45:14,112 - INFO - Kein Signal – überspringe.
+2025-11-07 18:45:14,142 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 19:00:07,598 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 19:00:10,542 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 19:00:14,235 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 19:00:14,237 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 19:00:14,594 - INFO - Kein Signal – überspringe.
+2025-11-07 19:00:14,621 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 19:15:06,926 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 19:15:10,784 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-07 19:15:14,433 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-07 19:15:14,435 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-07 19:15:16,343 - INFO - Eröffne BUY-Position: 0.332361 Contracts @ $161.539000 | Risk: 0.66 USDT
+2025-11-07 19:15:20,286 - INFO - Trailing-Stop platziert.
+2025-11-07 19:15:20,485 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-07 19:15:20,532 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 19:30:07,535 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 19:30:11,380 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 19:30:11,404 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 19:45:07,035 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 19:45:10,191 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 19:45:10,215 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 20:00:07,474 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 20:00:10,965 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 20:00:10,990 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 20:15:06,592 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 20:15:10,372 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 20:15:10,403 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 20:30:07,075 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 20:30:10,696 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 20:30:10,723 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 20:45:07,571 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 20:45:10,609 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 20:45:10,635 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 21:00:07,521 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 21:00:10,824 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 21:00:10,849 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 21:15:07,261 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 21:15:09,955 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 21:15:09,990 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 21:30:07,118 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 21:30:09,962 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 21:30:09,987 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 21:45:07,554 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 21:45:11,227 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 21:45:11,259 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 22:00:05,287 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 22:00:08,110 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 22:00:08,134 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 22:15:08,230 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 22:15:11,779 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 22:15:11,819 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 22:30:08,368 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 22:30:11,544 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 22:30:11,612 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 22:45:10,387 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 22:45:14,008 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 22:45:14,054 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 23:00:08,263 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 23:00:11,183 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 23:00:11,270 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 23:15:09,680 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 23:15:12,831 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 23:15:12,881 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 23:30:08,264 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 23:30:11,578 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 23:30:11,609 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-07 23:45:07,282 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-07 23:45:10,125 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-07 23:45:10,171 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 00:00:08,036 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 00:00:10,975 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 00:00:11,007 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 00:15:08,834 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 00:15:12,168 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 00:15:12,254 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 00:30:07,834 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 00:30:10,923 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 00:30:10,968 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 00:45:07,170 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 00:45:10,192 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 00:45:10,221 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 01:00:07,834 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 01:00:11,126 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 01:00:11,156 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 01:15:07,226 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 01:15:10,266 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 01:15:10,294 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 01:30:07,943 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 01:30:10,696 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 01:30:10,723 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 01:45:07,434 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 01:45:10,172 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 01:45:10,207 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 02:00:08,101 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 02:00:11,071 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 02:00:11,099 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 02:15:07,545 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 02:15:10,468 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 02:15:10,500 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 02:30:07,285 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 02:30:10,368 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 02:30:10,416 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 02:45:07,874 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 02:45:11,412 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 02:45:11,446 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 03:00:07,349 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 03:00:11,114 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 03:00:11,139 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 03:15:07,855 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 03:15:10,548 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 03:15:10,571 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 03:30:07,447 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 03:30:10,784 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 03:30:10,840 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 03:45:07,094 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 03:45:09,856 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 03:45:09,895 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 04:00:07,687 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 04:00:11,141 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 04:00:11,169 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 04:15:07,321 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 04:15:10,798 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 04:15:10,824 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 04:30:07,815 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 04:30:10,672 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 04:30:10,733 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 04:45:07,352 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 04:45:10,070 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 04:45:10,096 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 05:00:07,911 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 05:00:10,536 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 05:00:10,573 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 05:15:07,538 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 05:15:10,386 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 05:15:10,412 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 05:30:07,105 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 05:30:09,872 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 05:30:09,900 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 05:45:07,653 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 05:45:10,284 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 05:45:10,313 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 06:00:07,880 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 06:00:10,560 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 06:00:10,616 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 06:15:07,792 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 06:15:10,602 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 06:15:10,633 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 06:30:07,435 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 06:30:10,158 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 06:30:10,191 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 06:45:07,017 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 06:45:10,532 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 06:45:10,559 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 07:00:07,553 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 07:00:10,328 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 07:00:10,356 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 07:15:07,020 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 07:15:10,207 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 07:15:10,234 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 07:30:07,639 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 07:30:10,622 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 07:30:10,655 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 07:45:07,252 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 07:45:09,850 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 07:45:09,877 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 08:00:07,837 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 08:00:11,516 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 08:00:11,541 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 08:15:07,394 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 08:15:10,222 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 08:15:10,247 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 08:30:07,114 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 08:30:09,962 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 08:30:09,990 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 08:45:07,545 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 08:45:10,167 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 08:45:10,217 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 09:00:07,423 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 09:00:10,240 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 09:00:10,280 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 09:15:07,803 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 09:15:10,666 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 09:15:10,712 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 09:30:07,414 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 09:30:10,208 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 09:30:10,258 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 09:45:08,030 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 09:45:10,886 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 09:45:10,919 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 10:00:07,567 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 10:00:11,188 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 10:00:11,221 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 10:15:07,018 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 10:15:09,874 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 10:15:09,898 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 10:30:07,797 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 10:30:10,736 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 10:30:10,771 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 10:45:07,124 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 10:45:10,020 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 10:45:10,064 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 11:00:07,714 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 11:00:10,746 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 11:00:10,779 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 11:15:07,299 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 11:15:10,232 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 11:15:10,263 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 11:30:08,145 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 11:30:11,032 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 11:30:11,080 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 11:45:07,521 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 11:45:10,588 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 11:45:10,619 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 12:00:07,104 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 12:00:10,181 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 12:00:10,209 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 12:15:07,758 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 12:15:10,799 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 12:15:10,847 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 12:30:07,376 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 12:30:10,184 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 12:30:10,218 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 12:45:07,741 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 12:45:10,576 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-08 12:45:14,257 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-08 12:45:14,258 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-08 12:45:16,013 - INFO - Eröffne BUY-Position: 0.298046 Contracts @ $159.405000 | Risk: 0.58 USDT
+2025-11-08 12:45:19,906 - INFO - Trailing-Stop platziert.
+2025-11-08 12:45:20,110 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-08 12:45:20,133 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 13:00:07,328 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 13:00:10,540 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 13:00:10,567 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 13:15:07,939 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 13:15:10,790 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 13:15:10,820 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 13:30:07,403 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 13:30:10,570 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 13:30:10,598 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 13:45:08,017 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 13:45:10,724 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 13:45:10,761 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 14:00:07,610 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 14:00:10,884 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 14:00:10,928 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 14:15:07,157 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 14:15:10,626 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 14:15:10,687 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 14:30:07,834 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 14:30:10,894 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 14:30:10,926 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 14:45:07,527 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 14:45:10,824 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 14:45:10,881 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 15:00:08,539 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 15:00:12,873 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 15:00:12,903 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 15:15:07,506 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 15:15:10,706 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-08 15:15:14,436 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-08 15:15:14,437 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-08 15:15:14,856 - INFO - Kein Signal – überspringe.
+2025-11-08 15:15:14,886 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 15:30:06,977 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 15:30:10,142 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-08 15:30:13,800 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-08 15:30:13,806 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-08 15:30:14,151 - INFO - Kein Signal – überspringe.
+2025-11-08 15:30:14,198 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 15:45:07,685 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 15:45:10,902 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-08 15:45:14,579 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-08 15:45:14,588 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-08 15:45:14,932 - INFO - Kein Signal – überspringe.
+2025-11-08 15:45:14,960 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 16:00:07,193 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 16:00:10,588 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-08 16:00:14,752 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-08 16:00:14,753 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-08 16:00:15,108 - INFO - Kein Signal – überspringe.
+2025-11-08 16:00:15,139 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 16:15:07,664 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 16:15:10,895 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-08 16:15:14,540 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-08 16:15:14,542 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-08 16:15:14,914 - INFO - Kein Signal – überspringe.
+2025-11-08 16:15:14,945 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 16:30:07,526 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 16:30:11,193 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-08 16:30:15,043 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-08 16:30:15,045 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-08 16:30:16,896 - INFO - Eröffne BUY-Position: 0.289189 Contracts @ $156.624000 | Risk: 0.56 USDT
+2025-11-08 16:30:21,036 - INFO - Trailing-Stop platziert.
+2025-11-08 16:30:21,278 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-08 16:30:21,296 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 16:45:07,857 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 16:45:11,105 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 16:45:11,150 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 17:00:07,547 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 17:00:10,515 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 17:00:10,542 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 17:15:07,411 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 17:15:12,560 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 17:15:12,587 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 17:30:07,874 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 17:30:11,486 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 17:30:11,513 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 17:45:07,548 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 17:45:10,573 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 17:45:10,600 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 18:00:07,096 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 18:00:10,980 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 18:00:11,007 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 18:15:07,757 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 18:15:10,829 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 18:15:10,866 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 18:30:07,101 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 18:30:09,844 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 18:30:09,873 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 18:45:07,806 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 18:45:10,790 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 18:45:10,844 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 19:00:07,498 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 19:00:12,670 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 19:00:12,700 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 19:15:08,346 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 19:15:11,189 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 19:15:11,222 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 19:30:08,079 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 19:30:11,235 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 19:30:11,265 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 19:45:07,988 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 19:45:11,108 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 19:45:11,179 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 20:00:07,084 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 20:00:10,560 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 20:00:10,585 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 20:15:07,611 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 20:15:10,673 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 20:15:10,705 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 20:30:07,178 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 20:30:10,601 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 20:30:10,632 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 20:45:07,682 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 20:45:10,629 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 20:45:10,676 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 21:00:07,133 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 21:00:10,107 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 21:00:10,145 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 21:15:07,864 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 21:15:11,940 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 21:15:12,013 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 21:30:07,377 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 21:30:10,147 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 21:30:10,173 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 21:45:07,941 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 21:45:11,050 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 21:45:11,083 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 22:00:07,733 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 22:00:10,652 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 22:00:10,679 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 22:15:07,283 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 22:15:10,176 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 22:15:10,216 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 22:30:07,764 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 22:30:10,569 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 22:30:10,592 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 22:45:07,259 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 22:45:10,356 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 22:45:10,384 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 23:00:07,802 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 23:00:10,549 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 23:00:10,576 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 23:15:07,144 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 23:15:09,838 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 23:15:09,876 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 23:30:07,793 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 23:30:10,596 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 23:30:10,627 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-08 23:45:07,931 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-08 23:45:10,944 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-08 23:45:10,979 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 00:00:07,860 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 00:00:11,096 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 00:00:11,125 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 00:15:07,148 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 00:15:09,887 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 00:15:09,914 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 00:30:07,705 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 00:30:10,650 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 00:30:10,682 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 00:45:07,261 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 00:45:10,307 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 00:45:10,335 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 01:00:07,798 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 01:00:10,707 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 01:00:10,740 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 01:15:07,236 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 01:15:10,097 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 01:15:10,126 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 01:30:08,107 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 01:30:10,880 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 01:30:10,924 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 01:45:07,524 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 01:45:10,261 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 01:45:10,286 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 02:00:07,523 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 02:00:10,369 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 02:00:10,429 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 02:15:07,752 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 02:15:10,559 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 02:15:10,599 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 02:30:07,561 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 02:30:10,407 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 02:30:10,473 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 02:45:07,859 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 02:45:10,713 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 02:45:10,747 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 03:00:07,423 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 03:00:10,238 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 03:00:10,272 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 03:15:08,079 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 03:15:11,680 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 03:15:11,705 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 03:30:07,554 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 03:30:10,305 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 03:30:10,335 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 03:45:07,205 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 03:45:10,303 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 03:45:10,332 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 04:00:07,751 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 04:00:10,760 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 04:00:10,793 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 04:15:07,396 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 04:15:10,060 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 04:15:10,086 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 04:30:07,946 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 04:30:10,716 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 04:30:10,750 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 04:45:07,446 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 04:45:10,165 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 04:45:10,191 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 05:00:07,060 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 05:00:09,863 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 05:00:09,893 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 05:15:07,640 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 05:15:10,411 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 05:15:10,436 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 05:30:07,333 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 05:30:10,472 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 05:30:10,537 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 05:45:07,742 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 05:45:10,783 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 05:45:10,810 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 06:00:07,391 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 06:00:10,151 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 06:00:10,173 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 06:15:07,737 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 06:15:10,702 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 06:15:10,741 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 06:30:08,078 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 06:30:10,864 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 06:30:10,910 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 06:45:07,000 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 06:45:09,929 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 06:45:09,959 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 07:00:07,581 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 07:00:10,576 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 07:00:10,612 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 07:15:07,212 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 07:15:09,969 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 07:15:09,997 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 07:30:07,817 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 07:30:10,548 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 07:30:10,586 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 07:45:07,622 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 07:45:10,421 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 07:45:10,450 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 08:00:07,134 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 08:00:09,968 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 08:00:09,995 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 08:15:07,750 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 08:15:10,636 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 08:15:10,672 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 08:30:07,327 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 08:30:10,151 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 08:30:10,186 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 08:45:08,416 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 08:45:11,435 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 08:45:11,519 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 09:00:07,396 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 09:00:10,172 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 09:00:10,200 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 09:15:07,897 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 09:15:10,746 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 09:15:10,775 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 09:30:07,634 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 09:30:10,459 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 09:30:10,490 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 09:45:07,213 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 09:45:10,199 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 09:45:10,225 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 10:00:07,715 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 10:00:10,705 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 10:00:10,735 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 10:15:07,170 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 10:15:09,992 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 10:15:10,021 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 10:30:07,810 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 10:30:10,651 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 10:30:10,688 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 10:45:07,329 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 10:45:10,233 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 10:45:10,266 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 11:00:08,026 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 11:00:10,852 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 11:00:10,884 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 11:15:07,179 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 11:15:09,977 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 11:15:10,003 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 11:30:08,042 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 11:30:10,804 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 11:30:10,849 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 11:45:07,129 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 11:45:10,132 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 11:45:10,160 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 12:00:07,942 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 12:00:10,858 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 12:00:10,892 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 12:15:07,383 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 12:15:10,105 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 12:15:10,139 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 12:30:06,985 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 12:30:09,779 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 12:30:09,804 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 12:45:08,048 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 12:45:10,719 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 12:45:10,745 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 13:00:07,625 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 13:00:10,530 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 13:00:10,561 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 13:15:06,998 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 13:15:09,788 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 13:15:09,819 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 13:30:07,636 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 13:30:10,768 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 13:30:10,806 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 13:45:07,542 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 13:45:10,517 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 13:45:10,545 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 14:00:07,710 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 14:00:10,945 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 14:00:10,997 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 14:15:07,018 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 14:15:10,074 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 14:15:10,105 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 14:30:08,273 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 14:30:11,416 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 14:30:11,471 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 14:45:08,514 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 14:45:11,802 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 14:45:11,831 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 15:00:08,166 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 15:00:11,217 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 15:00:11,249 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 15:15:08,495 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 15:15:11,630 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 15:15:11,660 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 15:30:09,274 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 15:30:12,573 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 15:30:12,659 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 15:45:05,332 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 15:45:08,232 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-09 15:45:11,948 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-09 15:45:11,950 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-09 15:45:12,314 - INFO - Kein Signal – überspringe.
+2025-11-09 15:45:12,341 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 16:00:08,209 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 16:00:11,403 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-09 16:00:15,668 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-09 16:00:15,669 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-09 16:00:16,034 - INFO - Kein Signal – überspringe.
+2025-11-09 16:00:16,064 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 16:15:07,717 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 16:15:11,189 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-09 16:15:15,115 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-09 16:15:15,116 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-09 16:15:15,531 - INFO - Kein Signal – überspringe.
+2025-11-09 16:15:15,561 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 16:30:07,769 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 16:30:11,032 - INFO - Housekeeper: Starte Aufräumroutine für SOL/USDT:USDT...
+2025-11-09 16:30:14,728 - INFO - Housekeeper: SOL/USDT:USDT ist jetzt sauber.
+2025-11-09 16:30:14,737 - INFO - Prüfe Signal für SOL/USDT:USDT (15m)...
+2025-11-09 16:30:16,595 - INFO - Eröffne BUY-Position: 0.292552 Contracts @ $162.710000 | Risk: 0.59 USDT
+2025-11-09 16:30:20,568 - INFO - Trailing-Stop platziert.
+2025-11-09 16:30:20,795 - INFO - Trade-Eröffnung erfolgreich abgeschlossen.
+2025-11-09 16:30:20,828 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 16:45:08,364 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 16:45:11,688 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 16:45:11,721 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 17:00:08,239 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 17:00:11,584 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 17:00:11,605 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 17:15:07,825 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 17:15:11,488 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 17:15:11,516 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 17:30:07,234 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 17:30:17,831 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 17:30:17,856 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 17:45:07,986 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 17:45:16,840 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 17:45:16,867 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 18:00:07,248 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 18:00:21,166 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 18:00:21,180 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 18:15:06,574 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 18:15:14,285 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 18:15:14,300 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 18:30:05,878 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 18:30:13,002 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 18:30:13,015 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 18:45:07,107 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 18:45:17,215 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 18:45:17,228 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 19:00:07,276 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 19:00:27,313 - CRITICAL - Exchange konnte nicht initialisiert werden (Märkte nicht geladen). Breche Zyklus ab.
+2025-11-09 19:00:27,313 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 19:15:07,084 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 19:15:16,005 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 19:15:16,018 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 19:30:07,217 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 19:30:14,071 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 19:30:14,086 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 19:45:09,937 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 19:45:22,119 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 19:45:22,155 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 20:00:07,463 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 20:00:11,300 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 20:00:11,322 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 20:15:05,788 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 20:15:15,423 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 20:15:15,445 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
+2025-11-09 20:30:07,752 - INFO - --- Starte TitanBot für SOL/USDT:USDT (15m) auf Account 'Jurij' ---
+2025-11-09 20:30:17,115 - INFO - Position offen – Management via SL/TP/TSL.
+2025-11-09 20:30:17,129 - INFO - >>> TitanBot-Lauf für SOL/USDT:USDT (15m) abgeschlossen <<<
+
