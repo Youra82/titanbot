@@ -1,0 +1,8 @@
+# Datenbanken und temporäre Dateien ausschließen
+artifacts/db/optuna_studies_smc.db
+artifacts/db/*.db
+
+# Allgemeine Ausschlüsse
+.venv/
+__pycache__/
+*.pyc
