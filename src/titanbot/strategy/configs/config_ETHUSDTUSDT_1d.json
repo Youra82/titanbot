@@ -1,7 +1,8 @@
 {
     "market": {
         "symbol": "ETH/USDT:USDT",
-        "timeframe": "1d"
+        "timeframe": "1d",
+        "htf": "1d"
     },
     "strategy": {
         "swingsLength": 21,

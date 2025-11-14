@@ -1,7 +1,8 @@
 {
     "market": {
         "symbol": "DOGE/USDT:USDT",
-        "timeframe": "1h"
+        "timeframe": "1h",
+        "htf": "4h"
     },
     "strategy": {
         "swingsLength": 13,

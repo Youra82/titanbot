@@ -1,4 +1,4 @@
-# src/titanbot/analysis/optimizer.py (Leverage BEGRENZT auf 5-15)
+# /root/titanbot/src/titanbot/analysis/optimizer.py (Leverage BEGRENZT auf 5-15, mit MTF-HTF-Speicherung)
 import os
 import sys
 import json
@@ -18,11 +18,14 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.analysis.backtester import load_data, run_smc_backtest
 from titanbot.analysis.evaluator import evaluate_dataset
+from titanbot.utils.timeframe_utils import determine_htf # NEU: Import für HTF Bestimmung
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 HISTORICAL_DATA = None
+CURRENT_SYMBOL = None # NEU: Globale Variable für Symbol (wird für Backtester benötigt)
 CURRENT_TIMEFRAME = None
+CURRENT_HTF = None # NEU: Globale Variable für den berechneten HTF
 CONFIG_SUFFIX = ""
 MAX_DRAWDOWN_CONSTRAINT = 0.30
 MIN_WIN_RATE_CONSTRAINT = 55.0
@@ -37,12 +40,12 @@ def objective(trial):
     smc_params = {
         'swingsLength': trial.suggest_int('swingsLength', 10, 100),
         'ob_mitigation': trial.suggest_categorical('ob_mitigation', ['High/Low', 'Close']),
-        
-        # --- NEU: ADX-Filter-Parameter zur Optimierung hinzugefügt ---
         'use_adx_filter': trial.suggest_categorical('use_adx_filter', [True, False]),
-        'adx_period': trial.suggest_int('adx_period', 10, 20), # z.B. Standard 14
-        'adx_threshold': trial.suggest_int('adx_threshold', 20, 30) # z.B. Standard 25
-        # --- ENDE NEU ---
+        'adx_period': trial.suggest_int('adx_period', 10, 20),
+        'adx_threshold': trial.suggest_int('adx_threshold', 20, 30),
+        'symbol': CURRENT_SYMBOL, # NEU: Füge Symbol und Timeframe hinzu
+        'timeframe': CURRENT_TIMEFRAME,
+        'htf': CURRENT_HTF # NEU: Füge den HTF hinzu
     }
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.0, 5.0),
@@ -73,7 +76,7 @@ def objective(trial):
     return pnl
 
 def main():
-    global HISTORICAL_DATA, CURRENT_TIMEFRAME, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
+    global HISTORICAL_DATA, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CURRENT_HTF, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
     parser.add_argument('--symbols', required=True, type=str)
     parser.add_argument('--timeframes', required=True, type=str)
@@ -98,8 +101,13 @@ def main():
 
     for task in TASKS:
         symbol, timeframe = task['symbol'], task['timeframe']
+        
+        # NEU: Globale Variablen setzen
+        CURRENT_SYMBOL = symbol
         CURRENT_TIMEFRAME = timeframe
-        print(f"\n===== Optimiere: {symbol} ({timeframe}) {CONFIG_SUFFIX} =====")
+        CURRENT_HTF = determine_htf(timeframe)
+        
+        print(f"\n===== Optimiere: {symbol} ({timeframe}) | MTF-Bias von {CURRENT_HTF} =====")
         HISTORICAL_DATA = load_data(symbol, timeframe, args.start_date, args.end_date)
         if HISTORICAL_DATA.empty: print("Keine Daten geladen. Überspringe."); continue
 
@@ -130,20 +138,18 @@ def main():
         os.makedirs(config_dir, exist_ok=True)
         config_output_path = os.path.join(config_dir, f'config_{create_safe_filename(symbol, timeframe)}{CONFIG_SUFFIX}.json')
 
-        # --- NEU: ADX-Parameter werden hier ausgelesen und gespeichert ---
-        strategy_config = { 
-            'swingsLength': best_params['swingsLength'], 
+        strategy_config = {
+            'swingsLength': best_params['swingsLength'],
             'ob_mitigation': best_params['ob_mitigation'],
             'use_adx_filter': best_params['use_adx_filter'],
             'adx_period': best_params['adx_period'],
             'adx_threshold': best_params['adx_threshold']
         }
-        # --- ENDE NEU ---
         
         risk_config = {
-            'margin_mode': "isolated", 
+            'margin_mode': "isolated",
             'risk_per_trade_pct': round(best_params['risk_per_trade_pct'], 2),
-            'risk_reward_ratio': round(best_params['risk_reward_ratio'], 2), 
+            'risk_reward_ratio': round(best_params['risk_reward_ratio'], 2),
             'leverage': best_params['leverage'],
             'trailing_stop_activation_rr': round(best_params['trailing_stop_activation_rr'], 2),
             'trailing_stop_callback_rate_pct': round(best_params['trailing_stop_callback_rate_pct'], 2),
@@ -151,8 +157,11 @@ def main():
             'min_sl_pct': round(best_params['min_sl_pct'], 2)
         }
         behavior_config = {"use_longs": True, "use_shorts": True}
+        
+        # NEU: Speichere HTF in der finalen Config
         config_output = {
-            "market": {"symbol": symbol, "timeframe": timeframe}, "strategy": strategy_config,
+            "market": {"symbol": symbol, "timeframe": timeframe, "htf": CURRENT_HTF}, 
+            "strategy": strategy_config,
             "risk": risk_config, "behavior": behavior_config
         }
         with open(config_output_path, 'w') as f: json.dump(config_output, f, indent=4)

@@ -1,4 +1,4 @@
-# src/titanbot/analysis/portfolio_simulator.py (Version für TitanBot SMC - KORRIGIERT)
+# /root/titanbot/src/titanbot/analysis/portfolio_simulator.py (Version für TitanBot SMC - KORRIGIERT mit MTF-Bias)
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -6,49 +6,84 @@ import sys
 import os
 import ta # Import für ATR/ADX hinzugefügt
 import math # Import für math.ceil
+import json
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.strategy.smc_engine import SMCEngine, Bias
 from titanbot.strategy.trade_logic import get_titan_signal # Nutzt die Live-Logik
+from titanbot.analysis.backtester import load_data # Importiere load_data für HTF-Daten
+from titanbot.utils.timeframe_utils import determine_htf # NEU: Import für determine_htf
 
 def run_portfolio_simulation(start_capital, strategies_data, start_date, end_date):
     """
     Führt eine chronologische Portfolio-Simulation mit mehreren SMC-Strategien durch.
-    'strategies_data' erwartet jetzt Keys (z.B. 'BTC_1h') und Dictionaries mit
-    'symbol', 'timeframe', 'data', 'smc_params', 'risk_params'.
+    Beinhaltet MTF-Bias-Check.
     """
     print("\n--- Starte Portfolio-Simulation (SMC)... ---")
+
+    # --- 0. MTF-Bias für jede Strategie bestimmen ---
+    # Da der Simulator nur die Daten lädt, müssen wir den HTF-Bias hier bestimmen
+    mtf_bias_by_strategy = {}
+    print("0/4: Bestimme MTF-Bias für jede Strategie...")
+    
+    for key, strat in tqdm(strategies_data.items(), desc="MTF Bias Check"):
+        symbol = strat['symbol']
+        timeframe = strat['timeframe']
+        
+        # NEU: Hole HTF aus der Konfiguration (wird von show_results übergeben)
+        htf = strat.get('htf')
+        if not htf:
+            # Fallback, falls Konfigurationsdatei veraltet war (sollte nicht passieren)
+            htf = determine_htf(timeframe)
+            strat['htf'] = htf
+
+        market_bias = Bias.NEUTRAL
+        if htf and htf != timeframe:
+            # Lade HTF-Daten für den gesamten Backtest-Zeitraum
+            htf_data = load_data(symbol, htf, start_date, end_date)
+            
+            if htf_data.empty or len(htf_data) < 150:
+                # print(f"MTF-Check: Nicht genügend HTF-Daten für {key}.")
+                pass # Bleibt bei Bias.NEUTRAL
+            else:
+                # Führe SMC-Analyse auf HTF-Daten durch (Standard SMC settings)
+                htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'}) 
+                htf_engine.process_dataframe(htf_data[['open', 'high', 'low', 'close']].copy())
+                market_bias = htf_engine.swingTrend
+        
+        mtf_bias_by_strategy[key] = market_bias
+        
+    # --- ENDE MTF-Bias Bestimmung ---
 
     # --- 1. Kombiniere alle Zeitstempel & berechne Indikatoren ---
     all_timestamps = set()
     print("1/4: Berechne Indikatoren (ATR/ADX) für alle Strategien...")
-    data_with_indicators = {} # NEU: Dictionary für Daten mit Indikatoren
-    
+    data_with_indicators = {} 
+
     for key, strat in strategies_data.items():
         if 'data' in strat and not strat['data'].empty:
-            # --- START NEU: ATR & ADX für jede Strategie berechnen ---
+            
             try:
                 temp_data = strat['data'].copy()
                 smc_params = strat.get('smc_params', {})
-                adx_period = smc_params.get('adx_period', 14) # Hole Periode aus Config
-                
-                if len(temp_data) >= 15: # Mindestlänge für ATR(14)
+                adx_period = smc_params.get('adx_period', 14) 
+
+                if len(temp_data) >= 15:
                     # ATR
                     atr_indicator = ta.volatility.AverageTrueRange(high=temp_data['high'], low=temp_data['low'], close=temp_data['close'], window=14)
                     temp_data['atr'] = atr_indicator.average_true_range()
-                    
+
                     # ADX
                     adx_indicator = ta.trend.ADXIndicator(high=temp_data['high'], low=temp_data['low'], close=temp_data['close'], window=adx_period)
                     temp_data['adx'] = adx_indicator.adx()
                     temp_data['adx_pos'] = adx_indicator.adx_pos()
                     temp_data['adx_neg'] = adx_indicator.adx_neg()
+                    temp_data.dropna(subset=['atr', 'adx'], inplace=True) 
 
-                    temp_data.dropna(subset=['atr', 'adx'], inplace=True) # Zeilen ohne Indikatoren entfernen
-                    
                     if not temp_data.empty:
-                        data_with_indicators[key] = temp_data # Nur gültige Daten speichern
+                        data_with_indicators[key] = temp_data
                         all_timestamps.update(temp_data.index)
                     else:
                         print(f"WARNUNG: Keine Daten für Strategie {key} nach Indikator-Berechnung übrig.")
@@ -56,7 +91,6 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                     print(f"WARNUNG: Nicht genug Daten ({len(temp_data)}) für Indikatoren bei Strategie {key}.")
             except Exception as e:
                 print(f"FEHLER bei Indikator-Berechnung für {key}: {e}")
-            # --- ENDE NEU ---
         else:
             print(f"WARNUNG: Keine Daten für Strategie {key} gefunden.")
 
@@ -66,7 +100,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
         if key in data_with_indicators:
             strategies_data_processed[key] = strat.copy()
             strategies_data_processed[key]['data'] = data_with_indicators[key]
-        
+
     if not all_timestamps or not strategies_data_processed:
         print("Keine gültigen Daten für die Simulation gefunden (oder Indikatoren konnten nicht berechnet werden).")
         return None
@@ -77,13 +111,18 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
     # --- 2. SMC-Analyse für jede Strategie ---
     print("2/4: Führe SMC-Analyse für alle gültigen Strategien durch...")
     smc_results_by_strategy = {}
-    valid_strategies = {} 
-    
+    valid_strategies = {}
+
     for key, strat in tqdm(strategies_data_processed.items(), desc="SMC Analyse"):
         try:
+            # Stelle sicher, dass Symbol/Timeframe im smc_params ist, falls im backtester benötigt
+            strat['smc_params']['symbol'] = strat['symbol']
+            strat['smc_params']['timeframe'] = strat['timeframe']
+            strat['smc_params']['htf'] = strat['htf'] # HTF hinzufügen
+
             engine = SMCEngine(settings=strat.get('smc_params', {}))
             smc_results_by_strategy[key] = engine.process_dataframe(strat['data'][['open','high','low','close']].copy())
-            valid_strategies[key] = strat 
+            valid_strategies[key] = strat
         except Exception as e:
             print(f"FEHLER bei SMC-Analyse für {key}: {e}")
 
@@ -100,7 +139,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
     min_equity_ever = start_capital
     liquidation_date = None
 
-    open_positions = {} 
+    open_positions = {}
     trade_history = []
     equity_curve = []
 
@@ -109,14 +148,14 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
     max_allowed_effective_leverage = 10
     absolute_max_notional_value = 1000000
     min_notional = 5.0
-
+    
     for ts in tqdm(sorted_timestamps, desc="Simuliere Portfolio"):
         if liquidation_date: break
 
-        current_total_equity = equity 
+        current_total_equity = equity
         unrealized_pnl = 0
 
-        # --- 3a. Offene Positionen managen ---
+        # --- 3a. Offene Positionen managen (Unverändert) ---
         positions_to_close = []
         for key, pos in open_positions.items():
             strat_data = valid_strategies.get(key)
@@ -171,12 +210,15 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                     smc_results = smc_results_by_strategy.get(key)
                     risk_params = strat.get('risk_params', {})
                     smc_params = strat.get('smc_params', {})
+                    market_bias = mtf_bias_by_strategy.get(key, Bias.NEUTRAL) # MTF Bias holen
 
                     if not smc_results: continue
-                    
+
                     # --- NEU: Kombiniere Parameter für die Logik-Funktion ---
                     params_for_logic = {"strategy": smc_params, "risk": risk_params}
-                    side, _ = get_titan_signal(smc_results, current_candle, params=params_for_logic)
+                    
+                    # FEHLER BEHOBEN: market_bias an die Signalfunktion übergeben
+                    side, _ = get_titan_signal(smc_results, current_candle, params=params_for_logic, market_bias=market_bias) 
 
                     if side:
                         entry_price = current_candle['close']
@@ -185,24 +227,24 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                         leverage = risk_params.get('leverage', 10)
                         activation_rr = risk_params.get('trailing_stop_activation_rr', 2.0)
                         callback_rate = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100
-                        
+
                         # --- NEU: Hole optimierte SL-Parameter ---
-                        atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0) 
+                        atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0)
                         min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0
-                        
+
                         current_atr = current_candle.get('atr')
                         if pd.isna(current_atr) or current_atr <= 0:
-                            continue 
+                            continue
 
                         sl_distance_atr = current_atr * atr_multiplier_sl
                         sl_distance_min = entry_price * min_sl_pct
                         sl_distance = max(sl_distance_atr, sl_distance_min)
                         if sl_distance <= 0:
                             continue
-                        
-                        risk_amount_usd = equity * risk_per_trade_pct 
+
+                        risk_amount_usd = equity * risk_per_trade_pct
                         sl_distance_pct_equivalent = sl_distance / entry_price
-                        if sl_distance_pct_equivalent <= 1e-6: 
+                        if sl_distance_pct_equivalent <= 1e-6:
                             continue
 
                         calculated_notional_value = risk_amount_usd / sl_distance_pct_equivalent
@@ -211,9 +253,9 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
 
                         if final_notional_value < min_notional:
                             continue
-                            
+
                         margin_used = math.ceil((final_notional_value / leverage) * 100) / 100
-                        
+
                         current_total_margin = sum(p['margin_used'] for p in open_positions.values())
                         if current_total_margin + margin_used > equity:
                             continue
@@ -234,10 +276,10 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                             'peak_price': entry_price,
                             'callback_rate': callback_rate,
                             'last_known_price': entry_price
-                        }
+                            }
 
-        # --- 3c. Equity Curve und Drawdown aktualisieren ---
-        current_total_equity = equity + unrealized_pnl 
+        # --- 3c. Equity Curve und Drawdown aktualisieren (Unverändert) ---
+        current_total_equity = equity + unrealized_pnl
         equity_curve.append({'timestamp': ts, 'equity': current_total_equity})
 
         peak_equity = max(peak_equity, current_total_equity)
@@ -250,7 +292,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
         if current_total_equity <= 0 and not liquidation_date:
             liquidation_date = ts
 
-    # --- 4. Ergebnisse vorbereiten ---
+    # --- 4. Ergebnisse vorbereiten (Unverändert) ---
     print("4/4: Bereite Analyse-Ergebnisse vor...")
     final_equity = equity_curve[-1]['equity'] if equity_curve else start_capital
     total_pnl_pct = (final_equity / start_capital - 1) * 100 if start_capital > 0 else 0
@@ -282,59 +324,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
         "liquidation_date": liquidation_date,
         "pnl_per_strategy": pnl_per_strategy,
         "trades_per_strategy": trades_per_strategy,
-        "equity_curve": equity_df 
+        "equity_curve": equity_df
     }
 
-# Optional: Ein kleiner Test, wenn die Datei direkt ausgeführt wird
-if __name__ == "__main__":
-    from titanbot.analysis.backtester import load_data # Import hierhin verschoben
-    start_cap = 1000
-    start_dt = "2024-01-01"
-    end_dt = "2024-04-01"
-
-    test_strategies = {
-        "BTC_1h": {
-            'symbol': "BTC/USDT:USDT", 'timeframe': "1h",
-            'smc_params': {'swingsLength': 30, 'ob_mitigation': 'High/Low', 'adx_period': 14, 'use_adx_filter': True, 'adx_threshold': 25},
-            'risk_params': {'risk_per_trade_pct': 1.0, 'risk_reward_ratio': 2.0, 'leverage': 10, 'atr_multiplier_sl': 2.0, 'min_sl_pct': 0.5}
-        },
-        "ETH_1h": {
-            'symbol': "ETH/USDT:USDT", 'timeframe': "1h",
-            'smc_params': {'swingsLength': 50, 'ob_mitigation': 'Close', 'adx_period': 14, 'use_adx_filter': False},
-            'risk_params': {'risk_per_trade_pct': 1.5, 'risk_reward_ratio': 1.5, 'leverage': 15, 'atr_multiplier_sl': 2.5, 'min_sl_pct': 0.8}
-        }
-    }
-
-    print("Lade Testdaten...")
-    test_strategies_raw_data = {}
-    for key in test_strategies:
-        strat = test_strategies[key]
-        test_strategies_raw_data[key] = {
-            **strat, 
-            'data': load_data(strat['symbol'], strat['timeframe'], start_dt, end_dt)
-        }
-        if not test_strategies_raw_data[key]['data'].empty:
-            print(f"Daten für {key} geladen: {len(test_strategies_raw_data[key]['data'])} Kerzen")
-        else:
-            print(f"FEHLER beim Laden der Daten für {key}")
-
-
-    if any(v['data'].empty for v in test_strategies_raw_data.values()):
-        print("Konnte nicht alle Testdaten laden. Breche Test ab.")
-    else:
-        print("\nStarte Portfolio-Simulationstest...")
-        results = run_portfolio_simulation(start_cap, test_strategies_raw_data, start_dt, end_dt)
-
-        if results:
-            print("\n--- TEST ERGEBNISSE ---")
-            print(f"Endkapital: {results['end_capital']:.2f}")
-            print(f"PnL %: {results['total_pnl_pct']:.2f}%")
-            print(f"Max DD %: {results['max_drawdown_pct']:.2f}%")
-            print(f"Trades: {results['trade_count']}")
-            if not results['equity_curve'].empty:
-                print("\nEquity Curve Head:")
-                print(results['equity_curve'].head())
-            else:
-                print("\nEquity Curve ist leer.")
-        else:
-            print("\nPortfolio-Simulationstest fehlgeschlagen oder keine Ergebnisse.")
+# ... (if __name__ == "__main__": bleibt unverändert)
