@@ -18431,3 +18431,7 @@ Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...
 20:30:26 [WARNING] DOGE/USDT:USDT|1d: Nicht genügend OHLCV-Daten für SMC/Indikatoren – überspringe.
 20:30:26 [INFO] DOGE/USDT:USDT|1d: >>> TitanBot-Lauf für DOGE/USDT:USDT (1d) abgeschlossen <<<
 
+=======================================================
+TitanBot Master Runner v1.0
+=======================================================
+Fehler: Kein 'jaegerbot'-Account in secret.json gefunden.
