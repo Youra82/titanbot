@@ -1,0 +1,19 @@
+# Datenbanken und temporäre Dateien ausschließen
+artifacts/db/optuna_studies_smc.db
+artifacts/db/*.db
+
+# Allgemeine Ausschlüsse
+.venv/
+__pycache__/
+*.pyc
+
+# Geheime Daten (API-Keys)
+secret.json
+
+# Logs
+logs/
+*.log
+
+# CSV-Daten
+data/cache/*.csv
+*.csv
