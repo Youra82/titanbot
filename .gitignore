@@ -7,9 +7,6 @@ artifacts/db/*.db
 __pycache__/
 *.pyc
 
-# Geheime Daten (API-Keys)
-secret.json
-
 # Logs
 logs/
 *.log
