@@ -45,10 +45,10 @@ def main():
             secrets = json.load(f)
 
         # *** Geändert: Account-Name (optional) ***
-        if not secrets.get('jaegerbot'): # Behalte den Secret-Namen bei
-            print("Fehler: Kein 'jaegerbot'-Account in secret.json gefunden.")
+        if not secrets.get('titanbot'):
+            print("Fehler: Kein 'titanbot'-Account in secret.json gefunden.")
             return
-        main_account_config = secrets['jaegerbot'][0]
+        main_account_config = secrets['titanbot'][0]
 
         print(f"Frage Kontostand für Account '{main_account_config.get('name', 'Standard')}' ab...")
         
