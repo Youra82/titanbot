@@ -33,7 +33,17 @@ class Exchange:
             logger.warning(f"WARNUNG: Unerwarteter Fehler beim Laden der Märkte: {e}")
             self.markets = None
 
-    def fetch_recent_ohlcv(self, symbol, timeframe, limit=100):
+    def fetch_recent_ohlcv(self, symbol, timeframe, limit=100, ensure_min_data=None):
+        """
+        Holt die letzten Kerzen. Wenn ensure_min_data angegeben ist und nicht genug Daten 
+        vorhanden sind, lädt automatisch historische Daten nach.
+        
+        Args:
+            symbol: Trading-Paar (z.B. 'BTC/USDT:USDT')
+            timeframe: Zeitrahmen (z.B. '1d', '4h', '30m')
+            limit: Anzahl der zu holenden Kerzen
+            ensure_min_data: Mindestanzahl Kerzen, die vorhanden sein müssen (lädt ggf. historisch nach)
+        """
         if not self.markets: return pd.DataFrame()
         try:
             effective_limit = min(limit, 1000)
@@ -43,6 +53,31 @@ class Exchange:
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
             df.set_index('timestamp', inplace=True)
             df.sort_index(inplace=True)
+            
+            # Wenn ensure_min_data gesetzt ist und nicht genug Daten vorhanden sind
+            if ensure_min_data and len(df) < ensure_min_data:
+                logger.warning(f"Nur {len(df)} Kerzen für {symbol} ({timeframe}) verfügbar, lade historische Daten nach...")
+                # Berechne, wie viele Tage wir zurückgehen müssen
+                timeframe_map = {'5m': 5/1440, '15m': 15/1440, '30m': 30/1440, '1h': 1/24, 
+                                 '2h': 2/24, '4h': 4/24, '6h': 6/24, '1d': 1}
+                days_per_candle = timeframe_map.get(timeframe, 1)
+                days_needed = int(ensure_min_data * days_per_candle) + 10  # +10 Tage Puffer
+                
+                end_date = datetime.now(timezone.utc)
+                start_date = end_date - timedelta(days=days_needed)
+                
+                historical_df = self.fetch_historical_ohlcv(
+                    symbol, timeframe, 
+                    start_date.strftime('%Y-%m-%d'),
+                    end_date.strftime('%Y-%m-%d')
+                )
+                
+                if not historical_df.empty:
+                    logger.info(f"✓ {len(historical_df)} historische Kerzen für {symbol} ({timeframe}) nachgeladen.")
+                    return historical_df
+                else:
+                    logger.warning(f"Konnte keine historischen Daten für {symbol} ({timeframe}) laden.")
+            
             return df
         except Exception as e:
             logger.error(f"Fehler bei fetch_recent_ohlcv für {symbol}: {e}")
