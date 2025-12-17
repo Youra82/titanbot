@@ -67,6 +67,7 @@ class Exchange:
                 end_date = datetime.now(timezone.utc)
                 start_date = end_date - timedelta(days=days_needed)
                 
+                logger.info(f"Versuche {days_needed} Tage historische Daten für {symbol} ({timeframe}) nachzuladen...")
                 historical_df = self.fetch_historical_ohlcv(
                     symbol, timeframe, 
                     start_date.strftime('%Y-%m-%d'),
@@ -74,13 +75,13 @@ class Exchange:
                 )
                 
                 if not historical_df.empty and len(historical_df) >= ensure_min_data:
-                    logger.info(f"✓ {len(historical_df)} historische Kerzen für {symbol} ({timeframe}) nachgeladen.")
+                    logger.info(f"✓ {len(historical_df)} historische Kerzen für {symbol} ({timeframe}) erfolgreich nachgeladen.")
                     return historical_df
                 elif not historical_df.empty:
-                    logger.warning(f"Nur {len(historical_df)} von {ensure_min_data} benötigten Kerzen nachgeladen.")
+                    logger.warning(f"Nur {len(historical_df)} von {ensure_min_data} benötigten Kerzen nachgeladen - nutze verfügbare Daten.")
                     return historical_df  # Gebe zurück was wir haben
                 else:
-                    logger.warning(f"Konnte keine historischen Daten für {symbol} ({timeframe}) laden.")
+                    logger.error(f"Konnte keine historischen Daten für {symbol} ({timeframe}) laden - verwende {len(df)} vorhandene Kerzen.")
             
             return df
         except Exception as e:
