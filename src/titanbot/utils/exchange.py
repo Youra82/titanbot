@@ -57,11 +57,12 @@ class Exchange:
             # Wenn ensure_min_data gesetzt ist und nicht genug Daten vorhanden sind
             if ensure_min_data and len(df) < ensure_min_data:
                 logger.warning(f"Nur {len(df)} Kerzen für {symbol} ({timeframe}) verfügbar, lade historische Daten nach...")
-                # Berechne, wie viele Tage wir zurückgehen müssen
+                # Berechne, wie viele Tage wir zurückgehen müssen (mit großzügigem Puffer)
                 timeframe_map = {'5m': 5/1440, '15m': 15/1440, '30m': 30/1440, '1h': 1/24, 
                                  '2h': 2/24, '4h': 4/24, '6h': 6/24, '1d': 1}
                 days_per_candle = timeframe_map.get(timeframe, 1)
-                days_needed = int(ensure_min_data * days_per_candle) + 10  # +10 Tage Puffer
+                # Verdoppeln wir die benötigten Tage für Puffer (Wochenenden, Feiertage etc.)
+                days_needed = int(ensure_min_data * days_per_candle * 2) + 30
                 
                 end_date = datetime.now(timezone.utc)
                 start_date = end_date - timedelta(days=days_needed)
@@ -72,9 +73,12 @@ class Exchange:
                     end_date.strftime('%Y-%m-%d')
                 )
                 
-                if not historical_df.empty:
+                if not historical_df.empty and len(historical_df) >= ensure_min_data:
                     logger.info(f"✓ {len(historical_df)} historische Kerzen für {symbol} ({timeframe}) nachgeladen.")
                     return historical_df
+                elif not historical_df.empty:
+                    logger.warning(f"Nur {len(historical_df)} von {ensure_min_data} benötigten Kerzen nachgeladen.")
+                    return historical_df  # Gebe zurück was wir haben
                 else:
                     logger.warning(f"Konnte keine historischen Daten für {symbol} ({timeframe}) laden.")
             
