@@ -62,10 +62,10 @@ def get_market_bias(exchange, symbol, htf, logger):
     """Bestimmt den Markt-Bias basierend auf der Swing-Struktur des HTF."""
     try:
         # Hole genügend Daten für SMC (swingsLength bis 100) auf HTF
-        # ensure_min_data=150 sorgt für automatisches Nachladen historischer Daten
-        htf_data = exchange.fetch_recent_ohlcv(symbol, htf, limit=300, ensure_min_data=150)
-        # 150 Kerzen für 50er Swing Length + ADX/ATR-Puffer
-        if htf_data.empty or len(htf_data) < 150: 
+        # ensure_min_data=100 sorgt für automatisches Nachladen historischer Daten
+        htf_data = exchange.fetch_recent_ohlcv(symbol, htf, limit=300, ensure_min_data=100)
+        # 100 Kerzen für 50er Swing Length + ADX/ATR-Puffer
+        if htf_data.empty or len(htf_data) < 100: 
             logger.warning(f"MTF-Check: Nicht genügend Daten ({len(htf_data)}) auf {htf} verfügbar.")
             return Bias.NEUTRAL # Neutraler Bias bei unzureichenden Daten
         
@@ -135,9 +135,9 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # --- ENDE NEU ---
 
         # Hole genügend Daten für SMC (swingsLength bis 100) und ADX (bis zu 20)
-        # ensure_min_data=150 sorgt für automatisches Nachladen historischer Daten
-        recent_data = exchange.fetch_recent_ohlcv(symbol, timeframe, limit=300, ensure_min_data=150)
-        if recent_data.empty or len(recent_data) < 150:
+        # ensure_min_data=100 sorgt für automatisches Nachladen historischer Daten
+        recent_data = exchange.fetch_recent_ohlcv(symbol, timeframe, limit=300, ensure_min_data=100)
+        if recent_data.empty or len(recent_data) < 100:
             logger.warning("Nicht genügend OHLCV-Daten für SMC/Indikatoren – überspringe.")
             return
 
