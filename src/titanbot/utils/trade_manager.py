@@ -247,9 +247,17 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # Berechne Contracts (Menge der Basiswährung)
         amount = calculated_notional_value / entry_price
 
+        # Prüfe Mindestordergröße in Contracts UND in USDT-Wert
         min_amount = exchange.markets[symbol].get('limits', {}).get('amount', {}).get('min', 0.0)
+        min_cost = exchange.markets[symbol].get('limits', {}).get('cost', {}).get('min', 5.0)  # Standard: 5 USDT
+        order_value_usdt = amount * entry_price
+        
         if amount < min_amount:
-            logger.error(f"Ordergröße {amount} < Mindestbetrag {min_amount}.")
+            logger.error(f"Ordergröße {amount:.6f} Contracts < Mindestbetrag {min_amount} Contracts.")
+            return
+        
+        if order_value_usdt < min_cost:
+            logger.error(f"Order-Wert {order_value_usdt:.2f} USDT < Mindest-Orderwert {min_cost} USDT.")
             return
 
         # --------------------------------------------------- #
