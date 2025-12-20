@@ -68,7 +68,8 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
             try:
                 temp_data = strat['data'].copy()
                 smc_params = strat.get('smc_params', {})
-                adx_period = smc_params.get('adx_period', 14) 
+                adx_period = smc_params.get('adx_period', 14)
+                volume_ma_period = smc_params.get('volume_ma_period', 20)
 
                 if len(temp_data) >= 15:
                     # ATR
@@ -80,6 +81,10 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                     temp_data['adx'] = adx_indicator.adx()
                     temp_data['adx_pos'] = adx_indicator.adx_pos()
                     temp_data['adx_neg'] = adx_indicator.adx_neg()
+                    
+                    # Volume MA (NEU)
+                    temp_data['volume_ma'] = temp_data['volume'].rolling(window=volume_ma_period).mean()
+                    
                     temp_data.dropna(subset=['atr', 'adx'], inplace=True) 
 
                     if not temp_data.empty:
@@ -217,8 +222,8 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                     # --- NEU: Kombiniere Parameter für die Logik-Funktion ---
                     params_for_logic = {"strategy": smc_params, "risk": risk_params}
                     
-                    # FEHLER BEHOBEN: market_bias an die Signalfunktion übergeben
-                    side, _ = get_titan_signal(smc_results, current_candle, params=params_for_logic, market_bias=market_bias) 
+                    # FEHLER BEHOBEN: market_bias an die Signalfunktion übergeben, signal_context empfangen
+                    side, _, signal_context = get_titan_signal(smc_results, current_candle, params=params_for_logic, market_bias=market_bias) 
 
                     if side:
                         entry_price = current_candle['close']

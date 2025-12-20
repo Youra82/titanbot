@@ -9,7 +9,11 @@
         "ob_mitigation": "Close",
         "use_adx_filter": false,
         "adx_period": 20,
-        "adx_threshold": 29
+        "adx_threshold": 29,
+        "use_entry_confirmation": true,
+        "use_volume_filter": true,
+        "volume_ma_period": 20,
+        "volume_threshold_multiplier": 1.5
     },
     "risk": {
         "margin_mode": "isolated",
@@ -19,7 +23,9 @@
         "trailing_stop_activation_rr": 2.96,
         "trailing_stop_callback_rate_pct": 0.65,
         "atr_multiplier_sl": 1.34,
-        "min_sl_pct": 1.15
+        "min_sl_pct": 1.15,
+        "use_structure_sl": true,
+        "structure_sl_buffer_pct": 0.2
     },
     "behavior": {
         "use_longs": true,
