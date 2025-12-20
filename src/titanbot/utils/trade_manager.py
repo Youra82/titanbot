@@ -144,6 +144,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # --- ATR/ADX Indikatoren im Live-Bot berechnen (Unverändert) ---
         smc_params = params.get('strategy', {})
         adx_period = smc_params.get('adx_period', 14)
+        volume_ma_period = smc_params.get('volume_ma_period', 20)
 
         # ATR
         atr_indicator = ta.volatility.AverageTrueRange(high=recent_data['high'], low=recent_data['low'], close=recent_data['close'], window=14)
@@ -154,6 +155,10 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         recent_data['adx'] = adx_indicator.adx()
         recent_data['adx_pos'] = adx_indicator.adx_pos()
         recent_data['adx_neg'] = adx_indicator.adx_neg()
+        
+        # Volume MA (NEU für Volume-Filter)
+        recent_data['volume_ma'] = recent_data['volume'].rolling(window=volume_ma_period).mean()
+        
         recent_data.dropna(subset=['atr', 'adx'], inplace=True) # Zeilen ohne Indikatoren entfernen
 
         # Aktualisiere current_candle mit den Indikatoren (letzte Kerze)
@@ -166,8 +171,8 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         smc_results_full = engine.process_dataframe(recent_data[['open', 'high', 'low', 'close']].copy())
 
         # Korrigierter Aufruf: SMC-Ergebnisse und Indikator-angereicherte Kerze übergeben
-        # GEÄNDERT: market_bias als neuen Parameter übergeben
-        signal_side, signal_price = get_titan_signal(smc_results_full, current_candle, params, market_bias) 
+        # GEÄNDERT: market_bias als neuen Parameter übergeben, signal_context empfangen
+        signal_side, signal_price, signal_context = get_titan_signal(smc_results_full, current_candle, params, market_bias) 
 
         if not signal_side:
             logger.info("Kein Signal – überspringe.")
@@ -176,6 +181,25 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         if exchange.fetch_open_positions(symbol):
             logger.info("Position bereits offen – überspringe.")
             return
+        
+        # --- NEU: Max-Open-Positions Check ---
+        # Lade settings.json für max_open_positions
+        try:
+            settings_path = os.path.join(PROJECT_ROOT, 'settings.json')
+            with open(settings_path, 'r') as f:
+                live_settings = json.load(f)
+            max_positions = live_settings.get('live_trading_settings', {}).get('max_open_positions', 999)
+            
+            # Zähle alle offenen Positionen über alle Symbole
+            all_open_positions = exchange.exchange.fetch_positions()
+            open_count = sum(1 for pos in all_open_positions if float(pos.get('contracts', 0)) > 0)
+            
+            if open_count >= max_positions:
+                logger.info(f"Max-Open-Positions Limit erreicht ({open_count}/{max_positions}) – überspringe.")
+                return
+        except Exception as e:
+            logger.warning(f"Konnte max_open_positions nicht prüfen: {e}")
+            # Fahre fort wenn Check fehlschlägt (fail-safe)
 
         # ... (Der Rest des Codes zur Margin/Orderplatzierung bleibt unverändert) ...
 
@@ -209,20 +233,48 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         risk_pct = risk_params.get('risk_per_trade_pct', 1.0) / 100.0
         risk_usdt = balance * risk_pct
 
-        # --- SL-Distanz basierend auf ATR und Min_SL (wie im Backtester) ---
+        # --- SL-Distanz: Struktur-basiert mit ATR-Fallback (NEU) ---
         atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0)
         min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0
+        use_structure_sl = risk_params.get('use_structure_sl', True)
+        structure_sl_buffer_pct = risk_params.get('structure_sl_buffer_pct', 0.2) / 100.0  # 0.2% Buffer
 
         current_atr = current_candle.get('atr')
-        if pd.isna(current_atr) or current_atr <= 0:
-            # Fallback, falls ATR-Berechnung im Live-Betrieb fehlschlägt
-            logger.warning("ATR-Daten ungültig, verwende Hebel-basierte SL-Distanz.")
-            sl_distance_pct = 1.0 / leverage
-            sl_distance = entry_price * sl_distance_pct
-        else:
-            sl_distance_atr = current_atr * atr_multiplier_sl
-            sl_distance_min = entry_price * min_sl_pct
-            sl_distance = max(sl_distance_atr, sl_distance_min)
+        
+        # Versuche Struktur-basiertes SL (falls signal_context vorhanden)
+        sl_distance = None
+        if use_structure_sl and signal_context:
+            try:
+                level_low = signal_context.get('level_low')
+                level_high = signal_context.get('level_high')
+                
+                if signal_side == 'buy' and level_low:
+                    # SL unter dem Level-Low + Buffer
+                    buffer = entry_price * structure_sl_buffer_pct
+                    sl_price_structure = level_low - buffer
+                    sl_distance = entry_price - sl_price_structure
+                elif signal_side == 'sell' and level_high:
+                    # SL über dem Level-High + Buffer
+                    buffer = entry_price * structure_sl_buffer_pct
+                    sl_price_structure = level_high + buffer
+                    sl_distance = sl_price_structure - entry_price
+                    
+                if sl_distance and sl_distance > 0:
+                    logger.info(f"Nutze Struktur-basiertes SL (Level: {level_low or level_high:.2f}, Buffer: {structure_sl_buffer_pct*100}%)")
+            except Exception as e:
+                logger.warning(f"Struktur-SL fehlgeschlagen: {e}, nutze ATR-Fallback")
+        
+        # Fallback auf ATR-basiertes SL
+        if not sl_distance or sl_distance <= 0:
+            if pd.isna(current_atr) or current_atr <= 0:
+                logger.warning("ATR-Daten ungültig, verwende Hebel-basierte SL-Distanz.")
+                sl_distance_pct = 1.0 / leverage
+                sl_distance = entry_price * sl_distance_pct
+            else:
+                sl_distance_atr = current_atr * atr_multiplier_sl
+                sl_distance_min = entry_price * min_sl_pct
+                sl_distance = max(sl_distance_atr, sl_distance_min)
+                logger.info(f"Nutze ATR-basiertes SL (ATR: {current_atr:.2f}, Multiplier: {atr_multiplier_sl})")
 
         if sl_distance <= 0: return # Sicherheit
 

@@ -99,6 +99,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
 
     # --- Indikator-Berechnungen (Unverändert) ---
     adx_period = smc_params.get('adx_period', 14)
+    volume_ma_period = smc_params.get('volume_ma_period', 20)
 
     try:
         # ATR-Berechnung
@@ -110,6 +111,10 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         data['adx'] = adx_indicator.adx()
         data['adx_pos'] = adx_indicator.adx_pos()
         data['adx_neg'] = adx_indicator.adx_neg()
+        
+        # Volume MA (NEU für Volume-Filter)
+        data['volume_ma'] = data['volume'].rolling(window=volume_ma_period).mean()
+        
         data.dropna(subset=['atr', 'adx'], inplace=True) 
 
         if data.empty:
@@ -194,8 +199,8 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
 
         # --- Einstiegs-Logik ---
         if not position and current_capital > 0:
-            # GEÄNDERT: market_bias an die Signalfunktion übergeben
-            side, _ = get_titan_signal(smc_results, current_candle, params=params_for_logic, market_bias=market_bias) 
+            # GEÄNDERT: market_bias an die Signalfunktion übergeben, signal_context empfangen
+            side, _, signal_context = get_titan_signal(smc_results, current_candle, params=params_for_logic, market_bias=market_bias) 
 
             if side:
                 entry_price = current_candle['close']
