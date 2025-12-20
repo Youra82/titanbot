@@ -1,0 +1,28 @@
+{
+    "market": {
+        "symbol": "ETH/USDT:USDT",
+        "timeframe": "5m",
+        "htf": "30m"
+    },
+    "strategy": {
+        "swingsLength": 58,
+        "ob_mitigation": "Close",
+        "use_adx_filter": true,
+        "adx_period": 10,
+        "adx_threshold": 21
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 2.0,
+        "risk_reward_ratio": 2.21,
+        "leverage": 9,
+        "trailing_stop_activation_rr": 1.76,
+        "trailing_stop_callback_rate_pct": 2.51,
+        "atr_multiplier_sl": 1.71,
+        "min_sl_pct": 0.34
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    }
+}

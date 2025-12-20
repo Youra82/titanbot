@@ -5,21 +5,21 @@
         "htf": "1d"
     },
     "strategy": {
-        "swingsLength": 74,
-        "ob_mitigation": "High/Low",
+        "swingsLength": 47,
+        "ob_mitigation": "Close",
         "use_adx_filter": false,
-        "adx_period": 16,
-        "adx_threshold": 26
+        "adx_period": 17,
+        "adx_threshold": 23
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 1.82,
-        "risk_reward_ratio": 4.93,
+        "risk_per_trade_pct": 1.93,
+        "risk_reward_ratio": 3.41,
         "leverage": 13,
         "trailing_stop_activation_rr": 1.0,
-        "trailing_stop_callback_rate_pct": 0.51,
+        "trailing_stop_callback_rate_pct": 0.5,
         "atr_multiplier_sl": 1.0,
-        "min_sl_pct": 0.62
+        "min_sl_pct": 1.88
     },
     "behavior": {
         "use_longs": true,
