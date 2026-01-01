@@ -1,232 +1,531 @@
-# TitanBot 🤖
+# ⚡ TitanBot - High-Performance Trading System
 
-Ein selbstoptimierender, **SMC-gesteuerter** (Smart Money Concepts) Trading-Bot für Krypto-Futures auf der Bitget-Börse. Er identifiziert Marktstrukturen wie Order Blocks (OBs) und Fair Value Gaps (FVGs), um Handelsentscheidungen zu treffen.
+<div align="center">
 
-Dieses System ist für den autonomen Betrieb auf einem Ubuntu-Server konzipiert und umfasst eine Pipeline zur **Optimierung von SMC- und Risiko-Parametern** sowie zum Live-Handel.
+![TitanBot Logo](https://img.shields.io/badge/TitanBot-v2.0-blue?style=for-the-badge)
+[![Python](https://img.shields.io/badge/Python-3.8+-green?style=for-the-badge&logo=python)](https://www.python.org/)
+[![CCXT](https://img.shields.io/badge/CCXT-4.3.5-red?style=for-the-badge)](https://github.com/ccxt/ccxt)
+[![Optuna](https://img.shields.io/badge/Optuna-4.5-purple?style=for-the-badge)](https://optuna.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+
+**Ein leistungsstarker Trading-Bot mit dynamischem Stop-Loss, Multi-Asset-Support und fortgeschrittenem Risikomanagement**
+
+[Features](#-features) • [Installation](#-installation) • [Optimierung](#-optimierung) • [Live-Trading](#-live-trading) • [Monitoring](#-monitoring) • [Wartung](#-wartung)
+
+</div>
 
 ---
 
-## Features 🧠
+## 📊 Übersicht
 
-* **SMC-basierte Analyse:** Identifiziert automatisch wichtige Marktstrukturen (BOS, CHoCH, Order Blocks, Fair Value Gaps) zur Fundierung von Handelsentscheidungen.
-* **Automatisierte Optimierungs-Pipeline:** Ein einziges Skript (`run_pipeline.sh`) steuert den Prozess der Datenanalyse und der **Optimierung der SMC- und Risikoparameter** mithilfe von `optuna` und Backtesting.
-* **Dynamisches Risikomanagement:** Die Positionsgröße wird vor jedem Trade dynamisch auf Basis des *aktuellen* Kontostandes berechnet, um den Zinseszinseffekt optimal zu nutzen.
-* **Robust & Sicher:** Entwickelt für einen stabilen 24/7-Betrieb mit Sicherheits-Checks, Schutz vor Doppel-Trades pro Kerze und einem "Guardian"-Mechanismus, der kritische Fehler abfängt und meldet.
-* **Anpassbare Handelslogik:** Die konkrete Einstiegslogik (z.B. Entry bei FVG-Touch) ist in einer separaten Datei (`trade_logic.py`) definiert und kann leicht angepasst werden.
+TitanBot ist ein hochentwickelter Trading-Bot mit Fokus auf Performance und Risikokontrolle. Das System verfügt über dynamische Stop-Loss-Mechanismen, intelligente Positionsgrößenverwaltung und kann bis zu mehrere Positionen gleichzeitig managen.
+
+### 🎯 Hauptmerkmale
+
+- **🚀 High Performance**: Optimiert für schnelle Ausführung und niedrige Latenz
+- **🎯 Dynamic Stop-Loss**: Intelligente, adaptive Stop-Loss-Strategien
+- **💰 Position Management**: Maximale Anzahl offener Positionen konfigurierbar
+- **📈 Multi-Asset**: Handel mehrerer Kryptowährungen parallel
+- **🔧 Auto-Optimization**: Vollautomatische Parameteroptimierung
+- **📊 Advanced Analytics**: Umfassende Performance-Analysen
+- **🛡️ Risk Control**: Fortgeschrittenes Risikomanagement
+- **🔔 Telegram Integration**: Real-time Notifications
 
 ---
 
-## Installation & Setup 🛠️
+## 🚀 Features
 
-Führe diese Schritte aus, um den TitanBot auf einem frischen Ubuntu-Server in Betrieb zu nehmen.
+### Trading Features
+- ✅ Dynamischer Stop-Loss (anpassbar an Volatilität)
+- ✅ Maximale offene Positionen: Konfigurierbar (Standard: 3)
+- ✅ Multi-Asset Trading (BTC, ETH, SOL, XRP, AAVE)
+- ✅ Multiple Timeframes (5m, 2h, 4h, 6h)
+- ✅ Optionaler MACD-Filter
+- ✅ Intelligentes Position Sizing
+- ✅ Take-Profit Management
+- ✅ Trailing Stop-Loss
 
-### 1. Projekt klonen
+### Technical Features
+- ✅ Optuna Hyperparameter-Optimierung
+- ✅ Fortgeschrittene technische Indikatoren
+- ✅ Volume-basierte Analysen
+- ✅ Walk-Forward-Testing
+- ✅ Backtesting mit realistischer Simulation
+- ✅ Performance-Tracking und Reporting
+
+---
+
+## 📋 Systemanforderungen
+
+### Hardware
+- **CPU**: Multi-Core Prozessor (i5 oder besser empfohlen)
+- **RAM**: Minimum 4GB, empfohlen 8GB+
+- **Speicher**: 2GB freier Speicherplatz
+
+### Software
+- **OS**: Linux (Ubuntu 20.04+), macOS, Windows 10/11
+- **Python**: Version 3.8 oder höher
+- **Git**: Für Repository-Verwaltung
+
+---
+
+## 💻 Installation
+
+### 1. Repository klonen
 
 ```bash
-# Ersetze <DEIN_GITHUB_REPO_LINK> mit dem Link zu deinem neuen TitanBot Repo
-git clone https://github.com/Youra82/titanbot.git
+git clone <repository-url>
 cd titanbot
 ```
 
-
-### 2\. Installations-Skript ausführen
-
-Dieses Skript ist der wichtigste Schritt. Es installiert alle Abhängigkeiten (ohne Tensorflow), richtet die Python-Umgebung ein und **macht alle anderen Skripte im Projekt automatisch ausführbar**.
+### 2. Automatische Installation
 
 ```bash
-bash ./install.sh
+# Linux/macOS
+chmod +x install.sh
+./install.sh
+
+# Windows (PowerShell)
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-*(Hinweis: Das `install.sh`-Skript selbst muss eventuell leicht angepasst werden, um die Tensorflow-spezifischen Teile zu entfernen, falls vorhanden. Die `requirements.txt` sollte bereits korrekt sein.)*
+Das Installations-Script:
+- ✅ Erstellt virtuelle Python-Umgebung
+- ✅ Installiert alle Dependencies
+- ✅ Erstellt Verzeichnisstruktur
+- ✅ Initialisiert Konfigurationen
 
-### 3\. API-Schlüssel eintragen
+### 3. API-Credentials konfigurieren
 
-Erstelle deine persönliche `secret.json`-Datei aus der Vorlage (falls vorhanden, ansonsten manuell) und trage deine API-Schlüssel von Bitget sowie deine Telegram-Daten ein.
-
-```bash
-# Falls eine Vorlage existiert:
-# cp secret.json.example secret.json
-nano secret.json
-```
-
-**Beispielinhalt für `secret.json`:**
+Erstelle `secret.json`:
 
 ```json
 {
-    "jaegerbot": [
-        {
-            "name": "DeinAccountName",
-            "apiKey": "DEIN_API_KEY",
-            "secret": "DEIN_SECRET_KEY",
-            "password": "DEIN_API_PASSWORT"
-        }
-    ],
-    "telegram": {
-        "bot_token": "DEIN_TELEGRAM_BOT_TOKEN",
-        "chat_id": "DEINE_TELEGRAM_CHAT_ID"
+  "titanbot": [
+    {
+      "name": "Binance Main",
+      "exchange": "binance",
+      "apiKey": "DEIN_API_KEY",
+      "secret": "DEIN_SECRET_KEY",
+      "options": {
+        "defaultType": "future"
+      }
     }
+  ],
+  "telegram": {
+    "bot_token": "DEIN_BOT_TOKEN",
+    "chat_id": "DEINE_CHAT_ID"
+  }
 }
 ```
 
-> Speichere mit `Strg + X`, dann `Y`, dann `Enter`.
+⚠️ **Sicherheit**:
+- Niemals `secret.json` committen!
+- Nur API-Keys ohne Withdrawal-Rechte
+- IP-Whitelist aktivieren
+- 2FA aktivieren
 
-### 4\. Strategien für den Handel aktivieren
+### 4. Trading-Strategien konfigurieren
 
-Bearbeite die `settings.json`, um festzulegen, welche deiner optimierten SMC-Strategien (Symbol/Timeframe-Kombinationen) im Live-Handel aktiv sein sollen.
+Bearbeite `settings.json`:
 
-```bash
-nano settings.json
+```json
+{
+  "live_trading_settings": {
+    "use_auto_optimizer_results": false,
+    "max_open_positions": 3,
+    "active_strategies": [
+      {
+        "symbol": "BTC/USDT:USDT",
+        "timeframe": "4h",
+        "use_macd_filter": false,
+        "active": true
+      },
+      {
+        "symbol": "ETH/USDT:USDT",
+        "timeframe": "6h",
+        "use_macd_filter": false,
+        "active": true
+      }
+    ]
+  }
+}
 ```
 
-Stelle sicher, dass die `"symbol"` und `"timeframe"` Einträge mit den Namen deiner `config_...json`-Dateien übereinstimmen.
+**Wichtige Parameter**:
+- `max_open_positions`: Maximale Anzahl gleichzeitiger Positionen (Standard: 3)
+- `symbol`: Handelspaar
+- `timeframe`: Zeitrahmen (5m, 2h, 4h, 6h)
+- `use_macd_filter`: MACD-Filter aktivieren
+- `active`: Strategie aktivieren/deaktivieren
 
-### 5\. Automatisierung per Cronjob einrichten
+---
 
-Richte den Cronjob ein, der den `master_runner` regelmäßig startet (z.B. alle 5 oder 15 Minuten, je nach kürzestem Timeframe deiner Strategien).
+## 🎯 Optimierung & Training
 
-```bash
-crontab -e
-```
-
-Füge die folgende **eine Zeile** am Ende der Datei ein:
-
-```
-# Starte den TitanBot Master-Runner alle 15 Minuten
-*/15 * * * * /usr/bin/flock -n /home/ubuntu/titanbot/titanbot.lock /bin/sh -c "cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu/titanbot/master_runner.py >> /home/ubuntu/titanbot/logs/cron.log 2>&1"
-```
-
-Master run manuell starten:
-
-```
-# Starte den TitanBot Master-Runner manuell
-cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu/titanbot/master_runner.py
-```
-
-
-Logverzeichnis anlegen:
-
-```
-mkdir -p /home/ubuntu/titanbot/logs
-```
-
------
-
-## Workflow & Befehlsreferenz ⚙️
-
-Dies ist deine Kommandozentrale für die Erstellung, Analyse und Verwaltung deiner SMC-Handelsstrategien. Alle Befehle funktionieren direkt nach der Ausführung von `install.sh`.
-
-### 1\. Pipeline: SMC-Strategien optimieren
-
-Dieser Prozess lädt historische Daten, führt Tausende von Backtests mit verschiedenen SMC- (`swingsLength`, `ob_mitigation`) und Risiko-Parametern (`RR`, `Leverage` etc.) durch und speichert die besten Kombinationen. **Es findet kein KI-Training mehr statt.**
+### Vollständige Pipeline (Empfohlen)
 
 ```bash
 ./run_pipeline.sh
 ```
 
-Nach Abschluss werden neue oder aktualisierte `config_...json`-Dateien in `src/titanbot/strategy/configs/` erstellt.
+Pipeline-Schritte:
+1. **Aufräumen** (Optional): Alte Configs löschen
+2. **Symbol-Auswahl**: Handelspaare wählen
+3. **Timeframe-Auswahl**: Zeitrahmen konfigurieren
+4. **Daten-Download**: Historische Daten laden
+5. **Optimierung**: Parameter mit Optuna optimieren
+6. **Backtest**: Strategien validieren
+7. **Deployment**: Configs für Live-Trading erstellen
 
-### 2\. Analyse: Performance der Strategien bewerten
-
-Dieses Skript bietet Modi, um die erstellten Strategien zu analysieren. (Hinweis: Die Funktionalität von `show_results.sh` muss eventuell an die SMC-Logik angepasst werden, falls die Backtest-Ausgaben sich geändert haben).
-
-```bash
-./show_results.sh
-```
-
-Dabei werden `.csv`-Dateien mit den detaillierten Equity-Kurven im Hauptverzeichnis erstellt (wenn der Backtester entsprechend angepasst wurde).
-
-### 3\. Reporting: Ergebnisse an Telegram senden
-
-Verwende diese Befehle, um deine Analyse-Ergebnisse direkt auf dein Handy zu bekommen. Funktioniert, wenn die `.csv`-Dateien im korrekten Format generiert werden.
-
-  * **CSV-Rohdaten senden:**
-
-    ```bash
-    ./send_report.sh optimal_portfolio_equity.csv
-    # oder ./send_report.sh manual_portfolio_equity.csv
-    ```
-
-  * **Grafische Diagramme senden:**
-
-    ```bash
-    ./show_chart.sh optimal_portfolio_equity.csv
-    # oder ./show_chart.sh manual_portfolio_equity.csv
-    ```
-
-### 4\. Wartung & Verwaltung
-
-  * **Logs live mitverfolgen (wichtigster Befehl):**
-
-    ```bash
-    tail -f logs/cron.log
-    ```
-
-  * **Die letzten 500 Log-Einträge anzeigen:**
-
-    ```bash
-    tail -n 500 logs/cron.log
-    ```
-
-  * **Alle Fehler-Einträge anzeigen:**
-
-    ```bash
-    grep -i "ERROR" logs/cron.log | tail -n 500
-    ```
-
-  * **Bot auf die neueste Version aktualisieren:**
-
-    ```bash
-    ./update.sh
-    ```
-
-  * **Automatisierte Tests ausführen (nach jedem Update empfohlen):**
-    *(Hinweis: Die Tests in `tests/` müssen komplett neu geschrieben werden, um die SMC-Logik zu testen\!)*
-
-    ```bash
-    ./run_tests.sh
-    ```
-
-  * **Projektstatus und Struktur anzeigen:**
-
-    ```bash
-    ./show_status.sh
-    ```
-
-  * **Alte Konfigurationen für einen Neustart löschen:**
-
-    ```bash
-    # Alle alten Konfigurationen löschen
-    rm -f src/titanbot/strategy/configs/config_*.json
-
-    # Überprüfen, ob der Ordner leer ist
-    ls -l src/titanbot/strategy/configs/
-    ```
-
-### 5\. Backup auf GitHub
-
-Sichere den kompletten Stand deines Bots inklusive aller Konfigurationen auf GitHub. **WARNUNG:** Führe dies nur aus, wenn dein Repository auf **"Privat"** gestellt ist, da deine Konfigurationen und eventuell deine `secret.json` (falls nicht in `.gitignore`) hochgeladen werden\!
+### Manuelle Optimierung
 
 ```bash
-# Sicherstellen, dass secret.json ignoriert wird (in .gitignore prüfen!)
-# git add .
-# git commit -m "Vollständiges Projekt-Backup TitanBot"
-# git push origin main # Ggf. '--force', wenn du bewusst überschreiben willst
+source .venv/bin/activate
+python src/titanbot/analysis/optimizer.py
 ```
 
------
+**Erweiterte Optionen**:
+```bash
+# Spezifische Symbole
+python src/titanbot/analysis/optimizer.py --symbols BTC ETH SOL
 
-## ⚠️ Disclaimer
+# Mehr Trials
+python src/titanbot/analysis/optimizer.py --trials 300
 
-Dieses Material dient ausschließlich zu Bildungs- und Unterhaltungszwecken. Es handelt sich nicht um eine Finanzberatung. Der Nutzer trägt die alleinige Verantwortung für alle Handlungen. Der Autor haftet nicht für etwaige Verluste.
-
+# Walk-Forward Analyse
+python src/titanbot/analysis/optimizer.py --walk-forward
 ```
 
 ---
 
-**Wichtige Hinweise:**
+## 🔴 Live Trading
 
-1.  **GitHub Repo:** Ersetze `<DEIN_GITHUB_REPO_LINK>` im `git clone`-Befehl durch den tatsächlichen Link deines neuen TitanBot-Repositories.
-2.  **`install.sh`:** Überprüfe kurz `install.sh`, ob dort noch spezifische Befehle für `tensorflow` oder `scikit-learn` drin sind, die entfernt werden können (obwohl es meistens nur `pip install -r requirements.txt` ist).
-3.  **Tests:** Die alten Tests in `tests/` sind **ungültig**. Du müsstest neue Tests schreiben, die die `SMCEngine` und die neue `trade_logic` prüfen.
-4.  **`show_results.sh` / `.csv`-Dateien:** Die Skripte zum Anzeigen und Senden von Ergebnissen (`show_results.sh`, `send_report.sh`, `show_chart.sh`) setzen voraus, dass der neue `backtester.py` (bzw. die darauf aufbauenden Skripte wie `portfolio_simulator.py`) weiterhin `.csv`-Dateien in einem ähnlichen Format wie zuvor ausgibt. Das musst du ggf. sicherstellen oder diese Skripte anpassen.
+### Start des Live-Trading
+
+```bash
+# Master Runner starten (alle aktiven Strategien)
+python master_runner.py
 ```
+
+Der Master Runner:
+- ✅ Verwaltet alle aktiven Strategien
+- ✅ Überwacht `max_open_positions` Limit
+- ✅ Führt dynamisches Stop-Loss Management durch
+- ✅ Loggt alle Trading-Aktivitäten
+- ✅ Sendet Telegram-Benachrichtigungen
+
+### Automatischer Start
+
+```bash
+./run_pipeline_automated.sh
+```
+
+### Als Systemd Service (Linux)
+
+```bash
+sudo nano /etc/systemd/system/titanbot.service
+```
+
+```ini
+[Unit]
+Description=TitanBot Trading System
+After=network.target
+
+[Service]
+Type=simple
+User=your-user
+WorkingDirectory=/path/to/titanbot
+ExecStart=/path/to/titanbot/.venv/bin/python master_runner.py
+Restart=always
+RestartSec=10
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable titanbot
+sudo systemctl start titanbot
+sudo systemctl status titanbot
+```
+
+---
+
+## 📊 Monitoring & Status
+
+### Status-Dashboard
+
+```bash
+./show_status.sh        # Vollständiger Status
+./show_results.sh       # Performance-Ergebnisse
+./show_chart.sh         # Charts generieren
+```
+
+### Real-time Monitoring
+
+```bash
+# Live-Trading Logs
+tail -f logs/live_trading_*.log
+
+# Nur Trades
+grep -i "opened\|closed\|profit" logs/live_trading_*.log
+
+# Fehler-Logs
+tail -f logs/error_*.log
+```
+
+### Chart-Generierung
+
+```bash
+# Equity-Curve generieren
+./show_chart.sh
+
+# Per Telegram senden
+python generate_and_send_chart.py
+```
+
+### Performance-Analyse
+
+```bash
+# Equity vergleichen
+python -c "
+import pandas as pd
+manual = pd.read_csv('manual_portfolio_equity.csv')
+optimal = pd.read_csv('optimal_portfolio_equity.csv')
+print('Manual ROI:', (manual['equity'].iloc[-1] / manual['equity'].iloc[0] - 1) * 100, '%')
+print('Optimal ROI:', (optimal['equity'].iloc[-1] / optimal['equity'].iloc[0] - 1) * 100, '%')
+"
+```
+
+---
+
+## 🛠️ Wartung & Pflege
+
+### Regelmäßige Wartung
+
+#### Updates installieren
+
+```bash
+./update.sh
+```
+
+#### Log-Rotation
+
+```bash
+# Logs komprimieren (>30 Tage)
+find logs/ -name "*.log" -type f -mtime +30 -exec gzip {} \;
+
+# Alte Logs löschen (>90 Tage)
+find logs/ -name "*.log.gz" -type f -mtime +90 -delete
+```
+
+### Vollständiges Aufräumen
+
+#### Konfigurationen zurücksetzen
+
+```bash
+# Generierte Configs löschen
+rm -f src/titanbot/strategy/configs/config_*.json
+ls -la src/titanbot/strategy/configs/
+
+# Optimierungsergebnisse löschen
+rm -rf artifacts/results/*
+ls -la artifacts/results/
+```
+
+#### Daten löschen
+
+```bash
+# Cache löschen
+rm -rf data/raw/* data/processed/*
+du -sh data/*
+```
+
+#### Kompletter Neustart
+
+```bash
+# Backup erstellen
+tar -czf titanbot_backup_$(date +%Y%m%d_%H%M%S).tar.gz \
+    secret.json settings.json artifacts/ logs/
+
+# Reset
+rm -rf artifacts/* data/* logs/*
+./install.sh
+
+# Konfiguration wiederherstellen
+cp settings.json.backup settings.json
+```
+
+### Tests ausführen
+
+```bash
+./run_tests.sh
+pytest tests/ -v
+pytest --cov=src tests/
+```
+
+---
+
+## 🔧 Nützliche Befehle
+
+### Konfiguration
+
+```bash
+# Settings validieren
+python -c "import json; print(json.load(open('settings.json')))"
+
+# max_open_positions prüfen
+python -c "import json; print('Max Positions:', json.load(open('settings.json'))['live_trading_settings']['max_open_positions'])"
+
+# Backup erstellen
+cp settings.json settings.json.backup.$(date +%Y%m%d)
+```
+
+### Prozess-Management
+
+```bash
+# TitanBot-Prozesse anzeigen
+ps aux | grep python | grep titanbot
+
+# PID finden
+pgrep -f master_runner.py
+
+# Sauber beenden
+pkill -f master_runner.py
+
+# Sofort beenden
+pkill -9 -f master_runner.py
+```
+
+### Exchange-Diagnose
+
+```bash
+# Verbindung testen
+python -c "from src.titanbot.utils.exchange import Exchange; \
+    e = Exchange('binance'); print(e.fetch_balance())"
+
+# Offene Positionen prüfen
+python -c "from src.titanbot.utils.exchange import Exchange; \
+    e = Exchange('binance'); \
+    positions = [p for p in e.fetch_positions() if float(p['contracts']) != 0]; \
+    print('Open Positions:', len(positions)); \
+    for p in positions: print(p['symbol'], p['contracts'])"
+
+# Anzahl offener Positionen
+python check_account_type.py
+```
+
+### Performance-Tracking
+
+```bash
+# Trade-History analysieren
+python -c "
+import pandas as pd
+trades = pd.read_csv('logs/trades_history.csv')
+print('Total Trades:', len(trades))
+print('Win Rate:', (trades['pnl'] > 0).mean() * 100, '%')
+print('Avg Profit per Trade:', trades['pnl'].mean())
+print('Total PnL:', trades['pnl'].sum())
+print('Best Trade:', trades['pnl'].max())
+print('Worst Trade:', trades['pnl'].min())
+"
+
+# Positions-Limit-Statistik
+grep "max_open_positions" logs/*.log | wc -l
+```
+
+---
+
+## 📂 Projekt-Struktur
+
+```
+titanbot/
+├── src/titanbot/
+│   ├── analysis/          # Optimierung
+│   ├── strategy/          # Trading-Strategien
+│   ├── backtest/          # Backtesting
+│   └── utils/             # Utilities
+├── tests/                 # Unit-Tests
+├── data/                  # Marktdaten
+├── logs/                  # Log-Files
+├── artifacts/             # Ergebnisse
+├── master_runner.py       # Main Entry-Point
+├── settings.json          # Konfiguration
+├── secret.json            # API-Credentials
+└── requirements.txt       # Dependencies
+```
+
+---
+
+## ⚠️ Wichtige Hinweise
+
+### Risiko-Disclaimer
+
+⚠️ **Kryptowährungs-Trading ist hochriskant!**
+
+- Nur Kapital riskieren, dessen Verlust Sie verkraften können
+- Keine Gewinn-Garantien
+- Vergangene Performance ≠ Zukünftige Ergebnisse
+- Ausgiebiges Testing empfohlen
+- Mit kleinen Beträgen starten
+
+### Security Best Practices
+
+- 🔐 Niemals API-Keys mit Withdrawal-Rechten
+- 🔐 IP-Whitelist aktivieren
+- 🔐 2FA für Exchange-Account
+- 🔐 `secret.json` in `.gitignore`
+- 🔐 Regelmäßige Security-Updates
+
+### Performance-Tipps
+
+- 💡 `max_open_positions` konservativ wählen (3-5)
+- 💡 Längere Timeframes (4h+) für stabilere Signale
+- 💡 Dynamischen Stop-Loss in volatilen Märkten nutzen
+- 💡 Regelmäßiges Monitoring ist essentiell
+- 💡 Re-Optimierung alle 3-4 Wochen
+
+---
+
+## 🤝 Support
+
+### Bei Problemen
+
+1. Logs prüfen: `logs/`
+2. Tests ausführen: `./run_tests.sh`
+3. GitHub Issue erstellen mit:
+   - Problembeschreibung
+   - Log-Auszüge
+   - System-Info
+   - Reproduktions-Schritte
+
+---
+
+## 📜 Lizenz
+
+MIT License - siehe [LICENSE](LICENSE)
+
+---
+
+## 🙏 Credits
+
+- [CCXT](https://github.com/ccxt/ccxt) - Exchange Integration
+- [Optuna](https://optuna.org/) - Hyperparameter Optimization
+- [Pandas](https://pandas.pydata.org/) - Data Analysis
+- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) - Telegram Integration
+
+---
+
+<div align="center">
+
+**Built with ❤️ for High-Performance Trading**
+
+⭐ Star this repo!
+
+[🔝 Nach oben](#-titanbot---high-performance-trading-system)
+
+</div>
