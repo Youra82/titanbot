@@ -20,6 +20,17 @@
 
 TitanBot ist ein hochentwickelter Trading-Bot mit Fokus auf Performance und Risikokontrolle. Das System verfügt über dynamische Stop-Loss-Mechanismen, intelligente Positionsgrößenverwaltung und kann bis zu mehrere Positionen gleichzeitig managen.
 
+### 🧭 Trading-Logik (Kurzfassung)
+- **Momentum-Core**: Kombiniert Trend-/Momentum-Indikatoren (z.B. MACD, RSI) mit Volatilitätsfiltern.
+- **Dynamischer Stop**: SL-Level passen sich an Volatilität/ATR an; optionaler Trailing-SL folgt dem Trend.
+- **Positions-Limit**: `max_open_positions` begrenzt parallele Trades, priorisiert höchste Signal-Qualität.
+- **Execution**: CCXT-Orders mit Fee/Slippage-Annahmen aus Backtests; Telegram-Notifications für State-Änderungen.
+
+Architektur-Skizze:
+```
+OHLCV → Momentum/Vol-Stack → Signal-Ranking → Risk Engine (SL/TP/Trail) → Order Router (CCXT)
+```
+
 ### 🎯 Hauptmerkmale
 
 - **🚀 High Performance**: Optimiert für schnelle Ausführung und niedrige Latenz
@@ -208,6 +219,13 @@ python src/titanbot/analysis/optimizer.py --walk-forward
 ```bash
 # Master Runner starten (alle aktiven Strategien)
 python master_runner.py
+```
+
+### Manuell starten / Cronjob testen
+Sofortige Ausführung auslösen (ohne 15-Minuten-Cron-Intervall):
+
+```bash
+cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu/titanbot/master_runner.py
 ```
 
 Der Master Runner:
