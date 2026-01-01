@@ -21,7 +21,7 @@
 TitanBot ist ein hochentwickelter Trading-Bot mit Fokus auf Performance und Risikokontrolle. Das System verfügt über dynamische Stop-Loss-Mechanismen, intelligente Positionsgrößenverwaltung und kann bis zu mehrere Positionen gleichzeitig managen.
 
 ### 🧭 Trading-Logik (Kurzfassung)
-- **Momentum-Core**: Kombiniert Trend-/Momentum-Indikatoren (z.B. MACD, RSI) mit Volatilitätsfiltern.
+- **SMC-Momentum-Hybrid**: Nutzt Smart-Money-Concepts (Liquidity Sweeps/Structure Breaks) kombiniert mit Momentum-Indikatoren (z.B. MACD/RSI) für Entry-Qualität.
 - **Dynamischer Stop**: SL-Level passen sich an Volatilität/ATR an; optionaler Trailing-SL folgt dem Trend.
 - **Positions-Limit**: `max_open_positions` begrenzt parallele Trades, priorisiert höchste Signal-Qualität.
 - **Execution**: CCXT-Orders mit Fee/Slippage-Annahmen aus Backtests; Telegram-Notifications für State-Änderungen.
