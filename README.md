@@ -26,6 +26,27 @@ TitanBot ist ein hochentwickelter Trading-Bot mit Fokus auf Performance und Risi
 - **Positions-Limit**: `max_open_positions` begrenzt parallele Trades, priorisiert höchste Signal-Qualität.
 - **Execution**: CCXT-Orders mit Fee/Slippage-Annahmen aus Backtests; Telegram-Notifications für State-Änderungen.
 
+### 🔍 Strategie-Visualisierung
+```mermaid
+flowchart LR
+  A[OHLCV] --> B[SMC Map
+  Liquidity | Breaker | MSB]
+  A --> C[Momentum Stack
+  MACD | RSI | Vol]
+  B & C --> D[Signal-Ranking]
+  D --> E[Risk Engine
+  ATR-SL/TP + Trail]
+  E --> F[Order Router (CCXT)
+  max_open_positions respected]
+```
+
+### 📈 Trade-Beispiel (TP/SL/Trailing)
+- Setup: Liquidity Sweep unter Struktur-Low + Momentum-Reversal (MACD Cross Up, RSI aus Oversold).
+- Entry: Long nach Bestätigungskerze über Breaker-Block.
+- Initial SL: Unter Sweep-Low oder ATR-basiert (1.5–2× ATR).
+- TP: 2–3× SL-Distanz oder nächstes markantes High/Imbalance-Fill.
+- Trailing: Aktiv nach +1×SL Distanz; Trail unter das letzte Higher Low, um Rest-Trend auszureizen.
+
 Architektur-Skizze:
 ```
 OHLCV → Momentum/Vol-Stack → Signal-Ranking → Risk Engine (SL/TP/Trail) → Order Router (CCXT)
