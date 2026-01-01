@@ -107,7 +107,7 @@ OHLCV → Momentum/Vol-Stack → Signal-Ranking → Risk Engine (SL/TP/Trail) �
 ### 1. Repository klonen
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Youra82/titanbot.git
 cd titanbot
 ```
 
