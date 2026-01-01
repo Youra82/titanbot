@@ -29,15 +29,16 @@ TitanBot ist ein hochentwickelter Trading-Bot mit Fokus auf Performance und Risi
 ### 🔍 Strategie-Visualisierung
 ```mermaid
 flowchart LR
-  A[OHLCV] --> B[SMC Map
-  Liquidity | Breaker | MSB]
-  A --> C[Momentum Stack
-  MACD | RSI | Vol]
-  B & C --> D[Signal-Ranking]
-  D --> E[Risk Engine
-  ATR-SL/TP + Trail]
-  E --> F[Order Router (CCXT)
-  max_open_positions respected]
+    A["OHLCV"]
+    B["SMC Map<br/>Liquidity | Breaker | MSB"]
+    C["Momentum Stack<br/>MACD | RSI | Vol"]
+    D["Signal-Ranking"]
+    E["Risk Engine<br/>ATR-SL/TP + Trail"]
+    F["Order Router (CCXT)<br/>max_open_positions respected"]
+
+    A --> B
+    A --> C
+    B & C --> D --> E --> F
 ```
 
 ### 📈 Trade-Beispiel (TP/SL/Trailing)
