@@ -106,4 +106,19 @@ EOF
     fi
 fi
 
+# --- OPTION 4: INTERAKTIVE CHARTS ---
+if [ "$MODE" == "4" ]; then
+    echo -e "\n${BLUE}Generiere interaktive Charts...${NC}"
+    python3 src/titanbot/analysis/interactive_status.py
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Charts wurden generiert!${NC}"
+    else
+        echo -e "${RED}❌ Fehler beim Generieren der Charts.${NC}"
+    fi
+    
+    deactivate
+    exit 0
+fi
+
 deactivate
