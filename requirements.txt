@@ -33,6 +33,7 @@ pandas==2.3.3
 peewee==3.18.2
 platformdirs==4.5.0
 pluggy==1.6.0
+plotly
 propcache==0.4.1
 protobuf==6.33.0
 pycares==4.11.0

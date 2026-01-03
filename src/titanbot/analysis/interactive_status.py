@@ -2,12 +2,12 @@
 """
 Interactive Status für SMC+EMA Bots (PBot, STBot, UtBot2, TitanBot)
 Zeigt Candlestick-Chart mit EMAs, Bollinger Bands und simulierten Trades
+Nutzt durchnummerierte Konfigurationsdateien zum Auswählen
 """
 
 import os
 import sys
 import json
-import argparse
 from datetime import datetime, timedelta
 import logging
 
@@ -40,22 +40,64 @@ def detect_bot_name():
 
 BOT_NAME = detect_bot_name()
 
-def load_config(symbol, timeframe):
-    """Lädt Konfiguration für SMC Bot"""
+def get_config_files():
+    """Sucht alle Konfigurationsdateien auf"""
     configs_dir = os.path.join(PROJECT_ROOT, 'src', BOT_NAME, 'strategy', 'configs')
-    safe_filename_base = f"{symbol.replace('/', '').replace(':', '')}_{timeframe}"
-    config_filename = f"config_{safe_filename_base}.json"
-    config_path = os.path.join(configs_dir, config_filename)
+    if not os.path.exists(configs_dir):
+        return []
     
-    if not os.path.exists(config_path):
-        # Versuche mit MACD Suffix
-        config_filename = f"config_{safe_filename_base}_macd.json"
-        config_path = os.path.join(configs_dir, config_filename)
+    configs = []
+    for filename in sorted(os.listdir(configs_dir)):
+        if filename.startswith('config_') and filename.endswith('.json'):
+            filepath = os.path.join(configs_dir, filename)
+            configs.append((filename, filepath))
     
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Config nicht gefunden für {symbol} {timeframe}")
+    return configs
+
+def select_configs():
+    """Zeigt durchnummerierte Konfigurationsdateien und lässt User wählen"""
+    configs = get_config_files()
     
-    with open(config_path, 'r') as f:
+    if not configs:
+        logger.error("Keine Konfigurationsdateien gefunden!")
+        sys.exit(1)
+    
+    print("\n" + "="*60)
+    print("Verfügbare Konfigurationen:")
+    print("="*60)
+    for idx, (filename, _) in enumerate(configs, 1):
+        # Extrahiere Symbol/Timeframe aus Dateiname
+        clean_name = filename.replace('config_', '').replace('.json', '')
+        print(f"{idx:2d}) {clean_name}")
+    print("="*60)
+    
+    print("\nWähle Konfiguration(en) zum Anzeigen:")
+    print("  Einzeln: z.B. '1' oder '5'")
+    print("  Mehrfach: z.B. '1,3,5' oder '1 3 5'")
+    
+    selection = input("\nAuswahl: ").strip()
+    
+    # Parse Eingabe
+    selected_indices = []
+    for part in selection.replace(',', ' ').split():
+        try:
+            idx = int(part)
+            if 1 <= idx <= len(configs):
+                selected_indices.append(idx - 1)
+            else:
+                logger.warning(f"Index {idx} außerhalb des Bereichs")
+        except ValueError:
+            logger.warning(f"Ungültige Eingabe: {part}")
+    
+    if not selected_indices:
+        logger.error("Keine gültigen Konfigurationen gewählt!")
+        sys.exit(1)
+    
+    return [configs[i] for i in selected_indices]
+
+def load_config(filepath):
+    """Lädt eine Konfiguration"""
+    with open(filepath, 'r') as f:
         return json.load(f)
 
 def add_smc_ema_indicators(df):
@@ -188,75 +230,91 @@ def create_interactive_chart(symbol, timeframe, df, trades, start_date, end_date
     return fig
 
 def main():
-    parser = argparse.ArgumentParser(description=f"{BOT_NAME.upper()} Interactive Status")
-    parser.add_argument('--symbol', required=True, type=str)
-    parser.add_argument('--timeframe', default='4h', type=str)
-    parser.add_argument('--start', type=str, help='Start date (YYYY-MM-DD)')
-    parser.add_argument('--end', type=str, help='End date (YYYY-MM-DD)')
-    parser.add_argument('--start-capital', type=float, default=1000)
-    parser.add_argument('--window', type=int, help='Letzten N Tage anzeigen')
-    parser.add_argument('--send-telegram', action='store_true')
+    # Wähle Konfigurationsdateien
+    selected_configs = select_configs()
     
-    args = parser.parse_args()
+    # Parameter für Chart-Generierung
+    print("\n" + "="*60)
+    print("Chart-Optionen:")
+    print("="*60)
+    
+    start_date = input("Startdatum (YYYY-MM-DD) [leer=beliebig]: ").strip() or None
+    end_date = input("Enddatum (YYYY-MM-DD) [leer=heute]: ").strip() or None
+    window_input = input("Letzten N Tage anzeigen [leer=alle]: ").strip()
+    window = int(window_input) if window_input.isdigit() else None
+    send_telegram = input("Telegram versenden? (j/n) [Standard: n]: ").strip().lower() in ['j', 'y', 'yes']
     
     try:
-        logger.info(f"Lade Config für {args.symbol} {args.timeframe}...")
-        config = load_config(args.symbol, args.timeframe)
-        
-        # Hole Daten vom Exchange
-        logger.info("Verbinde mit Exchange...")
         with open(os.path.join(PROJECT_ROOT, 'secret.json'), 'r') as f:
             secrets = json.load(f)
-        
-        account = secrets.get(BOT_NAME, [None])[0]
-        if not account:
-            raise ValueError(f"Keine Account-Konfiguration für {BOT_NAME} in secret.json")
-        
-        # Import der passenden Exchange-Klasse
-        module = __import__(f'{BOT_NAME}.utils.exchange', fromlist=['Exchange'])
-        Exchange = module.Exchange
-        
-        exchange = Exchange(account)
-        
-        logger.info(f"Lade OHLCV Daten für {args.symbol}...")
-        df = exchange.get_ohlcv(args.symbol, args.timeframe, limit=500)
-        
-        logger.info("Berechne Indikatoren...")
-        df = add_smc_ema_indicators(df)
-        
-        # Vereinachter Backtest
-        trades = []
-        
-        logger.info("Erstelle Chart...")
-        fig = create_interactive_chart(
-            args.symbol,
-            args.timeframe,
-            df,
-            trades,
-            args.start,
-            args.end,
-            args.window
-        )
-        
-        # Speichere HTML
-        output_file = f"/tmp/{BOT_NAME}_{args.symbol.replace('/', '_')}_{args.timeframe}.html"
-        fig.write_html(output_file)
-        logger.info(f"✅ Chart gespeichert: {output_file}")
-        
-        # Telegram versenden (optional)
-        if args.send_telegram:
-            logger.info("Sende Chart via Telegram...")
-            telegram_config = secrets.get('telegram', {})
-            if telegram_config and os.path.exists(output_file):
-                telegram_module = __import__(f'{BOT_NAME}.utils.telegram', fromlist=['send_file'])
-                send_file = telegram_module.send_file
-                send_file(output_file, telegram_config)
-        
-        logger.info("✅ Fertig!")
-        
     except Exception as e:
-        logger.error(f"Fehler: {e}", exc_info=True)
+        logger.error(f"Fehler beim Laden von secret.json: {e}")
         sys.exit(1)
+    
+    account = secrets.get(BOT_NAME, [None])[0]
+    if not account:
+        logger.error(f"Keine {BOT_NAME.upper()}-Accountkonfiguration gefunden")
+        sys.exit(1)
+    
+    # Import der passenden Exchange-Klasse
+    module = __import__(f'{BOT_NAME}.utils.exchange', fromlist=['Exchange'])
+    Exchange = module.Exchange
+    
+    exchange = Exchange(account)
+    telegram_config = secrets.get('telegram', {})
+    
+    # Generiere Chart für jede gewählte Config
+    for filename, filepath in selected_configs:
+        try:
+            logger.info(f"\nVerarbeite {filename}...")
+            
+            config = load_config(filepath)
+            symbol = config['market']['symbol']
+            timeframe = config['market']['timeframe']
+            
+            logger.info(f"Lade OHLCV-Daten für {symbol} {timeframe}...")
+            df = exchange.get_ohlcv(symbol, timeframe, limit=500)
+            
+            if df is None or len(df) == 0:
+                logger.warning(f"Keine Daten für {symbol} {timeframe}")
+                continue
+            
+            logger.info("Berechne Indikatoren...")
+            df = add_smc_ema_indicators(df)
+            
+            # Erstelle Chart
+            logger.info("Erstelle Chart...")
+            fig = create_interactive_chart(
+                symbol,
+                timeframe,
+                df,
+                [],  # Keine Trades für diese vereinachte Version
+                start_date,
+                end_date,
+                window
+            )
+            
+            # Speichere HTML
+            safe_name = f"{symbol.replace('/', '_')}_{timeframe}"
+            output_file = f"/tmp/{BOT_NAME}_{safe_name}.html"
+            fig.write_html(output_file)
+            logger.info(f"✅ Chart gespeichert: {output_file}")
+            
+            # Telegram versenden (optional)
+            if send_telegram and telegram_config:
+                try:
+                    logger.info(f"Sende Chart via Telegram...")
+                    telegram_module = __import__(f'{BOT_NAME}.utils.telegram', fromlist=['send_file'])
+                    send_file = telegram_module.send_file
+                    send_file(output_file, telegram_config)
+                except Exception as e:
+                    logger.warning(f"Konnte Chart nicht via Telegram versenden: {e}")
+        
+        except Exception as e:
+            logger.error(f"Fehler bei {filename}: {e}", exc_info=False)
+            continue
+    
+    logger.info("\n✅ Alle Charts generiert!")
 
 if __name__ == '__main__':
     main()
