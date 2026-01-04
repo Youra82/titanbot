@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
 """
-Interactive Status für SMC+EMA Bots (PBot, STBot, UtBot2, TitanBot)
-Zeigt Candlestick-Chart mit EMAs, Bollinger Bands und simulierten Trades
+Interactive Charts für JaegerBot - ANN-basierte Strategie
+Zeigt Candlestick-Chart mit Trade-Signalen (Entry/Exit Long/Short)
 Nutzt durchnummerierte Konfigurationsdateien zum Auswählen
 """
 
 import os
 import sys
 import json
+import argparse
 from datetime import datetime, timedelta, timezone
 import logging
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import ta
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
+
+from titanbot.utils.exchange import Exchange
+from titanbot.analysis.backtester import run_ann_backtest
 
 def setup_logging():
     logger = logging.getLogger('interactive_status')
@@ -30,19 +36,9 @@ def setup_logging():
 
 logger = setup_logging()
 
-def detect_bot_name():
-    """Erkennt welcher Bot am laufen ist basierend auf PWD"""
-    cwd = os.getcwd()
-    for bot_name in ['pbot', 'stbot', 'utbot2', 'titanbot']:
-        if bot_name in cwd:
-            return bot_name
-    return 'pbot'  # Default
-
-BOT_NAME = detect_bot_name()
-
 def get_config_files():
     """Sucht alle Konfigurationsdateien auf"""
-    configs_dir = os.path.join(PROJECT_ROOT, 'src', BOT_NAME, 'strategy', 'configs')
+    configs_dir = os.path.join(PROJECT_ROOT, 'src', 'jaegerbot', 'strategy', 'configs')
     if not os.path.exists(configs_dir):
         return []
     
@@ -100,27 +96,14 @@ def load_config(filepath):
     with open(filepath, 'r') as f:
         return json.load(f)
 
-def add_smc_ema_indicators(df):
-    """Fügt SMC+EMA Indikatoren hinzu"""
-    # EMAs für Trend-Erkennung
-    df['ema_20'] = ta.trend.ema_indicator(df['close'], window=20)
-    df['ema_50'] = ta.trend.ema_indicator(df['close'], window=50)
-    df['ema_200'] = ta.trend.ema_indicator(df['close'], window=200)
-    
-    # Bollinger Bands für Squeeze Detection
-    bb = ta.volatility.BollingerBands(df['close'], window=20, window_dev=2)
-    df['bb_upper'] = bb.bollinger_hband()
-    df['bb_middle'] = bb.bollinger_mavg()
-    df['bb_lower'] = bb.bollinger_lband()
-    df['bb_width'] = bb.bollinger_wband()
-    
-    # ATR für Stop Loss
-    df['atr'] = ta.volatility.average_true_range(df['high'], df['low'], df['close'], window=14)
-    
+def add_jaegerbot_indicators(df):
+    """Fügt Indikatoren für Chart-Anzeige hinzu (vereinfacht)"""
+    # Kerzen-Daten sind bereits vorhanden, keine zusätzlichen Indikatoren nötig
+    # Die eigentliche ANN-Analyse passiert in der Backtest-Funktion
     return df
 
 def create_interactive_chart(symbol, timeframe, df, trades, start_date, end_date, window=None):
-    """Erstellt interaktiven Chart mit SMC+EMA Indikatoren und Trades"""
+    """Erstellt interaktiven Chart mit Candlesticks und Trade-Signalen (Entry/Exit)"""
     
     # Filter auf Fenster
     if window:
@@ -133,9 +116,10 @@ def create_interactive_chart(symbol, timeframe, df, trades, start_date, end_date
     if end_date:
         df = df[df.index <= pd.to_datetime(end_date, utc=True)]
     
+    # Erstelle einfachen Chart mit Candlesticks + Trade-Signalen
     fig = go.Figure()
     
-    # Candlestick
+    # === Candlestick Chart ===
     fig.add_trace(
         go.Candlestick(
             x=df.index,
@@ -144,88 +128,108 @@ def create_interactive_chart(symbol, timeframe, df, trades, start_date, end_date
             low=df['low'],
             close=df['close'],
             name='OHLC',
+            increasing_line_color="#16a34a",
+            decreasing_line_color="#dc2626",
             showlegend=True
         )
     )
     
-    # EMAs
-    fig.add_trace(
-        go.Scatter(x=df.index, y=df['ema_20'], name='EMA 20', line=dict(color='orange', width=1.5))
-    )
-    fig.add_trace(
-        go.Scatter(x=df.index, y=df['ema_50'], name='EMA 50', line=dict(color='blue', width=1.5))
-    )
-    fig.add_trace(
-        go.Scatter(x=df.index, y=df['ema_200'], name='EMA 200', line=dict(color='red', width=2))
-    )
+    # === Trade-Signale extrahieren und eintragen ===
+    # Gruppiere Trades: Long (entry_long, exit_long) und Short (entry_short, exit_short)
+    entry_long_x, entry_long_y = [], []
+    exit_long_x, exit_long_y = [], []
+    entry_short_x, entry_short_y = [], []
+    exit_short_x, exit_short_y = [], []
     
-    # Bollinger Bands
-    fig.add_trace(
-        go.Scatter(x=df.index, y=df['bb_upper'], 
-                   name='BB Upper', line=dict(color='green', width=1, dash='dash'))
-    )
-    fig.add_trace(
-        go.Scatter(x=df.index, y=df['bb_lower'], 
-                   name='BB Lower', line=dict(color='green', width=1, dash='dash'),
-                   fill='tonexty', fillcolor='rgba(0,255,0,0.1)')
-    )
-    
-    # Trade Marker
     for trade in trades:
-        entry_time = trade['entry_time']
-        entry_price = trade['entry_price']
-        exit_time = trade['exit_time']
-        exit_price = trade['exit_price']
-        profit = trade['profit']
+        # Entry Long (Dreieck nach oben, grün)
+        if 'entry_long' in trade:
+            entry_time = trade['entry_long'].get('time')
+            entry_price = trade['entry_long'].get('price')
+            if entry_time and entry_price:
+                entry_long_x.append(pd.to_datetime(entry_time))
+                entry_long_y.append(entry_price)
         
-        color = 'green' if profit > 0 else 'red'
+        # Exit Long (Kreis, Cyan)
+        if 'exit_long' in trade:
+            exit_time = trade['exit_long'].get('time')
+            exit_price = trade['exit_long'].get('price')
+            if exit_time and exit_price:
+                exit_long_x.append(pd.to_datetime(exit_time))
+                exit_long_y.append(exit_price)
         
-        # Entry
-        fig.add_trace(
-            go.Scatter(
-                x=[entry_time],
-                y=[entry_price],
-                mode='markers',
-                marker=dict(size=10, color='green', symbol='triangle-up'),
-                name=f'Entry ({entry_price:.2f})',
-                showlegend=False
-            )
-        )
+        # Entry Short (Dreieck nach unten, Orange)
+        if 'entry_short' in trade:
+            entry_time = trade['entry_short'].get('time')
+            entry_price = trade['entry_short'].get('price')
+            if entry_time and entry_price:
+                entry_short_x.append(pd.to_datetime(entry_time))
+                entry_short_y.append(entry_price)
         
-        # Exit
-        fig.add_trace(
-            go.Scatter(
-                x=[exit_time],
-                y=[exit_price],
-                mode='markers',
-                marker=dict(size=10, color=color, symbol='triangle-down'),
-                name=f'Exit ({exit_price:.2f})',
-                showlegend=False
-            )
-        )
-        
-        # Verbindungslinie
-        fig.add_trace(
-            go.Scatter(
-                x=[entry_time, exit_time],
-                y=[entry_price, exit_price],
-                mode='lines',
-                line=dict(color=color, width=1, dash='dash'),
-                showlegend=False
-            )
-        )
+        # Exit Short (Diamant, Rot)
+        if 'exit_short' in trade:
+            exit_time = trade['exit_short'].get('time')
+            exit_price = trade['exit_short'].get('price')
+            if exit_time and exit_price:
+                exit_short_x.append(pd.to_datetime(exit_time))
+                exit_short_y.append(exit_price)
     
-    bot_display = BOT_NAME.upper()
-    title = f"{symbol} {timeframe} - {bot_display} (SMC+EMA Strategy)"
+    # Entry Long: Dreieck nach oben, grün (#16a34a)
+    if entry_long_x:
+        fig.add_trace(go.Scatter(
+            x=entry_long_x, y=entry_long_y, mode="markers",
+            marker=dict(color="#16a34a", symbol="triangle-up", size=14, line=dict(width=1.2, color="#0f5132")),
+            name="Entry Long",
+            showlegend=True
+        ))
+    
+    # Exit Long: Kreis, Cyan (#22d3ee)
+    if exit_long_x:
+        fig.add_trace(go.Scatter(
+            x=exit_long_x, y=exit_long_y, mode="markers",
+            marker=dict(color="#22d3ee", symbol="circle", size=12, line=dict(width=1.1, color="#0e7490")),
+            name="Exit Long",
+            showlegend=True
+        ))
+    
+    # Entry Short: Dreieck nach unten, Orange (#f59e0b)
+    if entry_short_x:
+        fig.add_trace(go.Scatter(
+            x=entry_short_x, y=entry_short_y, mode="markers",
+            marker=dict(color="#f59e0b", symbol="triangle-down", size=14, line=dict(width=1.2, color="#92400e")),
+            name="Entry Short",
+            showlegend=True
+        ))
+    
+    # Exit Short: Diamant, Rot (#ef4444)
+    if exit_short_x:
+        fig.add_trace(go.Scatter(
+            x=exit_short_x, y=exit_short_y, mode="markers",
+            marker=dict(color="#ef4444", symbol="diamond", size=12, line=dict(width=1.1, color="#7f1d1d")),
+            name="Exit Short",
+            showlegend=True
+        ))
+    
+    # Layout
+    title = f"{symbol} {timeframe} - JaegerBot (ANN-Strategie)"
     fig.update_layout(
         title=title,
-        height=800,
+        height=600,
         hovermode='x unified',
-        template='plotly_dark'
+        template='plotly_white',
+        dragmode='zoom',  # Zoom-Mode für Drag-Aktion
+        xaxis=dict(rangeslider=dict(visible=True), fixedrange=False),
+        yaxis=dict(fixedrange=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        # Zeige Toolbar mit Zoom/Pan/Reset Controls oben rechts (wie TradingView)
+        showlegend=True
     )
     
-    fig.update_yaxes(title_text="Price")
-    fig.update_xaxes(title_text="Time")
+    fig.update_yaxes(title_text="Preis")
+    
+    # Aktiviere Scroll-Wheel Zoom für beide Achsen
+    fig.update_xaxes(fixedrange=False)
+    fig.update_yaxes(fixedrange=False)
     
     return fig
 
@@ -251,14 +255,10 @@ def main():
         logger.error(f"Fehler beim Laden von secret.json: {e}")
         sys.exit(1)
     
-    account = secrets.get(BOT_NAME, [None])[0]
+    account = secrets.get('jaegerbot', [None])[0]
     if not account:
-        logger.error(f"Keine {BOT_NAME.upper()}-Accountkonfiguration gefunden")
+        logger.error("Keine Jaegerbot-Accountkonfiguration gefunden")
         sys.exit(1)
-    
-    # Import der passenden Exchange-Klasse
-    module = __import__(f'{BOT_NAME}.utils.exchange', fromlist=['Exchange'])
-    Exchange = module.Exchange
     
     exchange = Exchange(account)
     telegram_config = secrets.get('telegram', {})
@@ -273,22 +273,59 @@ def main():
             timeframe = config['market']['timeframe']
             
             logger.info(f"Lade OHLCV-Daten für {symbol} {timeframe}...")
-            df = exchange.fetch_recent_ohlcv(symbol, timeframe, limit=500)
+            
+            # Nutze historische Daten basierend auf Start/End Datum
+            # Falls keine Daten angefordert: letzte 30 Tage
+            if not start_date:
+                start_date_for_load = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+            else:
+                start_date_for_load = start_date
+            
+            if not end_date:
+                end_date_for_load = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            else:
+                end_date_for_load = end_date
+            
+            df = exchange.fetch_historical_ohlcv(symbol, timeframe, start_date_for_load, end_date_for_load)
             
             if df is None or len(df) == 0:
-                logger.warning(f"Keine Daten für {symbol} {timeframe}")
+                logger.warning(f"Keine Daten für {symbol} {timeframe} im Zeitraum {start_date_for_load} bis {end_date_for_load}")
                 continue
             
-            logger.info("Berechne Indikatoren...")
-            df = add_smc_ema_indicators(df)
+            logger.info("Verarbeite Daten...")
+            df = add_jaegerbot_indicators(df)
             
-            # Erstelle Chart
+            # Führe Backtest durch, um Trades zu generieren
+            logger.info("Führe Backtest durch...")
+            from titanbot.analysis.backtester import run_ann_backtest
+            
+            model_save_path = os.path.join(PROJECT_ROOT, 'artifacts', 'models', 
+                                          f'ann_predictor_{symbol.replace("/", "").replace(":", "")}_{timeframe}.h5')
+            scaler_save_path = os.path.join(PROJECT_ROOT, 'artifacts', 'models', 
+                                           f'ann_scaler_{symbol.replace("/", "").replace(":", "")}_{timeframe}.joblib')
+            
+            model_paths = {'model': model_save_path, 'scaler': scaler_save_path}
+            
+            backtest_result = run_ann_backtest(
+                df, 
+                config,
+                model_paths,
+                start_capital=1000,
+                use_macd_filter=config.get('market', {}).get('use_macd_filter', False),
+                timeframe=timeframe,
+                verbose=False
+            )
+            
+            # Extrahiere Trades aus Backtest-Ergebnis
+            trades = backtest_result.get('trades', [])
+            
+            # Erstelle Chart mit Trades
             logger.info("Erstelle Chart...")
             fig = create_interactive_chart(
                 symbol,
                 timeframe,
                 df,
-                [],  # Keine Trades für diese vereinachte Version
+                trades,
                 start_date,
                 end_date,
                 window
@@ -296,7 +333,7 @@ def main():
             
             # Speichere HTML
             safe_name = f"{symbol.replace('/', '_')}_{timeframe}"
-            output_file = f"/tmp/{BOT_NAME}_{safe_name}.html"
+            output_file = f"/tmp/jaegerbot_{safe_name}.html"
             fig.write_html(output_file)
             logger.info(f"✅ Chart gespeichert: {output_file}")
             
@@ -304,8 +341,7 @@ def main():
             if send_telegram and telegram_config:
                 try:
                     logger.info(f"Sende Chart via Telegram...")
-                    telegram_module = __import__(f'{BOT_NAME}.utils.telegram', fromlist=['send_document'])
-                    send_document = telegram_module.send_document
+                    from titanbot.utils.telegram import send_document
                     bot_token = telegram_config.get('bot_token')
                     chat_id = telegram_config.get('chat_id')
                     if bot_token and chat_id:
@@ -314,7 +350,7 @@ def main():
                     logger.warning(f"Konnte Chart nicht via Telegram versenden: {e}")
         
         except Exception as e:
-            logger.error(f"Fehler bei {filename}: {e}", exc_info=False)
+            logger.error(f"Fehler bei {filename}: {e}", exc_info=True)
             continue
     
     logger.info("\n✅ Alle Charts generiert!")
