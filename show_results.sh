@@ -14,9 +14,19 @@ echo -e "\n${YELLOW}Wähle einen Analyse-Modus:${NC}"
 echo "  1) Einzel-Analyse (jede Strategie wird isoliert getestet)"
 echo "  2) Manuelle Portfolio-Simulation (du wählst das Team)"
 echo "  3) Automatische Portfolio-Optimierung (der Bot wählt das beste Team)"
-echo "  4) Interaktive Charts (Entry/Exit-Signale nur, keine Indikatoren)"
-read -p "Auswahl (1-4) [Standard: 1]: " MODE
-MODE=${MODE:-1}
+echo "  4) Interaktive Charts (SMC mit Backtest-Simulation + Equity Curve)"
+
+# Input-Validierung: nur 1-4 akzeptieren
+while true; do
+    read -p "Auswahl (1-4) [Standard: 1]: " MODE
+    MODE=${MODE:-1}
+    # Prüfe ob Eingabe nur aus einer Ziffer 1-4 besteht
+    if [[ "$MODE" =~ ^[1-4]$ ]]; then
+        break
+    else
+        echo -e "${RED}Ungültige Eingabe. Bitte nur 1, 2, 3 oder 4 eingeben.${NC}"
+    fi
+done
 
 # *** NEU: Max Drawdown Abfrage für Modus 3 ***
 TARGET_MAX_DD=30 # Standardwert
