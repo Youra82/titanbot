@@ -139,6 +139,14 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
 
     engine = SMCEngine(settings=smc_params)
     smc_results = engine.process_dataframe(data[['open', 'high', 'low', 'close']].copy())
+    
+    # SMC-Strukturen für Visualisierung speichern
+    smc_structures = {
+        'order_blocks': engine.swingOrderBlocks + engine.internalOrderBlocks,
+        'fair_value_gaps': engine.fairValueGaps,
+        'events': engine.event_log,
+        'data_times': engine.times  # Für Zeitstempel-Konvertierung
+    }
 
     current_capital = start_capital
     peak_capital = start_capital
@@ -269,5 +277,6 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         "win_rate": win_rate, "max_drawdown_pct": max_drawdown_pct,
         "end_capital": final_capital,
         "trades_list": trades_list,  # NEU: Für Visualisierung
-        "equity_curve": equity_curve  # NEU: Für Visualisierung
+        "equity_curve": equity_curve,  # NEU: Für Visualisierung
+        "smc_structures": smc_structures  # NEU: OBs, FVGs, Events für Chart
     }
