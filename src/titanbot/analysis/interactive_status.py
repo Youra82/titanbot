@@ -93,8 +93,8 @@ def load_config(filepath):
 
 def run_backtest_for_chart(df, config, start_capital=1000):
     """
-    Führt einen Backtest durch und gibt Trades, Equity Curve und Stats zurück
-    Nutzt den existierenden SMC Backtester - jetzt mit Trades und Equity-Curve!
+    Führt einen Backtest durch und gibt Trades, Equity Curve, Stats und SMC-Strukturen zurück
+    Nutzt den existierenden SMC Backtester - jetzt mit Trades, Equity-Curve und SMC-Strukturen!
     """
     try:
         strategy_params = config.get('strategy', {})
@@ -105,7 +105,7 @@ def run_backtest_for_chart(df, config, start_capital=1000):
         strategy_params['symbol'] = market.get('symbol', '')
         strategy_params['timeframe'] = market.get('timeframe', '')
         
-        # Existierenden Backtester nutzen - gibt jetzt auch trades_list und equity_curve zurück
+        # Existierenden Backtester nutzen - gibt jetzt auch trades_list, equity_curve und smc_structures zurück
         logger_backtest = logging.getLogger('titanbot.analysis.backtester')
         original_level = logger_backtest.level
         logger_backtest.setLevel(logging.ERROR)
@@ -125,6 +125,9 @@ def run_backtest_for_chart(df, config, start_capital=1000):
         else:
             equity_df = pd.DataFrame()
         
+        # SMC-Strukturen für Chart-Visualisierung
+        smc_structures = result.get('smc_structures', {})
+        
         # Stats extrahieren
         stats = {
             'total_pnl_pct': result.get('total_pnl_pct', 0),
@@ -136,15 +139,15 @@ def run_backtest_for_chart(df, config, start_capital=1000):
         
         logger.info(f"Backtester: {len(trades)} Trades, End Capital: ${stats['end_capital']:.2f}")
         
-        return trades, equity_df, stats
+        return trades, equity_df, stats, smc_structures
     except Exception as e:
         logger.warning(f"Fehler bei Backtest-Simulation: {e}")
         import traceback
         traceback.print_exc()
-        return [], pd.DataFrame(), {}
+        return [], pd.DataFrame(), {}, {}
 
 
-def create_interactive_chart(symbol, timeframe, df, trades, equity_df, stats, start_date, end_date, window=None, start_capital=1000):
+def create_interactive_chart(symbol, timeframe, df, trades, equity_df, stats, start_date, end_date, window=None, start_capital=1000, smc_structures=None):
     """
     Erstellt interaktiven Chart GENAU wie ltbbot/utbot2:
     - Ein einzelner Chart (kein make_subplots mit 2 Reihen)
@@ -191,6 +194,126 @@ def create_interactive_chart(symbol, timeframe, df, trades, equity_df, stats, st
         ),
         secondary_y=False
     )
+    
+    # ===== SMC-STRUKTUREN (Order Blocks, FVGs) =====
+    if smc_structures:
+        # Hilfsfunktion: Konvertiere int64 Zeit zu datetime
+        def int_to_datetime(time_int):
+            try:
+                return pd.to_datetime(time_int, unit='ns')
+            except:
+                return pd.to_datetime(time_int)
+        
+        # Berechne Kerzenbreite für die Rechtecke
+        if len(df) > 1:
+            # Timeframe-basierte Breite berechnen
+            time_diff = (df.index[1] - df.index[0]).total_seconds() * 1000  # in ms
+            bar_width = time_diff * 0.8  # 80% der Kerzenbreite
+        else:
+            bar_width = 3600000  # 1 Stunde default
+        
+        shapes = []
+        annotations = []
+        
+        # --- Order Blocks zeichnen ---
+        order_blocks = smc_structures.get('order_blocks', [])
+        for ob in order_blocks:
+            try:
+                ob_time = int_to_datetime(ob.barTime)
+                
+                # Farbe basierend auf Bias und Mitigations-Status
+                if ob.bias.name == 'BULLISH':
+                    fill_color = 'rgba(34, 197, 94, 0.3)' if not ob.mitigated else 'rgba(34, 197, 94, 0.1)'  # Grün
+                    line_color = 'rgba(34, 197, 94, 0.8)' if not ob.mitigated else 'rgba(34, 197, 94, 0.3)'
+                else:
+                    fill_color = 'rgba(239, 68, 68, 0.3)' if not ob.mitigated else 'rgba(239, 68, 68, 0.1)'  # Rot
+                    line_color = 'rgba(239, 68, 68, 0.8)' if not ob.mitigated else 'rgba(239, 68, 68, 0.3)'
+                
+                # Rechteck für Order Block (erweitern nach rechts für bessere Sichtbarkeit)
+                # Erweitere um 10 Kerzen oder bis zum Chart-Ende
+                extend_bars = 10
+                end_time = ob_time + pd.Timedelta(milliseconds=bar_width * extend_bars)
+                
+                shapes.append(dict(
+                    type="rect",
+                    x0=ob_time, x1=end_time,
+                    y0=ob.barLow, y1=ob.barHigh,
+                    fillcolor=fill_color,
+                    line=dict(color=line_color, width=1),
+                    layer="below"
+                ))
+            except Exception as e:
+                continue
+        
+        # --- Fair Value Gaps zeichnen ---
+        fair_value_gaps = smc_structures.get('fair_value_gaps', [])
+        for fvg in fair_value_gaps:
+            try:
+                fvg_time = int_to_datetime(fvg.startTime)
+                
+                # Farbe basierend auf Bias und Mitigations-Status
+                if fvg.bias.name == 'BULLISH':
+                    fill_color = 'rgba(59, 130, 246, 0.25)' if not fvg.mitigated else 'rgba(59, 130, 246, 0.08)'  # Blau
+                    line_color = 'rgba(59, 130, 246, 0.7)' if not fvg.mitigated else 'rgba(59, 130, 246, 0.2)'
+                else:
+                    fill_color = 'rgba(249, 115, 22, 0.25)' if not fvg.mitigated else 'rgba(249, 115, 22, 0.08)'  # Orange
+                    line_color = 'rgba(249, 115, 22, 0.7)' if not fvg.mitigated else 'rgba(249, 115, 22, 0.2)'
+                
+                # Rechteck für FVG (erweitern nach rechts)
+                extend_bars = 8
+                end_time = fvg_time + pd.Timedelta(milliseconds=bar_width * extend_bars)
+                
+                shapes.append(dict(
+                    type="rect",
+                    x0=fvg_time, x1=end_time,
+                    y0=fvg.bottom, y1=fvg.top,
+                    fillcolor=fill_color,
+                    line=dict(color=line_color, width=1, dash='dot'),
+                    layer="below"
+                ))
+            except Exception as e:
+                continue
+        
+        # --- BOS/CHoCH Events als Linien markieren ---
+        events = smc_structures.get('events', [])
+        for event in events:
+            try:
+                event_time = int_to_datetime(event['time'])
+                event_type = event.get('type', '')
+                level = event.get('level')
+                
+                # Nur Level-basierte Events (BOS/CHoCH) zeichnen
+                if isinstance(level, (int, float)) and not pd.isna(level):
+                    # Farbe nach Event-Typ
+                    if 'Bullish' in event_type:
+                        color = '#22c55e'  # Grün
+                    elif 'Bearish' in event_type:
+                        color = '#ef4444'  # Rot
+                    else:
+                        continue
+                    
+                    # Linien-Stil nach Typ (CHoCH gestrichelt, BOS durchgezogen)
+                    dash_style = 'dash' if 'CHoCH' in event_type else 'solid'
+                    
+                    # Horizontale Linie am Level (erweitert nach rechts)
+                    extend_bars = 5
+                    end_time = event_time + pd.Timedelta(milliseconds=bar_width * extend_bars)
+                    
+                    shapes.append(dict(
+                        type="line",
+                        x0=event_time, x1=end_time,
+                        y0=level, y1=level,
+                        line=dict(color=color, width=1.5, dash=dash_style),
+                        layer="above"
+                    ))
+            except Exception as e:
+                continue
+        
+        # Shapes zum Layout hinzufügen
+        if shapes:
+            fig.update_layout(shapes=shapes)
+        
+        logger.info(f"SMC-Strukturen: {len(order_blocks)} OBs, {len(fair_value_gaps)} FVGs, {len(events)} Events")
     
     # ===== TRADE-SIGNALE =====
     entry_long_x, entry_long_y = [], []
@@ -270,9 +393,16 @@ def create_interactive_chart(symbol, timeframe, df, trades, equity_df, stats, st
         f"Win Rate: {win_rate:.1f}%"
     )
     
+    # SMC-Legende für Untertitel
+    smc_legend = ""
+    if smc_structures:
+        ob_count = len(smc_structures.get('order_blocks', []))
+        fvg_count = len(smc_structures.get('fair_value_gaps', []))
+        smc_legend = f"<br><span style='font-size:11px; color:#666'>SMC: 🟩 Bullish OB | 🟥 Bearish OB | 🟦 Bullish FVG | 🟧 Bearish FVG | ━ BOS | ┄ CHoCH ({ob_count} OBs, {fvg_count} FVGs)</span>"
+    
     fig.update_layout(
         title=dict(
-            text=title_text,
+            text=title_text + smc_legend,
             font=dict(size=14),
             x=0.5,
             xanchor='center'
@@ -353,10 +483,10 @@ def main():
             
             # Backtest-Simulation durchführen
             logger.info("Führe SMC-Backtest-Simulation durch...")
-            trades, equity_df, stats = run_backtest_for_chart(df, config, start_capital)
+            trades, equity_df, stats, smc_structures = run_backtest_for_chart(df, config, start_capital)
             
             # Chart erstellen
-            logger.info("Erstelle Chart mit Trade-Signalen und Equity Curve...")
+            logger.info("Erstelle Chart mit Trade-Signalen, SMC-Strukturen und Equity Curve...")
             fig = create_interactive_chart(
                 symbol,
                 timeframe,
@@ -367,7 +497,8 @@ def main():
                 start_date,
                 end_date,
                 window,
-                start_capital
+                start_capital,
+                smc_structures
             )
             
             safe_name = f"{symbol.replace('/', '_')}_{timeframe}"
