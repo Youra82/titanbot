@@ -231,33 +231,39 @@ def run_shared_mode(is_auto: bool, start_date, end_date, start_capital, target_m
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', default='1', type=str, help="Analyse-Modus (1=Einzel, 2=Manuell, 3=Auto)")
+    parser.add_argument('--mode', default='1', type=str, help="Analyse-Modus (1=Einzel, 2=Manuell, 3=Auto, 4=Interaktiv)")
     parser.add_argument('--target_max_drawdown', default=30.0, type=float, help="Ziel Max Drawdown % (nur für Modus 3)")
     args = parser.parse_args()
 
-    print("\n--- Bitte Konfiguration für den Backtest festlegen ---")
-    start_date = input(f"Startdatum (JJJJ-MM-TT) [Standard: 2023-01-01]: ") or "2023-01-01"
-    end_date = input(f"Enddatum (JJJJ-MM-TT) [Standard: Heute]: ") or date.today().strftime("%Y-%m-%d")
-    start_capital = int(input(f"Startkapital in USDT eingeben [Standard: 1000]: ") or 1000)
-    print("--------------------------------------------------")
+    if args.mode == '4':
+        # Modus 4: Interaktive Charts (SMC)
+        print("\n--- Starte interaktive Chart-Generierung (SMC) ---")
+        from titanbot.analysis.interactive_status import main as interactive_main
+        interactive_main()
+    else:
+        print("\n--- Bitte Konfiguration für den Backtest festlegen ---")
+        start_date = input(f"Startdatum (JJJJ-MM-TT) [Standard: 2023-01-01]: ") or "2023-01-01"
+        end_date = input(f"Enddatum (JJJJ-MM-TT) [Standard: Heute]: ") or date.today().strftime("%Y-%m-%d")
+        start_capital = int(input(f"Startkapital in USDT eingeben [Standard: 1000]: ") or 1000)
+        print("--------------------------------------------------")
 
-    if args.mode == '2':
-        # KORREKTUR: Explizite Benennung der Argumente für den run_shared_mode Aufruf (behebt TypeError)
-        run_shared_mode(
-            is_auto=False, 
-            start_date=start_date, 
-            end_date=end_date, 
-            start_capital=start_capital, 
-            target_max_dd=999.0
-        )
-    elif args.mode == '3':
-        # KORREKTUR: Explizite Benennung der Argumente für den run_shared_mode Aufruf (behebt TypeError)
-        run_shared_mode(
-            is_auto=True, 
-            start_date=start_date, 
-            end_date=end_date, 
-            start_capital=start_capital, 
-            target_max_dd=args.target_max_drawdown
-        )
-    else: # Modus 1 (default)
-        run_single_analysis(start_date=start_date, end_date=end_date, start_capital=start_capital)
+        if args.mode == '2':
+            # KORREKTUR: Explizite Benennung der Argumente für den run_shared_mode Aufruf (behebt TypeError)
+            run_shared_mode(
+                is_auto=False, 
+                start_date=start_date, 
+                end_date=end_date, 
+                start_capital=start_capital, 
+                target_max_dd=999.0
+            )
+        elif args.mode == '3':
+            # KORREKTUR: Explizite Benennung der Argumente für den run_shared_mode Aufruf (behebt TypeError)
+            run_shared_mode(
+                is_auto=True, 
+                start_date=start_date, 
+                end_date=end_date, 
+                start_capital=start_capital, 
+                target_max_dd=args.target_max_drawdown
+            )
+        else: # Modus 1 (default)
+            run_single_analysis(start_date=start_date, end_date=end_date, start_capital=start_capital)
