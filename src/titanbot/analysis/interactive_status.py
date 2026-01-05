@@ -21,6 +21,7 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.utils.exchange import Exchange
 from titanbot.strategy.smc_engine import SMCEngine, Bias
+from titanbot.analysis.backtester import run_smc_backtest
 
 def setup_logging():
     logger = logging.getLogger('interactive_status')
@@ -94,17 +95,31 @@ def load_config(filepath):
 def run_backtest_for_chart(df, config, start_capital=1000):
     """
     Führt einen Backtest durch und gibt Trades, Equity Curve und Stats zurück
-    Extrahiert Trade-Informationen für die Visualisierung im Chart
+    Nutzt den existierenden SMC Backtester für Stats
     """
     try:
-        # Trade-Signale zuerst extrahieren (basiert auf SMC Events)
+        strategy_params = config.get('strategy', {})
+        risk_params = config.get('risk', {})
+        
+        # Symbol und Timeframe für SMC hinzufügen
+        market = config.get('market', {})
+        strategy_params['symbol'] = market.get('symbol', '')
+        strategy_params['timeframe'] = market.get('timeframe', '')
+        
+        # Existierenden Backtester für Stats nutzen
+        logger_backtest = logging.getLogger('titanbot.analysis.backtester')
+        original_level = logger_backtest.level
+        logger_backtest.setLevel(logging.ERROR)
+        
+        stats = run_smc_backtest(df.copy(), strategy_params, risk_params, start_capital=start_capital, verbose=False)
+        
+        logger_backtest.setLevel(original_level)
+        
+        # Trade-Signale für Visualisierung extrahieren (basiert auf SMC Events)
         trades = extract_trades_from_backtest(df, config, start_capital)
         
         # Equity Curve simulieren basierend auf Trades
         equity_df = build_equity_curve(df, trades, start_capital)
-        
-        # Stats aus Trades berechnen
-        stats = calculate_stats_from_trades(trades, equity_df, start_capital)
         
         return trades, equity_df, stats
     except Exception as e:
@@ -112,57 +127,6 @@ def run_backtest_for_chart(df, config, start_capital=1000):
         import traceback
         traceback.print_exc()
         return [], df[[]].copy(), {}
-
-
-def calculate_stats_from_trades(trades, equity_df, start_capital):
-    """
-    Berechnet Stats direkt aus den extrahierten Trades
-    """
-    if not trades:
-        return {
-            'total_pnl_pct': 0,
-            'trades_count': 0,
-            'win_rate': 0,
-            'max_drawdown_pct': 0
-        }
-    
-    wins = 0
-    total_trades = len(trades)
-    
-    for trade in trades:
-        # Berechne PnL für jeden Trade
-        if 'exit_long' in trade and 'entry_long' in trade:
-            entry_price = trade['entry_long'].get('price', 0)
-            exit_price = trade['exit_long'].get('price', 0)
-            if entry_price > 0 and exit_price > entry_price:
-                wins += 1
-        elif 'exit_short' in trade and 'entry_short' in trade:
-            entry_price = trade['entry_short'].get('price', 0)
-            exit_price = trade['exit_short'].get('price', 0)
-            if entry_price > 0 and exit_price < entry_price:
-                wins += 1
-    
-    win_rate = (wins / total_trades * 100) if total_trades > 0 else 0
-    
-    # End Capital und PnL aus Equity Curve
-    end_capital = equity_df['equity'].iloc[-1] if not equity_df.empty and 'equity' in equity_df.columns else start_capital
-    total_pnl_pct = ((end_capital - start_capital) / start_capital * 100) if start_capital > 0 else 0
-    
-    # Max Drawdown berechnen
-    max_dd = 0
-    if not equity_df.empty and 'equity' in equity_df.columns:
-        peak = start_capital
-        for equity in equity_df['equity']:
-            peak = max(peak, equity)
-            dd = (peak - equity) / peak if peak > 0 else 0
-            max_dd = max(max_dd, dd)
-    
-    return {
-        'total_pnl_pct': total_pnl_pct,
-        'trades_count': total_trades,
-        'win_rate': win_rate,
-        'max_drawdown_pct': max_dd  # Als Dezimalzahl (0.xx)
-    }
 
 
 def build_equity_curve(df, trades, start_capital):
