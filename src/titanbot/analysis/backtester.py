@@ -146,6 +146,10 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     trades_count = 0
     wins_count = 0
     position = None
+    
+    # NEU: Trade-Liste und Equity-Curve für Visualisierung
+    trades_list = []
+    equity_curve = []
 
     params_for_logic = {"strategy": smc_params, "risk": risk_params}
 
@@ -154,6 +158,9 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     # --- Backtest Loop ---
     for timestamp, current_candle in iterator:
         if current_capital <= 0: break
+        
+        # NEU: Equity-Punkt für jeden Timestamp speichern
+        equity_curve.append({'timestamp': timestamp, 'equity': current_capital})
 
         # --- NEU: Dynamische MTF-Bias-Aktualisierung (falls nötig) ---
         # Diese Simulation ist vereinfacht und geht davon aus, 
@@ -191,6 +198,20 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 if current_capital <= 0: current_capital = 0; break
                 if (pnl_usd - total_fees) > 0: wins_count += 1
                 trades_count += 1
+                
+                # NEU: Trade für Visualisierung speichern
+                trade_record = {
+                    'entry_' + position['side']: {
+                        'time': position['entry_time'].isoformat() if hasattr(position.get('entry_time'), 'isoformat') else str(position.get('entry_time')),
+                        'price': position['entry_price']
+                    },
+                    'exit_' + position['side']: {
+                        'time': timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp),
+                        'price': exit_price
+                    }
+                }
+                trades_list.append(trade_record)
+                
                 position = None
                 peak_capital = max(peak_capital, current_capital)
                 if peak_capital > 0:
@@ -234,10 +255,11 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                     'take_profit': take_profit, 'margin_used': margin_used,
                     'notional_value': final_notional_value,
                     'trailing_active': False, 'activation_price': activation_price,
-                    'peak_price': entry_price
+                    'peak_price': entry_price,
+                    'entry_time': timestamp  # NEU: Entry-Zeit speichern
                 }
 
-    # --- Endergebnis (Unverändert) ---
+    # --- Endergebnis ---
     win_rate = (wins_count / trades_count * 100) if trades_count > 0 else 0
     final_pnl_pct = ((current_capital - start_capital) / start_capital) * 100 if start_capital > 0 else 0
     final_capital = max(0, current_capital)
@@ -245,5 +267,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     return {
         "total_pnl_pct": final_pnl_pct, "trades_count": trades_count,
         "win_rate": win_rate, "max_drawdown_pct": max_drawdown_pct,
-        "end_capital": final_capital
+        "end_capital": final_capital,
+        "trades_list": trades_list,  # NEU: Für Visualisierung
+        "equity_curve": equity_curve  # NEU: Für Visualisierung
     }

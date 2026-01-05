@@ -20,7 +20,6 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.utils.exchange import Exchange
-from titanbot.strategy.smc_engine import SMCEngine, Bias
 from titanbot.analysis.backtester import run_smc_backtest
 
 def setup_logging():
@@ -95,7 +94,7 @@ def load_config(filepath):
 def run_backtest_for_chart(df, config, start_capital=1000):
     """
     Führt einen Backtest durch und gibt Trades, Equity Curve und Stats zurück
-    Nutzt den existierenden SMC Backtester für Stats
+    Nutzt den existierenden SMC Backtester - jetzt mit Trades und Equity-Curve!
     """
     try:
         strategy_params = config.get('strategy', {})
@@ -106,176 +105,43 @@ def run_backtest_for_chart(df, config, start_capital=1000):
         strategy_params['symbol'] = market.get('symbol', '')
         strategy_params['timeframe'] = market.get('timeframe', '')
         
-        # Existierenden Backtester für Stats nutzen
+        # Existierenden Backtester nutzen - gibt jetzt auch trades_list und equity_curve zurück
         logger_backtest = logging.getLogger('titanbot.analysis.backtester')
         original_level = logger_backtest.level
         logger_backtest.setLevel(logging.ERROR)
         
-        stats = run_smc_backtest(df.copy(), strategy_params, risk_params, start_capital=start_capital, verbose=False)
+        result = run_smc_backtest(df.copy(), strategy_params, risk_params, start_capital=start_capital, verbose=False)
         
         logger_backtest.setLevel(original_level)
         
-        # Trade-Signale für Visualisierung extrahieren (basiert auf SMC Events)
-        trades = extract_trades_from_backtest(df, config, start_capital)
+        # Trades direkt vom Backtester (konsistent mit Stats!)
+        trades = result.get('trades_list', [])
         
-        # Equity Curve simulieren basierend auf Trades
-        equity_df = build_equity_curve(df, trades, start_capital)
+        # Equity Curve direkt vom Backtester
+        equity_data = result.get('equity_curve', [])
+        if equity_data:
+            equity_df = pd.DataFrame(equity_data)
+            equity_df.set_index('timestamp', inplace=True)
+        else:
+            equity_df = pd.DataFrame()
+        
+        # Stats extrahieren
+        stats = {
+            'total_pnl_pct': result.get('total_pnl_pct', 0),
+            'trades_count': result.get('trades_count', 0),
+            'win_rate': result.get('win_rate', 0),
+            'max_drawdown_pct': result.get('max_drawdown_pct', 0),
+            'end_capital': result.get('end_capital', start_capital)
+        }
+        
+        logger.info(f"Backtester: {len(trades)} Trades, End Capital: ${stats['end_capital']:.2f}")
         
         return trades, equity_df, stats
     except Exception as e:
         logger.warning(f"Fehler bei Backtest-Simulation: {e}")
         import traceback
         traceback.print_exc()
-        return [], df[[]].copy(), {}
-
-
-def build_equity_curve(df, trades, start_capital):
-    """
-    Erstellt eine Equity Curve basierend auf den simulierten Trades
-    """
-    equity = start_capital
-    equity_data = []
-    
-    # Sammle alle Trade-Events mit Zeitstempel
-    trade_events = []
-    for trade in trades:
-        if 'exit_long' in trade:
-            entry_price = trade.get('entry_long', {}).get('price', 0)
-            exit_price = trade.get('exit_long', {}).get('price', 0)
-            exit_time = trade.get('exit_long', {}).get('time')
-            if entry_price and exit_price and exit_time:
-                pnl_pct = (exit_price - entry_price) / entry_price
-                trade_events.append({
-                    'time': pd.to_datetime(exit_time),
-                    'pnl_pct': pnl_pct,
-                    'side': 'long'
-                })
-        
-        if 'exit_short' in trade:
-            entry_price = trade.get('entry_short', {}).get('price', 0)
-            exit_price = trade.get('exit_short', {}).get('price', 0)
-            exit_time = trade.get('exit_short', {}).get('time')
-            if entry_price and exit_price and exit_time:
-                pnl_pct = (entry_price - exit_price) / entry_price
-                trade_events.append({
-                    'time': pd.to_datetime(exit_time),
-                    'pnl_pct': pnl_pct,
-                    'side': 'short'
-                })
-    
-    # Sortiere Trade-Events nach Zeit
-    trade_events = sorted(trade_events, key=lambda x: x['time'])
-    
-    # Erstelle Equity Curve für jeden Timestamp im DataFrame
-    trade_idx = 0
-    for timestamp, row in df.iterrows():
-        # Wende alle Trades bis zu diesem Timestamp an
-        while trade_idx < len(trade_events) and trade_events[trade_idx]['time'] <= timestamp:
-            trade = trade_events[trade_idx]
-            equity += equity * trade['pnl_pct']
-            trade_idx += 1
-        
-        equity_data.append({
-            'timestamp': timestamp,
-            'equity': equity
-        })
-    
-    equity_df = pd.DataFrame(equity_data)
-    equity_df.set_index('timestamp', inplace=True)
-    return equity_df
-
-def extract_trades_from_backtest(df, config, start_capital=1000):
-    """
-    Extrahiert Trade-Signale aus dem SMC-Chart für die Visualisierung
-    Nutzt die SMC Engine Event-Log für BOS/CHoCH Signale
-    Liefert Entry/Exit Punkte für Long und Short Positionen
-    """
-    trades = []
-    try:
-        strategy_params = config.get('strategy', {})
-        
-        # SMC Engine initialisieren und verarbeiten
-        engine = SMCEngine(settings=strategy_params)
-        smc_results = engine.process_dataframe(df[['open', 'high', 'low', 'close']].copy())
-        
-        # Hole die Events aus der SMC Engine
-        events = smc_results.get('events', [])
-        
-        in_position = False
-        position_type = None
-        entry_price = None
-        entry_time = None
-        entry_index = None
-        
-        # Verarbeite Events chronologisch
-        for event in events:
-            event_type = event.get('type', '')
-            event_index = event.get('index', 0)
-            event_time = event.get('time')
-            
-            # Nur Swing-Events für Trades verwenden (stabiler als Internal)
-            if 'Swing' not in event_type:
-                continue
-            
-            # Bestimme Signal-Richtung
-            is_bullish = 'Bullish' in event_type
-            is_bearish = 'Bearish' in event_type
-            
-            # Hole Close-Preis zum Event-Zeitpunkt
-            if event_index >= len(df):
-                continue
-            close_price = df.iloc[event_index]['close']
-            timestamp = df.index[event_index]
-            
-            # State machine für Positionen
-            if not in_position:
-                if is_bullish:
-                    in_position = True
-                    position_type = 'long'
-                    entry_price = close_price
-                    entry_time = timestamp
-                    entry_index = event_index
-                elif is_bearish:
-                    in_position = True
-                    position_type = 'short'
-                    entry_price = close_price
-                    entry_time = timestamp
-                    entry_index = event_index
-            else:
-                # Exit bei entgegengesetztem Signal
-                should_exit = False
-                if position_type == 'long' and is_bearish:
-                    should_exit = True
-                elif position_type == 'short' and is_bullish:
-                    should_exit = True
-                
-                if should_exit:
-                    trade = {
-                        'entry_' + position_type: {
-                            'time': entry_time.isoformat() if hasattr(entry_time, 'isoformat') else str(entry_time),
-                            'price': float(entry_price)
-                        },
-                        'exit_' + position_type: {
-                            'time': timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp),
-                            'price': float(close_price)
-                        }
-                    }
-                    trades.append(trade)
-                    
-                    # Sofort neue Position in entgegengesetzter Richtung eröffnen
-                    in_position = True
-                    position_type = 'long' if is_bullish else 'short'
-                    entry_price = close_price
-                    entry_time = timestamp
-                    entry_index = event_index
-        
-        logger.info(f"SMC Events: {len(events)}, Trades extrahiert: {len(trades)}")
-        return trades
-    except Exception as e:
-        logger.warning(f"Fehler beim Extrahieren von Trades: {e}")
-        import traceback
-        traceback.print_exc()
-        return []
+        return [], pd.DataFrame(), {}
 
 
 def create_interactive_chart(symbol, timeframe, df, trades, equity_df, stats, start_date, end_date, window=None, start_capital=1000):
