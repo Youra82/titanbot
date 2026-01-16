@@ -2,15 +2,14 @@
 
 <div align="center">
 
-![TitanBot Logo](https://img.shields.io/badge/TitanBot-v2.0-blue?style=for-the-badge)
+![TitanBot Logo](https://img.shields.io/badge/TitanBot-v1.0-blue?style=for-the-badge)
 [![Python](https://img.shields.io/badge/Python-3.8+-green?style=for-the-badge&logo=python)](https://www.python.org/)
 [![CCXT](https://img.shields.io/badge/CCXT-4.3.5-red?style=for-the-badge)](https://github.com/ccxt/ccxt)
-[![Optuna](https://img.shields.io/badge/Optuna-4.5-purple?style=for-the-badge)](https://optuna.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
-**Ein leistungsstarker Trading-Bot mit dynamischem Stop-Loss, Multi-Asset-Support und fortgeschrittenem Risikomanagement**
+**Ein leistungsstarker Trading-Bot mit SMC-Momentum-Hybrid, dynamischem Stop-Loss und intelligenter Multi-Position-Verwaltung**
 
-[Features](#-features) • [Installation](#-installation) • [Optimierung](#-optimierung) • [Live-Trading](#-live-trading) • [Monitoring](#-monitoring) • [Wartung](#-wartung)
+[Features](#-features) • [Installation](#-installation) • [Konfiguration](#-konfiguration) • [Live-Trading](#-live-trading) • [Pipeline](#-interaktives-pipeline-script) • [Monitoring](#-monitoring--status) • [Wartung](#-wartung)
 
 </div>
 
@@ -18,72 +17,62 @@
 
 ## 📊 Übersicht
 
-TitanBot ist ein hochentwickelter Trading-Bot mit Fokus auf Performance und Risikokontrolle. Das System verfügt über dynamische Stop-Loss-Mechanismen, intelligente Positionsgrößenverwaltung und kann bis zu mehrere Positionen gleichzeitig managen.
+TitanBot ist ein hochentwickelter Trading-Bot mit Fokus auf Performance und Risikokontrolle. Das System kombiniert Smart Money Concepts (Liquidity Sweeps, Breaker-Blocks) mit Momentum-Indikatoren und verfügt über dynamische Stop-Loss-Mechanismen sowie intelligente Multi-Position-Verwaltung.
 
 ### 🧭 Trading-Logik (Kurzfassung)
-- **SMC-Momentum-Hybrid**: Nutzt Smart-Money-Concepts (Liquidity Sweeps/Structure Breaks) kombiniert mit Momentum-Indikatoren (z.B. MACD/RSI) für Entry-Qualität.
-- **Dynamischer Stop**: SL-Level passen sich an Volatilität/ATR an; optionaler Trailing-SL folgt dem Trend.
-- **Positions-Limit**: `max_open_positions` begrenzt parallele Trades, priorisiert höchste Signal-Qualität.
-- **Execution**: CCXT-Orders mit Fee/Slippage-Annahmen aus Backtests; Telegram-Notifications für State-Änderungen.
+- **SMC-Momentum-Hybrid**: Nutzt Liquidity Sweeps/Structure Breaks (SMC) kombiniert mit Momentum-Indikatoren (MACD/RSI)
+- **Dynamischer Stop-Loss**: SL-Level passen sich an Volatilität/ATR an; optionaler Trailing-SL folgt dem Trend
+- **Position-Limit**: `max_open_positions` begrenzt parallele Trades, priorisiert höchste Signal-Qualität
+- **Signal-Ranking**: Mehrere Signale werden ranked und best-performing Setups werden bevorzugt
+- **Risk Layer**: ATR-basierte SL/TP Berechnung; Positionsgröße auf Konto-Risk begrenzt
+- **Execution**: CCXT-Orders mit realistischer Fee/Slippage-Annahmen
+- **Telegram-Notifications**: Real-time Updates für alle Position-State-Änderungen
 
 ### 🔍 Strategie-Visualisierung
 ```mermaid
 flowchart LR
-    A["OHLCV"]
+    A["OHLCV Marktdaten"]
     B["SMC Map<br/>Liquidity | Breaker | MSB"]
     C["Momentum Stack<br/>MACD | RSI | Vol"]
-    D["Signal-Ranking"]
-    E["Risk Engine<br/>ATR-SL/TP + Trail"]
-    F["Order Router (CCXT)<br/>max_open_positions respected"]
+    D["Signal-Ranking<br/>Quality Score"]
+    E["Position Check<br/>max_open_positions"]
+    F["Risk Engine<br/>ATR-SL/TP + Trail"]
+    G["Order Router (CCXT)"]
 
     A --> B
     A --> C
-    B & C --> D --> E --> F
+    B & C --> D --> E --> F --> G
 ```
 
-### 📈 Trade-Beispiel (TP/SL/Trailing)
-- Setup: Liquidity Sweep unter Struktur-Low + Momentum-Reversal (MACD Cross Up, RSI aus Oversold).
-- Entry: Long nach Bestätigungskerze über Breaker-Block.
-- Initial SL: Unter Sweep-Low oder ATR-basiert (1.5–2× ATR).
-- TP: 2–3× SL-Distanz oder nächstes markantes High/Imbalance-Fill.
-- Trailing: Aktiv nach +1×SL Distanz; Trail unter das letzte Higher Low, um Rest-Trend auszureizen.
-
-Architektur-Skizze:
-```
-OHLCV → Momentum/Vol-Stack → Signal-Ranking → Risk Engine (SL/TP/Trail) → Order Router (CCXT)
-```
-
-### 🎯 Hauptmerkmale
-
-- **🚀 High Performance**: Optimiert für schnelle Ausführung und niedrige Latenz
-- **🎯 Dynamic Stop-Loss**: Intelligente, adaptive Stop-Loss-Strategien
-- **💰 Position Management**: Maximale Anzahl offener Positionen konfigurierbar
-- **📈 Multi-Asset**: Handel mehrerer Kryptowährungen parallel
-- **🔧 Auto-Optimization**: Vollautomatische Parameteroptimierung
-- **📊 Advanced Analytics**: Umfassende Performance-Analysen
-- **🛡️ Risk Control**: Fortgeschrittenes Risikomanagement
-- **🔔 Telegram Integration**: Real-time Notifications
+### 📈 Trade-Beispiel (Entry/SL/TP)
+- **Setup**: Liquidity Sweep unter Struktur-Low + Momentum-Reversal (MACD Cross Up, RSI aus Oversold)
+- **Entry**: Long nach Bestätigungskerze über Breaker-Block mit Signal-Quality-Score > Schwelle
+- **Initial SL**: Unter Sweep-Low oder ATR-basiert (1.5–2× ATR)
+- **TP**: 2–3× SL-Distanz oder nächstes markantes High/Imbalance-Fill
+- **Trailing**: Aktiv nach +1×SL Distanz; Trail unter das letzte Higher Low
 
 ---
 
 ## 🚀 Features
 
 ### Trading Features
+- ✅ Smart Money Concepts Implementierung
 - ✅ Dynamischer Stop-Loss (anpassbar an Volatilität)
 - ✅ Maximale offene Positionen: Konfigurierbar (Standard: 3)
 - ✅ Multi-Asset Trading (BTC, ETH, SOL, XRP, AAVE)
 - ✅ Multiple Timeframes (5m, 2h, 4h, 6h)
+- ✅ Signal-Ranking für höchste Qualität
 - ✅ Optionaler MACD-Filter
 - ✅ Intelligentes Position Sizing
-- ✅ Take-Profit Management
-- ✅ Trailing Stop-Loss
+- ✅ Telegram-Benachrichtigungen
 
 ### Technical Features
+- ✅ CCXT Integration für mehrere Börsen
 - ✅ Optuna Hyperparameter-Optimierung
 - ✅ Fortgeschrittene technische Indikatoren
 - ✅ Volume-basierte Analysen
-- ✅ Walk-Forward-Testing
 - ✅ Backtesting mit realistischer Simulation
+- ✅ Walk-Forward-Testing
 - ✅ Performance-Tracking und Reporting
 
 ---
@@ -111,7 +100,7 @@ git clone https://github.com/Youra82/titanbot.git
 cd titanbot
 ```
 
-### 2. Automatische Installation
+### 2. Automatische Installation (empfohlen)
 
 ```bash
 # Linux/macOS
@@ -124,21 +113,21 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Das Installations-Script:
-- ✅ Erstellt virtuelle Python-Umgebung
-- ✅ Installiert alle Dependencies
-- ✅ Erstellt Verzeichnisstruktur
-- ✅ Initialisiert Konfigurationen
+Das Installations-Script führt folgende Schritte aus:
+- ✅ Erstellt eine virtuelle Python-Umgebung (`.venv`)
+- ✅ Installiert alle erforderlichen Abhängigkeiten
+- ✅ Erstellt notwendige Verzeichnisse (`data/`, `logs/`, `artifacts/`)
+- ✅ Initialisiert Konfigurationsdateien
 
 ### 3. API-Credentials konfigurieren
 
-Erstelle `secret.json`:
+Erstelle eine `secret.json` Datei:
 
 ```json
 {
   "titanbot": [
     {
-      "name": "Binance Main",
+      "name": "Binance Trading Account",
       "exchange": "binance",
       "apiKey": "DEIN_API_KEY",
       "secret": "DEIN_SECRET_KEY",
@@ -146,19 +135,14 @@ Erstelle `secret.json`:
         "defaultType": "future"
       }
     }
-  ],
-  "telegram": {
-    "bot_token": "DEIN_BOT_TOKEN",
-    "chat_id": "DEINE_CHAT_ID"
-  }
+  ]
 }
 ```
 
-⚠️ **Sicherheit**:
-- Niemals `secret.json` committen!
-- Nur API-Keys ohne Withdrawal-Rechte
-- IP-Whitelist aktivieren
-- 2FA aktivieren
+⚠️ **Wichtig**: 
+- Niemals `secret.json` committen oder teilen!
+- Verwende nur API-Keys mit eingeschränkten Rechten
+- Aktiviere IP-Whitelist auf der Exchange
 
 ### 4. Trading-Strategien konfigurieren
 
@@ -167,19 +151,20 @@ Bearbeite `settings.json`:
 ```json
 {
   "live_trading_settings": {
-    "use_auto_optimizer_results": false,
     "max_open_positions": 3,
     "active_strategies": [
       {
         "symbol": "BTC/USDT:USDT",
         "timeframe": "4h",
-        "use_macd_filter": false,
+        "use_momentum_filter": true,
+        "use_trailing_stop": true,
         "active": true
       },
       {
         "symbol": "ETH/USDT:USDT",
-        "timeframe": "6h",
-        "use_macd_filter": false,
+        "timeframe": "2h",
+        "use_momentum_filter": true,
+        "use_trailing_stop": true,
         "active": true
       }
     ]
@@ -187,50 +172,13 @@ Bearbeite `settings.json`:
 }
 ```
 
-**Wichtige Parameter**:
-- `max_open_positions`: Maximale Anzahl gleichzeitiger Positionen (Standard: 3)
+**Parameter-Erklärung**:
+- `max_open_positions`: Max. gleichzeitig offene Positionen
 - `symbol`: Handelspaar
-- `timeframe`: Zeitrahmen (5m, 2h, 4h, 6h)
-- `use_macd_filter`: MACD-Filter aktivieren
-- `active`: Strategie aktivieren/deaktivieren
-
----
-
-## 🎯 Optimierung & Training
-
-### Vollständige Pipeline (Empfohlen)
-
-```bash
-./run_pipeline.sh
-```
-
-Pipeline-Schritte:
-1. **Aufräumen** (Optional): Alte Configs löschen
-2. **Symbol-Auswahl**: Handelspaare wählen
-3. **Timeframe-Auswahl**: Zeitrahmen konfigurieren
-4. **Daten-Download**: Historische Daten laden
-5. **Optimierung**: Parameter mit Optuna optimieren
-6. **Backtest**: Strategien validieren
-7. **Deployment**: Configs für Live-Trading erstellen
-
-### Manuelle Optimierung
-
-```bash
-source .venv/bin/activate
-python src/titanbot/analysis/optimizer.py
-```
-
-**Erweiterte Optionen**:
-```bash
-# Spezifische Symbole
-python src/titanbot/analysis/optimizer.py --symbols BTC ETH SOL
-
-# Mehr Trials
-python src/titanbot/analysis/optimizer.py --trials 300
-
-# Walk-Forward Analyse
-python src/titanbot/analysis/optimizer.py --walk-forward
-```
+- `timeframe`: Zeitrahmen
+- `use_momentum_filter`: Momentum-Filter aktivieren
+- `use_trailing_stop`: Trailing Stop aktivieren
+- `active`: Strategie aktiv
 
 ---
 
@@ -239,28 +187,41 @@ python src/titanbot/analysis/optimizer.py --walk-forward
 ### Start des Live-Trading
 
 ```bash
-# Master Runner starten (alle aktiven Strategien)
+# Master Runner starten
 python master_runner.py
 ```
 
 ### Manuell starten / Cronjob testen
-Sofortige Ausführung auslösen (ohne 15-Minuten-Cron-Intervall):
 
 ```bash
 cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu/titanbot/master_runner.py
 ```
 
 Der Master Runner:
-- ✅ Verwaltet alle aktiven Strategien
-- ✅ Überwacht `max_open_positions` Limit
-- ✅ Führt dynamisches Stop-Loss Management durch
+- ✅ Lädt Konfigurationen aus `settings.json`
+- ✅ Verwaltet offene Positionen (max_open_positions)
+- ✅ Startet separate Prozesse für aktive Strategien
+- ✅ Berechnet SMC-Signale und Momentum-Scores
+- ✅ Überwacht Kontostand und verfügbares Kapital
+- ✅ Aktualisiert dynamische Stop-Loss-Level
 - ✅ Loggt alle Trading-Aktivitäten
 - ✅ Sendet Telegram-Benachrichtigungen
 
-### Automatischer Start
+### Automatischer Start (Produktions-Setup)
 
 ```bash
-./run_pipeline_automated.sh
+crontab -e
+```
+
+```
+# Starte den TitanBot Master-Runner alle 15 Minuten
+*/15 * * * * /usr/bin/flock -n /home/ubuntu/titanbot/titanbot.lock /bin/sh -c "cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu/titanbot/master_runner.py >> /home/ubuntu/titanbot/logs/cron.log 2>&1"
+```
+
+Logverzeichnis:
+
+```bash
+mkdir -p /home/ubuntu/titanbot/logs
 ```
 
 ### Als Systemd Service (Linux)
@@ -281,7 +242,6 @@ WorkingDirectory=/path/to/titanbot
 ExecStart=/path/to/titanbot/.venv/bin/python master_runner.py
 Restart=always
 RestartSec=10
-Environment="PYTHONUNBUFFERED=1"
 
 [Install]
 WantedBy=multi-user.target
@@ -295,116 +255,124 @@ sudo systemctl status titanbot
 
 ---
 
+## 📊 Interaktives Pipeline-Script
+
+Das **`run_pipeline.sh`** Script automatisiert die Parameter-Optimierung. Es optimiert SMC-Parameter, Momentum-Indikatoren und Position-Management-Einstellungen.
+
+### Features des Pipeline-Scripts
+
+✅ **Interaktive Eingabe** - Einfache Menü-Navigation  
+✅ **Automatische Datumswahl** - Zeitrahmen-basierte Lookback-Berechnung  
+✅ **Optuna-Optimierung** - Bayessche Hyperparameter-Suche  
+✅ **Batch-Optimierung** - Mehrere Symbol/Timeframe-Kombinationen  
+✅ **Automatisches Speichern** - Optimale Konfigurationen  
+✅ **Integrierte Backtests** - Sofort nach Optimierung testen  
+
+### Verwendung
+
+```bash
+chmod +x run_pipeline.sh
+./run_pipeline.sh
+```
+
+### Optimierte Konfigurationen
+
+```
+artifacts/optimal_configs/
+├── optimal_BTCUSDT_4h.json
+└── ...
+```
+
+**Beispiel-Konfiguration**:
+
+```json
+{
+  "symbol": "BTCUSDT",
+  "timeframe": "4h",
+  "parameters": {
+    "atr_period": 14,
+    "atr_multiplier_sl": 1.8,
+    "atr_multiplier_tp": 3.0,
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "rsi_period": 14,
+    "momentum_threshold": 0.65,
+    "signal_quality_threshold": 0.70
+  },
+  "performance": {
+    "total_return": 11.25,
+    "win_rate": 61.5,
+    "num_trades": 13,
+    "max_drawdown": -6.80,
+    "end_capital": 812.50
+  }
+}
+```
+
+---
+
 ## 📊 Monitoring & Status
 
 ### Status-Dashboard
 
 ```bash
-./show_status.sh        # Vollständiger Status
-./show_results.sh       # Performance-Ergebnisse
-./show_chart.sh         # Charts generieren
+./show_status.sh
 ```
 
-### Real-time Monitoring
+### Live-Position Tracking
 
 ```bash
-# Live-Trading Logs
-tail -f logs/live_trading_*.log
-
-# Nur Trades
-grep -i "opened\|closed\|profit" logs/live_trading_*.log
-
-# Fehler-Logs
-tail -f logs/error_*.log
+./show_results.sh
 ```
 
-### Chart-Generierung
+### Log-Files
 
 ```bash
-# Equity-Curve generieren
-./show_chart.sh
-
-# Per Telegram senden
-python generate_and_send_chart.py
+tail -f logs/cron.log
+tail -f logs/error.log
+tail -n 100 logs/titanbot_BTCUSDTUSDT_4h.log
 ```
 
-### Performance-Analyse
+### Performance-Metriken
 
 ```bash
-# Equity vergleichen
-python -c "
-import pandas as pd
-manual = pd.read_csv('manual_portfolio_equity.csv')
-optimal = pd.read_csv('optimal_portfolio_equity.csv')
-print('Manual ROI:', (manual['equity'].iloc[-1] / manual['equity'].iloc[0] - 1) * 100, '%')
-print('Optimal ROI:', (optimal['equity'].iloc[-1] / optimal['equity'].iloc[0] - 1) * 100, '%')
-"
+python analyze_real_trades_detailed.py
+python compare_real_vs_backtest.py
 ```
 
 ---
 
 ## 🛠️ Wartung & Pflege
 
-### Regelmäßige Wartung
-
-#### Updates installieren
+### Logs ansehen
 
 ```bash
-./update.sh
+tail -f logs/cron.log
+tail -n 200 logs/cron.log
+grep -i "ERROR" logs/cron.log
+grep -i "POSITION" logs/cron.log
 ```
 
-#### Log-Rotation
+### Bot aktualisieren
 
 ```bash
-# Logs komprimieren (>30 Tage)
+chmod +x update.sh
+bash ./update.sh
+```
+
+### Log-Rotation
+
+```bash
 find logs/ -name "*.log" -type f -mtime +30 -exec gzip {} \;
-
-# Alte Logs löschen (>90 Tage)
 find logs/ -name "*.log.gz" -type f -mtime +90 -delete
-```
-
-### Vollständiges Aufräumen
-
-#### Konfigurationen zurücksetzen
-
-```bash
-# Generierte Configs löschen
-rm -f src/titanbot/strategy/configs/config_*.json
-ls -la src/titanbot/strategy/configs/
-
-# Optimierungsergebnisse löschen
-rm -rf artifacts/results/*
-ls -la artifacts/results/
-```
-
-#### Daten löschen
-
-```bash
-# Cache löschen
-rm -rf data/raw/* data/processed/*
-du -sh data/*
-```
-
-#### Kompletter Neustart
-
-```bash
-# Backup erstellen
-tar -czf titanbot_backup_$(date +%Y%m%d_%H%M%S).tar.gz \
-    secret.json settings.json artifacts/ logs/
-
-# Reset
-rm -rf artifacts/* data/* logs/*
-./install.sh
-
-# Konfiguration wiederherstellen
-cp settings.json.backup settings.json
 ```
 
 ### Tests ausführen
 
 ```bash
 ./run_tests.sh
-pytest tests/ -v
+pytest tests/test_strategy.py -v
+pytest tests/test_smc_detector.py -v
 pytest --cov=src tests/
 ```
 
@@ -415,67 +383,37 @@ pytest --cov=src tests/
 ### Konfiguration
 
 ```bash
-# Settings validieren
 python -c "import json; print(json.load(open('settings.json')))"
-
-# max_open_positions prüfen
-python -c "import json; print('Max Positions:', json.load(open('settings.json'))['live_trading_settings']['max_open_positions'])"
-
-# Backup erstellen
 cp settings.json settings.json.backup.$(date +%Y%m%d)
+diff settings.json settings.json.backup
 ```
 
 ### Prozess-Management
 
 ```bash
-# TitanBot-Prozesse anzeigen
 ps aux | grep python | grep titanbot
-
-# PID finden
 pgrep -f master_runner.py
-
-# Sauber beenden
 pkill -f master_runner.py
-
-# Sofort beenden
 pkill -9 -f master_runner.py
 ```
 
-### Exchange-Diagnose
+### Position Management
 
 ```bash
-# Verbindung testen
-python -c "from src.titanbot.utils.exchange import Exchange; \
-    e = Exchange('binance'); print(e.fetch_balance())"
+# Offene Positionen anzeigen
+grep "POSITION" logs/cron.log | tail -20
 
-# Offene Positionen prüfen
-python -c "from src.titanbot.utils.exchange import Exchange; \
-    e = Exchange('binance'); \
-    positions = [p for p in e.fetch_positions() if float(p['contracts']) != 0]; \
-    print('Open Positions:', len(positions)); \
-    for p in positions: print(p['symbol'], p['contracts'])"
-
-# Anzahl offener Positionen
-python check_account_type.py
+# Position-Änderungen anzeigen
+grep "Entry\|Exit\|Trail" logs/cron.log
 ```
 
-### Performance-Tracking
+### Debugging
 
 ```bash
-# Trade-History analysieren
-python -c "
-import pandas as pd
-trades = pd.read_csv('logs/trades_history.csv')
-print('Total Trades:', len(trades))
-print('Win Rate:', (trades['pnl'] > 0).mean() * 100, '%')
-print('Avg Profit per Trade:', trades['pnl'].mean())
-print('Total PnL:', trades['pnl'].sum())
-print('Best Trade:', trades['pnl'].max())
-print('Worst Trade:', trades['pnl'].min())
-"
-
-# Positions-Limit-Statistik
-grep "max_open_positions" logs/*.log | wc -l
+export TITANBOT_DEBUG=1
+python master_runner.py
+tail -f logs/cron.log | grep -i "smc\|signal\|position\|trailing"
+python -m pdb master_runner.py
 ```
 
 ---
@@ -484,19 +422,27 @@ grep "max_open_positions" logs/*.log | wc -l
 
 ```
 titanbot/
-├── src/titanbot/
-│   ├── analysis/          # Optimierung
-│   ├── strategy/          # Trading-Strategien
-│   ├── backtest/          # Backtesting
-│   └── utils/             # Utilities
-├── tests/                 # Unit-Tests
-├── data/                  # Marktdaten
-├── logs/                  # Log-Files
-├── artifacts/             # Ergebnisse
-├── master_runner.py       # Main Entry-Point
-├── settings.json          # Konfiguration
-├── secret.json            # API-Credentials
-└── requirements.txt       # Dependencies
+├── src/
+│   └── titanbot/
+│       ├── strategy/          # Trading-Logik
+│       │   ├── run.py
+│       │   ├── smc_detector.py
+│       │   └── momentum_scorer.py
+│       ├── backtest/          # Backtesting
+│       │   └── backtester.py
+│       └── utils/             # Hilfsfunktionen
+│           ├── exchange.py
+│           ├── telegram.py
+│           └── position_manager.py
+├── scripts/
+├── tests/
+├── data/
+├── logs/
+├── artifacts/
+├── master_runner.py
+├── settings.json
+├── secret.json
+└── requirements.txt
 ```
 
 ---
@@ -505,83 +451,81 @@ titanbot/
 
 ### Risiko-Disclaimer
 
-⚠️ **Kryptowährungs-Trading ist hochriskant!**
+⚠️ **Trading mit Kryptowährungen birgt erhebliche Risiken!**
 
-- Nur Kapital riskieren, dessen Verlust Sie verkraften können
-- Keine Gewinn-Garantien
-- Vergangene Performance ≠ Zukünftige Ergebnisse
-- Ausgiebiges Testing empfohlen
-- Mit kleinen Beträgen starten
+- Nur Kapital einsetzen, dessen Verlust Sie verkraften können
+- Keine Garantie für Gewinne
+- Vergangene Performance ist kein Indikator
+- Testen Sie mit Demo-Accounts
+- Starten Sie mit kleinen Beträgen
+- Multi-Position-Management erhöht Risiko - `max_open_positions` entsprechend setzen
 
 ### Security Best Practices
 
-- 🔐 Niemals API-Keys mit Withdrawal-Rechten
+- 🔐 Keine API-Keys mit Withdrawal-Rechten
 - 🔐 IP-Whitelist aktivieren
-- 🔐 2FA für Exchange-Account
-- 🔐 `secret.json` in `.gitignore`
-- 🔐 Regelmäßige Security-Updates
+- 🔐 2FA verwenden
+- 🔐 `secret.json` niemals committen
+- 🔐 Regelmäßige Updates durchführen
+- 🔐 Position-Manager-Logs überwachen
 
 ### Performance-Tipps
 
-- 💡 `max_open_positions` konservativ wählen (3-5)
-- 💡 Längere Timeframes (4h+) für stabilere Signale
-- 💡 Dynamischen Stop-Loss in volatilen Märkten nutzen
-- 💡 Regelmäßiges Monitoring ist essentiell
-- 💡 Re-Optimierung alle 3-4 Wochen
-
-### Optimierte Konfigurationen auf Repo hochladen
-
-Nach erfolgreicher Parameter-Optimierung können die Konfigurationsdateien auf das Repository hochgeladen werden:
-
-```bash
-# Konfigurationsdateien auf Repository hochladen
-git add src/titanbot/strategy/configs/*.json
-git commit -m "Update: Optimierte Strategie-Konfigurationen"
-git push origin main --force
-```
-
-Dies sichert:
-- ✅ **Backup** der optimierten Parameter
-- ✅ **Versionierung** aller Konfigurationsänderungen
-- ✅ **Deployment** auf mehrere Server mit konsistenten Einstellungen
-- ✅ **Nachvollziehbarkeit** welche Parameter zu welchem Zeitpunkt verwendet wurden
+- 💡 Starten Sie mit max_open_positions = 1
+- 💡 Längere Timeframes für stabilere Signale
+- 💡 Monitoren Sie regelmäßig die Position-Performance
+- 💡 Parameter regelmäßig optimieren
+- 💡 Dynamische SL-Anpassung überwachen
+- 💡 Position-Sizing angemessen konfigurieren
 
 ---
 
-## 🤝 Support
+## 🤝 Support & Community
 
-### Bei Problemen
+### Probleme melden
 
-1. Logs prüfen: `logs/`
-2. Tests ausführen: `./run_tests.sh`
-3. GitHub Issue erstellen mit:
-   - Problembeschreibung
-   - Log-Auszüge
-   - System-Info
-   - Reproduktions-Schritte
+1. Prüfen Sie die Logs
+2. Führen Sie Tests aus
+3. Öffnen Sie ein Issue
+
+### Updates
+
+```bash
+git fetch origin
+./update.sh
+```
+
+### Hochladen
+
+```bash
+git add artifacts/optimal_configs/*.json
+git commit -m "Update: Optimierte Parameter"
+git push origin main
+```
 
 ---
 
 ## 📜 Lizenz
 
-MIT License - siehe [LICENSE](LICENSE)
+Dieses Projekt ist lizenziert unter der MIT License.
 
 ---
 
 ## 🙏 Credits
 
-- [CCXT](https://github.com/ccxt/ccxt) - Exchange Integration
-- [Optuna](https://optuna.org/) - Hyperparameter Optimization
-- [Pandas](https://pandas.pydata.org/) - Data Analysis
-- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) - Telegram Integration
+Entwickelt mit:
+- [CCXT](https://github.com/ccxt/ccxt)
+- [Optuna](https://optuna.org/)
+- [Pandas](https://pandas.pydata.org/)
+- [TA-Lib](https://github.com/mrjbq7/ta-lib)
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for High-Performance Trading**
+**Made with ❤️ by the TitanBot Team**
 
-⭐ Star this repo!
+⭐ Star uns auf GitHub wenn dir dieses Projekt gefällt!
 
 [🔝 Nach oben](#-titanbot---high-performance-trading-system)
 
