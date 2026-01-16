@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TitanBot - SMC Momentum Hybrid Trading</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            height: 500px;
+        }
+        .chart-container h2 { margin-bottom: 15px; color: #333; }
+        .chart-container canvas { max-height: 420px; }
+        .diagram-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .diagram-section h2 { color: #333; margin-bottom: 20px; }
+        footer { text-align: center; color: white; margin-top: 40px; padding: 20px; opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ TitanBot - SMC Momentum Hybrid</h1>
+            <p>High-Performance Position Management mit Dynamic Stop-Loss</p>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h2>Liquidity Sweep Zones</h2>
+                <canvas id="liquidityChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Momentum Stack (MACD/RSI)</h2>
+                <canvas id="momentumChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Dynamic Stop-Loss Trailing</h2>
+                <canvas id="trailingSlChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Position Ranking Quality</h2>
+                <canvas id="rankingChart"></canvas>
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <h2>🎯 SMC-Momentum-Hybrid Strategie</h2>
+            <p style="margin: 15px 0;">
+                <strong>Liquidity Sweep:</strong> Preis dippt unter Struktur-Low = Liquidität gezogen<br>
+                <strong>Reversal Signal:</strong> MACD Cross Up + RSI aus Oversold = Momentum-Reversal<br>
+                <strong>Entry:</strong> Close über Breaker-Block + Signal-Quality > 0.70<br>
+                <strong>Dynamic SL:</strong> ATR-basiert (1.5-2x ATR), passt sich an Volatilität an<br>
+                <strong>Trailing SL:</strong> Nach +1x SL Gewinn wird Trail unter Higher Low nachgezogen<br>
+                <strong>Max Open Positions:</strong> Standard 3, priorisiert hochste Signal-Quality
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        <p>TitanBot © 2025 | SMC + Momentum Hybrid | Dynamic Risk Management</p>
+    </footer>
+
+    <script>
+        const liquidityCtx = document.getElementById('liquidityChart').getContext('2d');
+        new Chart(liquidityCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 50}, (_, i) => i),
+                datasets: [
+                    {
+                        label: 'Structure Low',
+                        data: Array.from({length: 50}, (_, i) => 44500 + Math.sin(i/12)*1000),
+                        borderColor: '#f44336',
+                        borderWidth: 3,
+                        fill: false
+                    },
+                    {
+                        label: 'Sweep Zone',
+                        data: Array.from({length: 50}, (_, i) => 44300 + Math.sin(i/12)*1000),
+                        borderColor: '#ff9800',
+                        borderWidth: 2.5,
+                        borderDash: [5, 5],
+                        fill: false
+                    },
+                    {
+                        label: 'Breaker Block',
+                        data: Array.from({length: 50}, (_, i) => 44700 + Math.sin(i/12)*1000),
+                        borderColor: '#ffc107',
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: 'Price',
+                        data: Array.from({length: 50}, (_, i) => 44600 + Math.sin(i/12)*1000 + (Math.random()-0.5)*300),
+                        borderColor: '#3f51b5',
+                        borderWidth: 2.5,
+                        fill: false
+                    }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const momentumCtx = document.getElementById('momentumChart').getContext('2d');
+        new Chart(momentumCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 40}, (_, i) => i),
+                datasets: [
+                    {
+                        label: 'RSI (14)',
+                        data: Array.from({length: 40}, (_, i) => 50 + Math.sin(i/8)*30 + (Math.random()-0.5)*5),
+                        borderColor: '#ffc107',
+                        borderWidth: 2,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'MACD',
+                        data: Array.from({length: 40}, (_, i) => Math.sin(i/10)*60 + (Math.random()-0.5)*10),
+                        borderColor: '#3f51b5',
+                        borderWidth: 2,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { position: 'left', min: 0, max: 100 },
+                    y1: { position: 'right' }
+                }
+            }
+        });
+
+        const trailingSlCtx = document.getElementById('trailingSlChart').getContext('2d');
+        new Chart(trailingSlCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 50}, (_, i) => i),
+                datasets: [
+                    {
+                        label: 'Entry Price',
+                        data: Array.from({length: 50}, (_, i) => 45000),
+                        borderColor: '#3f51b5',
+                        borderWidth: 3,
+                        fill: false,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Initial SL',
+                        data: Array.from({length: 50}, (_, i) => 44700),
+                        borderColor: '#f44336',
+                        borderWidth: 2.5,
+                        fill: false,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Trailing SL',
+                        data: Array.from({length: 50}, (_, i) => i < 15 ? 44700 : Math.max(44700, 44800 + Math.sin((i-15)/10)*400 - 100)),
+                        borderColor: '#ff9800',
+                        borderWidth: 2.5,
+                        fill: false,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Price',
+                        data: Array.from({length: 50}, (_, i) => 45000 + Math.sin(i/10)*800 + (Math.random()-0.5)*200),
+                        borderColor: '#4caf50',
+                        borderWidth: 2,
+                        fill: false
+                    }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const rankingCtx = document.getElementById('rankingChart').getContext('2d');
+        new Chart(rankingCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Position 1', 'Position 2', 'Position 3', 'Waiting'],
+                datasets: [{
+                    label: 'Signal Quality Score',
+                    data: [0.92, 0.78, 0.65, 0.55],
+                    backgroundColor: ['#4caf50', '#8bc34a', '#ffc107', '#e0e0e0'],
+                    borderColor: ['#388e3c', '#689f38', '#f57f17', '#999'],
+                    borderWidth: 2
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 1 } } }
+        });
+    </script>
+</body>
+</html>
