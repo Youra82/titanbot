@@ -224,34 +224,7 @@ Logverzeichnis:
 mkdir -p /home/ubuntu/titanbot/logs
 ```
 
-### Als Systemd Service (Linux)
 
-```bash
-sudo nano /etc/systemd/system/titanbot.service
-```
-
-```ini
-[Unit]
-Description=TitanBot Trading System
-After=network.target
-
-[Service]
-Type=simple
-User=your-user
-WorkingDirectory=/path/to/titanbot
-ExecStart=/path/to/titanbot/.venv/bin/python master_runner.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-sudo systemctl enable titanbot
-sudo systemctl start titanbot
-sudo systemctl status titanbot
-```
 
 ---
 
@@ -333,12 +306,7 @@ tail -f logs/error.log
 tail -n 100 logs/titanbot_BTCUSDTUSDT_4h.log
 ```
 
-### Performance-Metriken
 
-```bash
-python analyze_real_trades_detailed.py
-python compare_real_vs_backtest.py
-```
 
 ---
 
@@ -360,12 +328,7 @@ chmod +x update.sh
 bash ./update.sh
 ```
 
-### Log-Rotation
 
-```bash
-find logs/ -name "*.log" -type f -mtime +30 -exec gzip {} \;
-find logs/ -name "*.log.gz" -type f -mtime +90 -delete
-```
 
 ### Tests ausführen
 
@@ -374,46 +337,6 @@ find logs/ -name "*.log.gz" -type f -mtime +90 -delete
 pytest tests/test_strategy.py -v
 pytest tests/test_smc_detector.py -v
 pytest --cov=src tests/
-```
-
----
-
-## 🔧 Nützliche Befehle
-
-### Konfiguration
-
-```bash
-python -c "import json; print(json.load(open('settings.json')))"
-cp settings.json settings.json.backup.$(date +%Y%m%d)
-diff settings.json settings.json.backup
-```
-
-### Prozess-Management
-
-```bash
-ps aux | grep python | grep titanbot
-pgrep -f master_runner.py
-pkill -f master_runner.py
-pkill -9 -f master_runner.py
-```
-
-### Position Management
-
-```bash
-# Offene Positionen anzeigen
-grep "POSITION" logs/cron.log | tail -20
-
-# Position-Änderungen anzeigen
-grep "Entry\|Exit\|Trail" logs/cron.log
-```
-
-### Debugging
-
-```bash
-export TITANBOT_DEBUG=1
-python master_runner.py
-tail -f logs/cron.log | grep -i "smc\|signal\|position\|trailing"
-python -m pdb master_runner.py
 ```
 
 ---
