@@ -328,6 +328,22 @@ chmod +x update.sh
 bash ./update.sh
 ```
 
+### 🔧 Config-Management
+
+#### Konfigurationsdateien löschen
+
+Bei Bedarf können alle generierten Konfigurationen gelöscht werden:
+
+```bash
+rm -f src/titanbot/strategy/configs/config_*.json
+```
+
+#### Löschung verifizieren
+
+```bash
+ls -la src/titanbot/strategy/configs/config_*.json 2>&1 || echo "✅ Alle Konfigurationsdateien wurden gelöscht"
+```
+
 
 
 ### Tests ausführen
