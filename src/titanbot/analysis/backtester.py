@@ -236,35 +236,10 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 current_atr = current_candle.get('atr')
                 if pd.isna(current_atr) or current_atr <= 0: continue
 
-                # FIXIERT: Nutze auch Struktur-basiertes SL im Backtester (wie im Livebot!)
-                sl_distance = None
-                use_structure_sl = smc_params.get('use_structure_sl', True)
-                structure_sl_buffer_pct = smc_params.get('structure_sl_buffer_pct', 0.002)
-                
-                if use_structure_sl and signal_context:
-                    try:
-                        level_low = signal_context.get('level_low')
-                        level_high = signal_context.get('level_high')
-                        
-                        if side == 'buy' and level_low:
-                            buffer = entry_price * structure_sl_buffer_pct
-                            sl_price_structure = level_low - buffer
-                            if sl_price_structure < entry_price:
-                                sl_distance = entry_price - sl_price_structure
-                        elif side == 'sell' and level_high:
-                            buffer = entry_price * structure_sl_buffer_pct
-                            sl_price_structure = level_high + buffer
-                            if sl_price_structure > entry_price:
-                                sl_distance = sl_price_structure - entry_price
-                    except Exception:
-                        sl_distance = None
-                
-                # Fallback auf ATR-basiertes SL
-                if not sl_distance or sl_distance <= 0:
-                    sl_distance_atr = current_atr * atr_multiplier_sl
-                    sl_distance_min = entry_price * min_sl_pct
-                    sl_distance = max(sl_distance_atr, sl_distance_min)
-                
+                # ATR-basiertes SL (dynamisch, optimal!)
+                sl_distance_atr = current_atr * atr_multiplier_sl
+                sl_distance_min = entry_price * min_sl_pct
+                sl_distance = max(sl_distance_atr, sl_distance_min)
                 if sl_distance <= 0: continue
 
                 risk_amount_usd = current_capital * risk_per_trade_pct
