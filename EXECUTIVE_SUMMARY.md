@@ -1,5 +1,5 @@
 # 🎯 TitanBot Trading Logic - ANALYSE & BUGFIXES
-## Executive Summary (22. Januar 2026)
+## Executive Summary (22. Januar 2026) - KORRIGIERT
 
 ---
 
@@ -12,28 +12,34 @@ Livebot Performance:     5-8% PnL (30 Tage)
 Diskrepanz:            20+ Prozentpunkte ❌
 ```
 
-**Frage:** Warum performt der Livebot so viel schlechter als der Backtest, obwohl die Logik identisch sein sollte?
+**Frage:** Warum performt der Livebot so viel schlechter als der Backtest?
 
 ---
 
-## 🔍 **ANALYSE-ERGEBNIS**
+## 🔍 **ANALYSE-ERGEBNIS (KORRIGIERT)**
 
-### Die 5 **KRITISCHEN BUGS**:
+### Die 4 **KRITISCHEN BUGS**:
 
-#### 🔴 **#1: BACKTESTER NUTZTE GAR NICHT STRUKTUR-BASIERTES SL** (Impact: 15-20% PnL!)
+#### 🔴 **#1: LIVEBOT NUTZTE STRUKTUR-SL STATT ATR-SL** (Impact: 15-20% PnL!)
 ```
-Backtester Code:
-- Nutzte IMMER ATR-basiertes SL
-- Breitere Stop Losses = weniger Verluste bei normalen Moves
+✅ ATR-basiertes SL (OPTIMAL):
+- Dynamisch, passt sich an Volatilität an
+- Ruhige Märkte → enger SL (weniger Risiko)
+- Volatile Märkte → weiter SL (weniger false Exits)
+- Bewährte Trading-Methode
 
-Livebot Code:
-- Nutzt STRUKTUR-basiertes SL
-- Engere Stop Losses = höhere Verluste
+❌ Struktur-basiertes SL (PROBLEMATISCH):
+- Zu starr, ignoriert aktuelle Volatilität
+- Kann zu eng sein → zu früh ausgestoppt
+- Kann zu weit sein → zu viel Risiko
 
-👉 RESULTAT: Backtester ~20% zu optimistisch!
+Das Problem:
+- Backtester: ATR-SL ✅ (optimal)
+- Livebot: Struktur-SL ❌ (zu starr)
+→ Inkonsistenz führte zu Diskrepanz!
 ```
 
-**BEHEBEN:** ✅ Backtester nutzt jetzt auch `signal_context` für Struktur-SL
+**BEHEBEN:** ✅ Beide nutzen jetzt ATR-basiertes SL (wie im Backtester bereits optimal war)
 
 ---
 

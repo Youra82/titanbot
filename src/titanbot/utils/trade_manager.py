@@ -266,10 +266,10 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         risk_pct = risk_params.get('risk_per_trade_pct', 1.0) / 100.0
         risk_usdt = balance * risk_pct
 
-        # --- SL-Distanz: Struktur-basiert mit ATR-Fallback (NEU) ---
+        # --- SL-Distanz: ATR-basiert (dynamisch & optimal!) ---
         atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0)
         min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0
-        use_structure_sl = risk_params.get('use_structure_sl', True)
+        use_structure_sl = risk_params.get('use_structure_sl', False)  # Deaktiviert: ATR ist besser!
         structure_sl_buffer_pct = risk_params.get('structure_sl_buffer_pct', 0.2) / 100.0  # 0.2% Buffer
 
         current_atr = current_candle.get('atr')
