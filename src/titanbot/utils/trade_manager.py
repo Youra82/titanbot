@@ -203,9 +203,24 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # GEÄNDERT: market_bias als neuen Parameter übergeben, signal_context empfangen
         # Hole auch die vorherige Kerze für Confirmation-Logik (falls nötig)
         prev_candle = recent_data.iloc[-2] if len(recent_data) >= 2 else None
-        signal_side, signal_price, signal_context = get_titan_signal(
+
+        # Einige Tests mocken get_titan_signal() nur mit 2 Rückgabewerten.
+        # Akzeptiere daher sowohl 2- als auch 3-teilige Rückgaben und ergänze Kontext mit None.
+        signal_result = get_titan_signal(
             smc_results_full, current_candle, params, market_bias, prev_candle
-        ) 
+        )
+
+        # Normalfall: (side, price, context); Fallback: (side, price)
+        if isinstance(signal_result, tuple):
+            if len(signal_result) == 3:
+                signal_side, signal_price, signal_context = signal_result
+            elif len(signal_result) == 2:
+                signal_side, signal_price = signal_result
+                signal_context = None
+            else:
+                signal_side, signal_price, signal_context = None, None, None
+        else:
+            signal_side, signal_price, signal_context = None, None, None
 
         if not signal_side:
             logger.info("Kein Signal – überspringe.")
