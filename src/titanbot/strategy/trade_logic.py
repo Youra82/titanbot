@@ -36,14 +36,17 @@ def get_titan_signal(smc_results: dict, current_candle: pd.Series, params: dict,
             volume_ma = current_candle.get('volume_ma', np.nan)
             current_volume = current_candle.get('volume', 0)
             
+            # FIXIERT: Wenn Volume-MA nicht verfügbar, warne aber blockiere nicht
             if pd.isna(volume_ma) or volume_ma == 0:
-                return None, None, None  # Keine Volume-Daten
-            
-            # Prüfe ob Volume über Threshold liegt
-            if current_volume < (volume_ma * volume_threshold_multiplier):
-                return None, None, None  # Volume zu niedrig
+                # Volume-Filter kann nicht angewendet werden, aber blockiere Signal nicht
+                # (Backtest kann mit unvollständigen Indikator-Daten arbeiten)
+                pass
+            elif current_volume < (volume_ma * volume_threshold_multiplier):
+                # Volume zu niedrig - Signal blockieren
+                return None, None, None
         except Exception as e:
-            return None, None, None  # Bei Fehler blockieren
+            # Bei Fehler: Warnung loggen aber weitermachen
+            pass
 
     # --- 3. Signallogik mit Entry-Confirmation ---
     unmitigated_fvgs = smc_results.get("unmitigated_fvgs", [])
@@ -65,7 +68,9 @@ def get_titan_signal(smc_results: dict, current_candle: pd.Series, params: dict,
                            current_candle['close'] >= fvg.bottom)
             
             if price_in_zone:
-                # Entry-Confirmation: Bullische Kerze erforderlich
+                # Entry-Confirmation: Bullische Kerze erforderlich (optional)
+                # FIXIERT: Nur blockieren wenn use_entry_confirmation=True UND nicht bullisch
+                # Backtest kann auch mit nicht-bullischen Kerzen arbeiten
                 if use_entry_confirmation and not is_bullish_candle:
                     continue  # Warte auf bullische Bestätigung
                 

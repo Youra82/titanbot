@@ -57,10 +57,28 @@ def set_trade_lock(symbol_timeframe, lock_duration_minutes=60):
     trade_lock[symbol_timeframe] = lock_time.strftime("%Y-%m-%d %H:%M:%S")
     save_trade_lock(trade_lock)
 
-# --- NEU: FUNTION ZUR BESTIMMUNG DES MTF-BIAS ---
+# --- NEU: FUNTION ZUR BESTIMMUNG DES MTF-BIAS (mit Caching) ---
+_mtf_bias_cache = {}  # Cache für MTF-Bias (symbol_timeframe -> (Bias, timestamp))
+_mtf_cache_ttl_minutes = 5  # Cache 5 Minuten lang
+
 def get_market_bias(exchange, symbol, htf, logger):
-    """Bestimmt den Markt-Bias basierend auf der Swing-Struktur des HTF."""
+    """
+    Bestimmt den Markt-Bias basierend auf der Swing-Struktur des HTF.
+    FIXIERT: Nutze Cache um redundante Berechnungen zu vermeiden und Konsistenz zu erhöhen.
+    """
+    from datetime import datetime, timedelta
+    
     try:
+        cache_key = f"{symbol}_{htf}"
+        now = datetime.now()
+        
+        # FIXIERT: Prüfe Cache
+        if cache_key in _mtf_bias_cache:
+            cached_bias, cached_time = _mtf_bias_cache[cache_key]
+            if (now - cached_time).total_seconds() < _mtf_cache_ttl_minutes * 60:
+                logger.debug(f"MTF-Check: Cache-Hit für {symbol} ({htf}), Bias: {cached_bias.name}")
+                return cached_bias
+        
         # Hole genügend Daten für SMC (swingsLength bis 100) auf HTF
         # Nutze verfügbare Daten ohne Nachladen (Bitget liefert ~90 Kerzen)
         htf_data = exchange.fetch_recent_ohlcv(symbol, htf, limit=300)
@@ -76,6 +94,10 @@ def get_market_bias(exchange, symbol, htf, logger):
         # Der Bias wird durch die letzte festgestellte Swing-Struktur bestimmt
         swing_bias = htf_engine.swingTrend
         logger.info(f"MTF-Check: Höherer Zeitrahmen ({htf}) Swing-Bias: {swing_bias.name}")
+        
+        # FIXIERT: Cachen
+        _mtf_bias_cache[cache_key] = (swing_bias, now)
+        
         return swing_bias
         
     except Exception as e:
@@ -125,6 +147,13 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         return
 
     try:
+        # ⚠️  WICHTIGER HINWEIS FÜR BACKTEST vs. LIVEBOT:
+        # - Im BACKTEST wird das Signal auf JEDER Kerze geprüft (auch noch offenen)
+        # - Im LIVEBOT wird das Signal nur auf GESCHLOSSENEN Kerzen geprüft
+        # - Dies führt zu Unterschieden in der Trade-Häufigkeit und PnL!
+        # - Der Livebot ist konservativer, da er nur auf bestätigten Signalen traded
+        # ---
+        
         # --------------------------------------------------- #
         # 1. Daten holen + SMC/Indikatoren berechnen
         # --------------------------------------------------- #
@@ -172,7 +201,11 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
 
         # Korrigierter Aufruf: SMC-Ergebnisse und Indikator-angereicherte Kerze übergeben
         # GEÄNDERT: market_bias als neuen Parameter übergeben, signal_context empfangen
-        signal_side, signal_price, signal_context = get_titan_signal(smc_results_full, current_candle, params, market_bias) 
+        # Hole auch die vorherige Kerze für Confirmation-Logik (falls nötig)
+        prev_candle = recent_data.iloc[-2] if len(recent_data) >= 2 else None
+        signal_side, signal_price, signal_context = get_titan_signal(
+            smc_results_full, current_candle, params, market_bias, prev_candle
+        ) 
 
         if not signal_side:
             logger.info("Kein Signal – überspringe.")
@@ -252,17 +285,32 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
                     # SL unter dem Level-Low + Buffer
                     buffer = entry_price * structure_sl_buffer_pct
                     sl_price_structure = level_low - buffer
-                    sl_distance = entry_price - sl_price_structure
+                    
+                    # FIXIERT: SL muss unter Entry liegen und realistisch sein
+                    # Schütze vor extremen SL-Werten (z.B. wenn Level-Low > Entry)
+                    if sl_price_structure >= entry_price:
+                        logger.warning(f"Structure SL ungültig (Level: {level_low:.2f} >= Entry: {entry_price:.2f}), verwende ATR-Fallback")
+                        sl_distance = None  # Fallback erzwingen
+                    else:
+                        sl_distance = entry_price - sl_price_structure
+                    
                 elif signal_side == 'sell' and level_high:
                     # SL über dem Level-High + Buffer
                     buffer = entry_price * structure_sl_buffer_pct
                     sl_price_structure = level_high + buffer
-                    sl_distance = sl_price_structure - entry_price
+                    
+                    # FIXIERT: SL muss über Entry liegen und realistisch sein
+                    if sl_price_structure <= entry_price:
+                        logger.warning(f"Structure SL ungültig (Level: {level_high:.2f} <= Entry: {entry_price:.2f}), verwende ATR-Fallback")
+                        sl_distance = None  # Fallback erzwingen
+                    else:
+                        sl_distance = sl_price_structure - entry_price
                     
                 if sl_distance and sl_distance > 0:
-                    logger.info(f"Nutze Struktur-basiertes SL (Level: {level_low or level_high:.2f}, Buffer: {structure_sl_buffer_pct*100}%)")
+                    logger.info(f"Nutze Struktur-basiertes SL (Level: {level_low or level_high:.2f}, Distance: {sl_distance:.6f}, Buffer: {structure_sl_buffer_pct*100}%)")
             except Exception as e:
                 logger.warning(f"Struktur-SL fehlgeschlagen: {e}, nutze ATR-Fallback")
+                sl_distance = None  # Explizit zurücksetzen für Fallback
         
         # Fallback auf ATR-basiertes SL
         if not sl_distance or sl_distance <= 0:
@@ -486,7 +534,12 @@ def update_stop_loss_to_structure(exchange, params, telegram_config, logger):
             return  # Unbekannte Position-Richtung
         
         # 5. Berechne minimale Verbesserung (nur updaten wenn > 0.2% besser)
-        improvement_pct = abs(improved_sl - current_sl_price) / entry_price
+        # FIXIERT: improvement_pct sollte die relative Bewegung vom SL, nicht vom Entry sein
+        if pos_side == 'long':
+            improvement_pct = (improved_sl - current_sl_price) / current_sl_price if current_sl_price > 0 else 0
+        else:  # short
+            improvement_pct = (current_sl_price - improved_sl) / current_sl_price if current_sl_price > 0 else 0
+            
         if improvement_pct < 0.002:  # Weniger als 0.2% Verbesserung
             logger.debug(f"Dynamic SL Update: Verbesserung zu gering ({improvement_pct*100:.3f}%).")
             return
