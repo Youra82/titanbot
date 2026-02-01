@@ -375,27 +375,27 @@ Um eine sofortige Optimierung zu starten (ignoriert das Zeitintervall):
 
 ```bash
 # Letzten Optimierungszeitpunkt löschen (erzwingt Neustart)
-rm /home/ubuntu/titanbot/data/cache/.last_optimization_run
+rm ~/titanbot/data/cache/.last_optimization_run
 
 # Master Runner starten (prüft ob Optimierung fällig ist)
-cd /home/ubuntu/titanbot && .venv/bin/python3 master_runner.py
+cd ~/titanbot && .venv/bin/python3 master_runner.py
 ```
 
 ### Optimizer-Logs überwachen
 
 ```bash
 # Optimizer-Log live mitverfolgen
-tail -f /home/ubuntu/titanbot/logs/optimizer_output.log
+tail -f ~/titanbot/logs/optimizer_output.log
 
 # Letzte 50 Zeilen des Optimizer-Logs anzeigen
-tail -50 /home/ubuntu/titanbot/logs/optimizer_output.log
+tail -50 ~/titanbot/logs/optimizer_output.log
 ```
 
 ### Optimierungsergebnisse ansehen
 
 ```bash
 # Beste gefundene Parameter anzeigen (erste 50 Zeilen)
-cat /home/ubuntu/titanbot/artifacts/results/optimization_results.json | head -50
+cat ~/titanbot/artifacts/results/optimization_results.json | head -50
 ```
 
 ### Optimizer-Prozess überwachen
