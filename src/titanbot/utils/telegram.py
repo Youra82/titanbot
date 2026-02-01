@@ -9,20 +9,9 @@ def send_message(bot_token, chat_id, message):
         logger.warning("Telegram Bot-Token oder Chat-ID nicht konfiguriert.")
         return
 
-    # Escape MarkdownV2 characters
-    escape_chars = r'_*[]()~`>#+-=|{}.!'
-    # Temporärer String zum Aufbau der Escaped-Nachricht
-    escaped_message = ""
-    for char in message:
-        if char in escape_chars:
-            escaped_message += f'\\{char}'
-        else:
-            escaped_message += char
-    message = escaped_message # Überschreibe Original mit Escaped-Version
-
     api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    # Verwende MarkdownV2 für die Formatierung
-    payload = {'chat_id': chat_id, 'text': message, 'parse_mode': 'MarkdownV2'}
+    # Verwende HTML statt MarkdownV2 (einfacher, weniger Escaping-Probleme)
+    payload = {'chat_id': chat_id, 'text': message, 'parse_mode': 'HTML'}
 
     try:
         response = requests.post(api_url, data=payload, timeout=10)
