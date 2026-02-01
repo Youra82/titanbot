@@ -289,12 +289,20 @@ artifacts/optimal_configs/
 ### Status-Dashboard
 
 ```bash
+# Einmalig ausführbar machen
+chmod +x show_status.sh
+
+# Status anzeigen
 ./show_status.sh
 ```
 
-### Live-Position Tracking
+### Trading-Ergebnisse anzeigen
 
 ```bash
+# Einmalig ausführbar machen
+chmod +x show_results.sh
+
+# Ergebnisse anzeigen
 ./show_results.sh
 ```
 
