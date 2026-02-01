@@ -87,15 +87,16 @@ def check_and_run_optimizer():
             
             # Starte den Optimizer SYNCHRON (wartet auf Ende)
             # So wird die Telegram-Nachricht garantiert gesendet bevor wir weitermachen
-            print(f"    Starte Optimizer synchron (warte auf Abschluss)...")
+            print(f"    Starte Optimizer im Hintergrund...")
             with open(log_file, 'a') as log:
-                result = subprocess.run(
+                # Starte als Hintergrundprozess - Bots haben Priorität!
+                subprocess.Popen(
                     [python_executable, optimizer_script, '--force'],
                     stdout=log,
                     stderr=subprocess.STDOUT,
-                    cwd=SCRIPT_DIR  # Wichtig: Arbeitsverzeichnis setzen!
+                    cwd=SCRIPT_DIR,  # Wichtig: Arbeitsverzeichnis setzen!
+                    start_new_session=True  # Läuft unabhängig weiter
                 )
-            print(f"    Optimizer beendet mit Exit-Code: {result.returncode}")
             return True
         else:
             print(f"    Fehler: {optimizer_script} nicht gefunden!")
@@ -209,8 +210,8 @@ def main():
         print(f"Ein unerwarteter Fehler im Master Runner ist aufgetreten: {e}")
 
 if __name__ == "__main__":
-    # EINMALIGER Auto-Optimizer Check beim Start (cron-kompatibel)
-    check_and_run_optimizer()
-    
-    # Dann normale Bot-Starts
+    # ZUERST: Normale Bot-Starts (Trades haben Priorität!)
     main()
+    
+    # DANACH: Auto-Optimizer Check (läuft im Hintergrund)
+    check_and_run_optimizer()
