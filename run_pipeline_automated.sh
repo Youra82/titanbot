@@ -66,9 +66,10 @@ fi
 # --- Lese Pipeline-Einstellungen ---
 # Verwende Standardwerte, falls Schlüssel nicht existieren
 ENABLED=$(get_setting "['optimization_settings', 'enabled']")
-ENABLED=${ENABLED:-False} # Default ist False
+ENABLED=${ENABLED:-false} # Default ist false
+ENABLED_LC=$(echo "$ENABLED" | tr '[:upper:]' '[:lower:]')
 
-if [ "$ENABLED" != "True" ]; then
+if [ "$ENABLED_LC" != "true" ]; then
     echo "Automatische Optimierung ist in settings.json deaktiviert. Breche ab."
     deactivate
     exit 0
