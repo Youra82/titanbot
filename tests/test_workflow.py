@@ -47,8 +47,8 @@ def test_setup():
     except Exception as e:
         pytest.fail(f"Exchange konnte nicht initialisiert werden: {e}")
 
-    # PEPE FÜR TEST (ANGEPASSTE PARAMETER FÜR NIEDRIGERES RISIKO UND MARGIN)
-    symbol = 'PEPE/USDT:USDT'
+    # XRP FÜR TEST (ANGEPASSTE PARAMETER FÜR NIEDRIGERES RISIKO UND MARGIN)
+    symbol = 'XRP/USDT:USDT'
     timeframe = '5m'
     
     # NEU: Bestimme HTF für den Test-Case
