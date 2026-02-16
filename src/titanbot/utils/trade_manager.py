@@ -379,14 +379,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # 4. Market-Order eröffnen
         # --------------------------------------------------- #
         logger.info(f"Eröffne {pos_side.upper()}-Position: {amount:.6f} Contracts @ ${entry_price:.6f} | Risk: {risk_usdt:.2f} USDT")
-        
-        # *** WICHTIG: marginMode muss explizit als Order-Parameter übergeben werden ***
-        # (nicht nur set_margin_mode() aufrufen, sondern auch in der Order selbst!)
-        order_params = {
-            'marginMode': risk_params.get('margin_mode', 'isolated'),
-            'leverage': leverage
-        }
-        entry_order = exchange.create_market_order(symbol, pos_side, amount, params=order_params)
+        entry_order = exchange.create_market_order(symbol, pos_side, amount, {'leverage': leverage})
         if not entry_order:
             logger.error("Market-Order fehlgeschlagen.")
             return
