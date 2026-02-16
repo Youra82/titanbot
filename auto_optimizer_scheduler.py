@@ -265,7 +265,35 @@ def run_optimization_python() -> bool:
     
     start_time = time.time()
     end_date = datetime.now().strftime("%Y-%m-%d")
-    start_date = (datetime.now() - timedelta(days=lookback_days)).strftime("%Y-%m-%d")
+
+    # Support "auto" and string values for lookback_days (compute numeric days)
+    if isinstance(lookback_days, str):
+        if lookback_days.lower() == "auto":
+            # Choose lookback per timeframe (conservative: take max)
+            tf_map = {
+                "5m": 60,
+                "15m": 60,
+                "30m": 365,
+                "1h": 365,
+                "2h": 730,
+                "4h": 730,
+                "6h": 1095,
+                "1d": 1095,
+            }
+            days_list = []
+            for tf in timeframes:
+                tf_key = tf.strip()
+                days_list.append(tf_map.get(tf_key, 365))
+            lookback_days = max(days_list) if days_list else 365
+            log(f"INFO: lookback_days set to {lookback_days} (auto derived from timeframes)")
+        else:
+            try:
+                lookback_days = int(lookback_days)
+            except Exception:
+                log(f"WARN: invalid lookback_days value '{lookback_days}', falling back to 365")
+                lookback_days = 365
+
+    start_date = (datetime.now() - timedelta(days=int(lookback_days))).strftime("%Y-%m-%d")
     
     optimizer_path = SCRIPT_DIR / "src" / "titanbot" / "analysis" / "optimizer.py"
     
