@@ -65,7 +65,12 @@ fi
 
 # --- Lese Pipeline-Einstellungen ---
 # Verwende Standardwerte, falls Schlüssel nicht existieren
-ENABLED=$(get_setting "['optimization_settings', 'enabled']")
+# Robustly read optimization_settings.enabled (prefer jq, fallback to python)
+if command -v jq &> /dev/null; then
+    ENABLED=$(jq -r '.optimization_settings.enabled // false' "$SETTINGS_FILE")
+else
+    ENABLED=$(python3 -c "import json;print(json.load(open('$SETTINGS_FILE')).get('optimization_settings',{}).get('enabled', False))")
+fi
 ENABLED=${ENABLED:-false} # Default ist false
 ENABLED_LC=$(echo "$ENABLED" | tr '[:upper:]' '[:lower:]')
 
