@@ -4,6 +4,7 @@ import subprocess
 import sys
 import os
 import time
+import re
 
 # Pfad anpassen, damit die utils importiert werden können
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -78,19 +79,40 @@ def main():
                 print(f"\n--- Überspringe inaktive Strategie: {symbol} ({timeframe}) ---")
                 continue
 
-            symbol, timeframe, use_macd = None, None, None # use_macd wird für SMC nicht verwendet
+            symbol, timeframe, use_macd = None, None, None  # use_macd wird für SMC nicht verwendet
 
             if use_autopilot and isinstance(strategy_info, str):
-                # ... (Diese Logik muss ggf. angepasst werden, wenn der Autopilot
-                # ... (für SMC genutzt wird, aktuell ignoriert)
-                pass 
-            
+                # strategy_info ist ein Config-Dateiname aus den Optimizer-Ergebnissen
+                config_name = strategy_info
+                configs_dir = os.path.join(SCRIPT_DIR, 'src', 'titanbot', 'strategy', 'configs')
+                config_path = os.path.join(configs_dir, config_name)
+
+                if os.path.exists(config_path):
+                    try:
+                        with open(config_path, 'r', encoding='utf-8') as cf:
+                            cfg = json.load(cf)
+                        symbol = cfg.get('market', {}).get('symbol')
+                        timeframe = cfg.get('market', {}).get('timeframe')
+                        use_macd = cfg.get('strategy', {}).get('use_macd_filter', False)
+                    except Exception as e:
+                        print(f"Warnung: Konnte Config '{config_name}' nicht lesen: {e}. Überspringe.")
+                else:
+                    # Fallback: versuche Symbol/Timeframe aus dem Dateinamen zu extrahieren
+                    m = re.match(r'config_([A-Z0-9]+)USDTUSDT_(\w+)\.json', config_name)
+                    if m:
+                        base = m.group(1)
+                        symbol = f"{base}/USDT:USDT"
+                        timeframe = m.group(2)
+                        use_macd = False
+                    else:
+                        print(f"Warnung: Unbekanntes Autopilot-Config-Format: {config_name}")
+
             elif isinstance(strategy_info, dict):
                 symbol = strategy_info.get('symbol')
                 timeframe = strategy_info.get('timeframe')
                 # use_macd wird nicht mehr benötigt, aber wir müssen einen
                 # Dummy-Wert übergeben, da run.py es erwartet
-                use_macd = strategy_info.get('use_macd_filter', False) 
+                use_macd = strategy_info.get('use_macd_filter', False)
 
             if not all([symbol, timeframe, use_macd is not None]):
                 print(f"Warnung: Unvollständige Strategie-Info: {strategy_info}. Überspringe.")
