@@ -38,6 +38,17 @@ def main():
     print("TitanBot Master Runner v1.0")
     print("=======================================================")
 
+    # Zeige sofort, ob gerade eine automatische Optimierung läuft
+    inprog = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
+    if os.path.exists(inprog):
+        try:
+            ts = open(inprog, 'r', encoding='utf-8').read().strip()
+            print(f"INFO: Automatische Optimierung läuft (gestartet: {ts})")
+        except Exception:
+            print("INFO: Automatische Optimierung läuft (Startzeit unbekannt)")
+    else:
+        print("INFO: Keine laufende automatische Optimierung gefunden.")
+
     try:
         with open(settings_file, 'r') as f:
             settings = json.load(f)
@@ -62,6 +73,10 @@ def main():
             with open(optimization_results_file, 'r') as f:
                 strategy_config = json.load(f)
             strategy_list = strategy_config.get('optimal_portfolio', [])
+            # DEBUG: Zeige, was aus optimization_results.json geladen wurde
+            print(f"DEBUG: optimization_results -> {strategy_list}")
+            configs_check_dir = os.path.join(SCRIPT_DIR, 'src', 'titanbot', 'strategy', 'configs')
+            print(f"DEBUG: configs_dir exists: {os.path.isdir(configs_check_dir)} ({configs_check_dir})")
         else:
             print("Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...")
             strategy_list = live_settings.get('active_strategies', [])
