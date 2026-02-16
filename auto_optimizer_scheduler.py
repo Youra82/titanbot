@@ -24,6 +24,12 @@ import subprocess
 import sys
 from datetime import datetime, date, time as dtime, timedelta
 
+# HTTP helper for Telegram notifications
+try:
+    import requests
+except Exception:
+    requests = None
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SETTINGS_FILE = os.path.join(ROOT, 'settings.json')
 CACHE_DIR = os.path.join(ROOT, 'data', 'cache')
@@ -95,6 +101,48 @@ def should_run(settings: dict, last_run: datetime | None, now: datetime) -> tupl
     return True, f'should run (scheduled_dt={scheduled_dt.isoformat()}, interval_days={interval_days})'
 
 
+def _send_telegram_message(text: str) -> bool:
+    """Send a Telegram message using bot token/chat_id from secret.json.
+    Returns True if sent (or at least attempted), False otherwise.
+    """
+    secret_path = os.path.join(ROOT, 'secret.json')
+    try:
+        with open(secret_path, 'r', encoding='utf-8') as f:
+            sec = json.load(f)
+        tg = sec.get('telegram', {})
+        bot = tg.get('bot_token')
+        chat = tg.get('chat_id')
+        if not bot or not chat:
+            print('INFO: Telegram not configured in secret.json (bot_token/chat_id missing)')
+            return False
+    except Exception as e:
+        print(f'INFO: secret.json not available or unreadable: {e}')
+        return False
+
+    payload = {'chat_id': chat, 'text': text}
+    url = f'https://api.telegram.org/bot{bot}/sendMessage'
+
+    if requests:
+        try:
+            r = requests.post(url, data=payload, timeout=10)
+            if r.status_code == 200:
+                return True
+            else:
+                print(f'WARN: Telegram API returned status {r.status_code}: {r.text}')
+                return False
+        except Exception as e:
+            print(f'WARN: Exception while sending Telegram message: {e}')
+            return False
+    else:
+        # fallback to curl if requests not available
+        try:
+            subprocess.run(['curl', '-s', '-X', 'POST', url, '-d', f"chat_id={chat}", '-d', f"text={text}"], check=False)
+            return True
+        except Exception as e:
+            print(f'WARN: Could not send Telegram message (curl fallback failed): {e}')
+            return False
+
+
 def run_pipeline() -> int:
     # Execute the existing run_pipeline_automated.sh using bash
     if not os.path.exists(PIPELINE_SCRIPT):
@@ -133,24 +181,42 @@ def main() -> int:
 
         if force:
             print('Force run requested -> executing pipeline now')
+            notify = settings.get('optimization_settings', {}).get('send_telegram_on_completion', False)
+            if notify:
+                _send_telegram_message('🚀 Automatische Optimierung (forced) wurde gestartet.')
+
             rc = run_pipeline()
+
             if rc == 0:
                 write_last_run(datetime.now())
                 print('Pipeline finished successfully; updated last-run timestamp.')
+                if notify:
+                    _send_telegram_message('✅ Automatische Optimierung (forced) ist abgeschlossen.')
             else:
                 print(f'Pipeline exited with return code {rc}')
+                if notify:
+                    _send_telegram_message(f'❌ Automatische Optimierung (forced) ist mit Fehlercode {rc} beendet.')
             return
 
         do_run, reason = should_run(settings, last_run, now)
         print(f'Check at {now.isoformat()}: {reason}')
         if do_run:
+            notify = settings.get('optimization_settings', {}).get('send_telegram_on_completion', False)
+            if notify:
+                _send_telegram_message('🚀 Automatische Optimierung wurde gestartet.')
+
             print('Condition met -> executing pipeline...')
             rc = run_pipeline()
+
             if rc == 0:
                 write_last_run(datetime.now())
                 print('Pipeline finished successfully; updated last-run timestamp.')
+                if notify:
+                    _send_telegram_message('✅ Automatische Optimierung ist abgeschlossen.')
             else:
                 print(f'Pipeline exited with return code {rc}')
+                if notify:
+                    _send_telegram_message(f'❌ Automatische Optimierung ist mit Fehlercode {rc} beendet.')
         else:
             print('Not running at this time.')
 
