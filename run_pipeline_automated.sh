@@ -88,6 +88,26 @@ TIMEFRAMES=${TIMEFRAMES:-"1h 4h"} # Fallback, falls leer
 
 LOOKBACK_DAYS=$(get_setting "['optimization_settings', 'lookback_days']")
 LOOKBACK_DAYS=${LOOKBACK_DAYS:-$DEFAULT_LOOKBACK}
+
+# Wenn LOOKBACK_DAYS auf "auto" steht, bestimme die benötigten Tage basierend auf den Zeitfenstern.
+if [ "${LOOKBACK_DAYS}" = "auto" ] || [ "${LOOKBACK_DAYS}" = "" ]; then
+    # TIMEFRAMES enthält z.B. "1h 4h" - wir berechnen die maximale benötigte Lookback-Dauer
+    AUTO_MAX=0
+    for tf in $TIMEFRAMES; do
+        case "$tf" in
+            5m|15m) days=60 ;; 
+            30m|1h) days=365 ;;
+            2h|4h) days=730 ;;
+            6h|1d) days=1095 ;;
+            *) days=$DEFAULT_LOOKBACK ;;
+        esac
+        if [ $days -gt $AUTO_MAX ]; then
+            AUTO_MAX=$days
+        fi
+    done
+    LOOKBACK_DAYS=$AUTO_MAX
+    echo "INFO: lookback_days auf 'auto' gesetzt. Berechneter Lookback (max über Timeframes): $LOOKBACK_DAYS Tage"
+fi
 START_CAPITAL=$(get_setting "['optimization_settings', 'start_capital']")
 START_CAPITAL=${START_CAPITAL:-$DEFAULT_START_CAPITAL}
 N_CORES=$(get_setting "['optimization_settings', 'cpu_cores']")
