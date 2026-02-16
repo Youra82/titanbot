@@ -34,7 +34,38 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SETTINGS_FILE = os.path.join(ROOT, 'settings.json')
 CACHE_DIR = os.path.join(ROOT, 'data', 'cache')
 LAST_RUN_FILE = os.path.join(CACHE_DIR, '.last_optimization_run')
+# File created while the scheduler/optimizer is running
+IN_PROGRESS_FILE = os.path.join(CACHE_DIR, '.optimization_in_progress')
 PIPELINE_SCRIPT = os.path.join(ROOT, 'run_pipeline_automated.sh')
+
+
+def _set_in_progress() -> None:
+    """Create an "in-progress" marker with an ISO timestamp."""
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(IN_PROGRESS_FILE, 'w', encoding='utf-8') as f:
+            f.write(datetime.now().isoformat())
+        print(f'DEBUG: wrote in-progress marker {IN_PROGRESS_FILE}')
+    except Exception as e:
+        print(f'WARN: could not write in-progress marker: {e}')
+
+
+def _clear_in_progress() -> None:
+    try:
+        if os.path.exists(IN_PROGRESS_FILE):
+            os.remove(IN_PROGRESS_FILE)
+            print(f'DEBUG: cleared in-progress marker {IN_PROGRESS_FILE}')
+    except Exception as e:
+        print(f'WARN: could not clear in-progress marker: {e}')
+
+
+def _read_in_progress_ts() -> str | None:
+    try:
+        if os.path.exists(IN_PROGRESS_FILE):
+            return open(IN_PROGRESS_FILE, 'r', encoding='utf-8').read().strip()
+    except Exception:
+        return None
+    return None
 
 
 def load_settings() -> dict:
@@ -182,10 +213,17 @@ def main() -> int:
         if force:
             print('Force run requested -> executing pipeline now')
             notify = settings.get('optimization_settings', {}).get('send_telegram_on_completion', False)
+
+            # mark in-progress and notify
+            _set_in_progress()
             if notify:
                 _send_telegram_message('🚀 Automatische Optimierung (forced) wurde gestartet.')
 
-            rc = run_pipeline()
+            try:
+                rc = run_pipeline()
+            finally:
+                # always clear the in-progress marker so other components don't hang
+                _clear_in_progress()
 
             if rc == 0:
                 write_last_run(datetime.now())
@@ -202,11 +240,17 @@ def main() -> int:
         print(f'Check at {now.isoformat()}: {reason}')
         if do_run:
             notify = settings.get('optimization_settings', {}).get('send_telegram_on_completion', False)
+
+            # mark in-progress and notify
+            _set_in_progress()
             if notify:
                 _send_telegram_message('🚀 Automatische Optimierung wurde gestartet.')
 
             print('Condition met -> executing pipeline...')
-            rc = run_pipeline()
+            try:
+                rc = run_pipeline()
+            finally:
+                _clear_in_progress()
 
             if rc == 0:
                 write_last_run(datetime.now())
