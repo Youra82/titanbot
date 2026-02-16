@@ -88,7 +88,7 @@ class Exchange:
             logger.error(f"Fehler bei fetch_recent_ohlcv für {symbol}: {e}")
             return pd.DataFrame()
 
-    def fetch_historical_ohlcv(self, symbol, timeframe, start_date_str, end_date_str, max_retries=3):
+    def fetch_historical_ohlcv(self, symbol, timeframe, start_date_str, end_date_str, max_retries=10, allow_resample=True):
         if not self.markets: return pd.DataFrame()
         try:
             start_dt = pd.to_datetime(start_date_str + 'T00:00:00Z', utc=True)
@@ -126,8 +126,15 @@ class Exchange:
                     break
                 retries = 0
             except (ccxt.RateLimitExceeded, ccxt.NetworkError) as e:
-                logger.warning(f"Netzwerk/Ratelimit-Fehler bei fetch_historical_ohlcv: {e}. Versuch {retries+1}/{max_retries}. Warte...")
-                time.sleep(5 * (retries + 1))
+                # Exponential/backoff sleep on rate limits or network issues - be conservative
+                msg = str(e)
+                # If the exchange explicitly returns Too Many Requests, wait longer
+                if 'Too Many Requests' in msg or '429' in msg:
+                    sleep_sec = min(60, 10 * (retries + 1))
+                else:
+                    sleep_sec = min(30, 5 * (retries + 1))
+                logger.warning(f"Netzwerk/Ratelimit-Fehler bei fetch_historical_ohlcv: {e}. Versuch {retries+1}/{max_retries}. Warte {sleep_sec}s...")
+                time.sleep(sleep_sec)
                 retries += 1
             except ccxt.BadSymbol as e:
                 logger.error(f"FEHLER: Ungültiges Symbol bei fetch_historical_ohlcv: {symbol}. {e}")
@@ -139,6 +146,43 @@ class Exchange:
 
         if not all_ohlcv:
             logger.warning(f"Keine historischen Daten für {symbol} ({timeframe}) im Zeitraum {start_date_str} - {end_date_str} gefunden.")
+
+            # Fallback: versuchen von einer kleineren Basis-Periode zu laden und zu resamplen (z.B. 5m -> 30m)
+            if allow_resample:
+                try:
+                    # Map timeframe to pandas resample rule
+                    tf_to_rule = {
+                        '1m': '1T', '5m': '5T', '15m': '15T', '30m': '30T',
+                        '1h': '1H', '2h': '2H', '4h': '4H', '6h': '6H', '12h': '12H', '1d': '1D'
+                    }
+                    # Only resample when requested timeframe is higher than base
+                    base_tf = '5m'
+                    if timeframe == base_tf:
+                        return pd.DataFrame()
+
+                    logger.info(f"Versuche Fallback: lade {base_tf} Daten und resample zu {timeframe}...")
+                    base_df = self.fetch_historical_ohlcv(symbol, base_tf, start_date_str, end_date_str, max_retries=max_retries, allow_resample=False)
+                    if base_df is not None and not base_df.empty:
+                        rule = tf_to_rule.get(timeframe)
+                        if not rule:
+                            logger.warning(f"Cannot resample to unknown timeframe rule for {timeframe}")
+                            return pd.DataFrame()
+
+                        agg = {
+                            'open': 'first',
+                            'high': 'max',
+                            'low': 'min',
+                            'close': 'last',
+                            'volume': 'sum'
+                        }
+                        resampled = base_df.resample(rule).agg(agg).dropna()
+                        # Ensure we only return the requested range
+                        return resampled.loc[start_dt:end_dt]
+                    else:
+                        logger.warning(f"Fallback: keine Basisdaten ({base_tf}) verfügbar für {symbol}.")
+                except Exception as e:
+                    logger.error(f"Fehler beim Resample-Fallback: {e}")
+
             return pd.DataFrame()
 
         df = pd.DataFrame(all_ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
