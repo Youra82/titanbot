@@ -122,10 +122,75 @@ def main():
         study_name = f"smc_{create_safe_filename(symbol, timeframe)}{CONFIG_SUFFIX}_{OPTIM_MODE}"
 
         study = optuna.create_study(storage=STORAGE_URL, study_name=study_name, direction="maximize", load_if_exists=True)
+
+        # --- Progress reporting callback (writes progress log + status JSON) ---
+        import time, pathlib
+        LOGS_DIR = os.path.join(PROJECT_ROOT, 'logs')
+        os.makedirs(LOGS_DIR, exist_ok=True)
+        PROGRESS_LOG = os.path.join(LOGS_DIR, 'optimizer_progress.log')
+        STATUS_FILE = os.path.join(PROJECT_ROOT, 'data', 'cache', '.optimization_status.json')
+
+        def _write_progress_line(line: str):
+            ts = datetime.utcnow().isoformat() + 'Z'
+            try:
+                with open(PROGRESS_LOG, 'a', encoding='utf-8') as pf:
+                    pf.write(f"{ts} {line}\n")
+            except Exception:
+                pass
+
+        def _write_status_json(status: dict):
+            try:
+                os.makedirs(os.path.dirname(STATUS_FILE), exist_ok=True)
+                with open(STATUS_FILE, 'w', encoding="utf-8") as sf:
+                    json.dump(status, sf, indent=2)
+            except Exception:
+                pass
+
+        start_time = time.time()
+
+        def _trial_callback(study_obj, trial_obj):
+            # Called after each trial (including pruned/complete)
+            try:
+                trials_done = len([t for t in study_obj.trials if t.state != optuna.trial.TrialState.RUNNING])
+                trials_total = N_TRIALS
+                best = None
+                try:
+                    best = study_obj.best_trial
+                    best_val = round(best.value, 2) if best and best.value is not None else None
+                    best_no = best.number if best else None
+                except Exception:
+                    best_val = None
+                    best_no = None
+
+                elapsed = int(time.time() - start_time)
+                line = f"PROGRESS symbol={CURRENT_SYMBOL} timeframe={CURRENT_TIMEFRAME} trials={trials_done}/{trials_total} best_pnl={best_val} best_trial={best_no} elapsed_s={elapsed}"
+                _write_progress_line(line)
+
+                status = {
+                    'status': 'running',
+                    'symbol': CURRENT_SYMBOL,
+                    'timeframe': CURRENT_TIMEFRAME,
+                    'trials_done': trials_done,
+                    'trials_total': trials_total,
+                    'best_value': best_val,
+                    'best_trial_no': best_no,
+                    'started_at': datetime.utcfromtimestamp(start_time).isoformat() + 'Z',
+                    'last_update': datetime.utcnow().isoformat() + 'Z'
+                }
+                _write_status_json(status)
+            except Exception:
+                pass
+
         try:
-            study.optimize(objective, n_trials=N_TRIALS, n_jobs=args.jobs, show_progress_bar=True)
+            study.optimize(objective, n_trials=N_TRIALS, n_jobs=args.jobs, callbacks=[_trial_callback], show_progress_bar=False)
         except Exception as e_opt:
             print(f"FEHLER während Optuna optimize: {e_opt}")
+            # mark status file as error for visibility
+            _write_progress_line(f"ERROR symbol={CURRENT_SYMBOL} timeframe={CURRENT_TIMEFRAME} error={e_opt}")
+            try:
+                _write_status_json({'status': 'error', 'error': str(e_opt), 'last_update': datetime.utcnow().isoformat() + 'Z'})
+            except Exception:
+                pass
             continue # Nächsten Task versuchen
 
         valid_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]

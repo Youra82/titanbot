@@ -80,11 +80,21 @@ def _write_trigger_log(line: str) -> None:
 
 
 def _set_in_progress() -> None:
-    """Create an "in-progress" marker with an ISO timestamp."""
+    """Create an "in-progress" marker with an ISO timestamp and write a
+    lightweight JSON status file that other processes (master_runner) can
+    read to show live progress.
+    """
     try:
         os.makedirs(CACHE_DIR, exist_ok=True)
         with open(IN_PROGRESS_FILE, 'w', encoding='utf-8') as f:
             f.write(datetime.now().isoformat())
+        # write a starter status file
+        status_file = os.path.join(CACHE_DIR, '.optimization_status.json')
+        try:
+            with open(status_file, 'w', encoding='utf-8') as sf:
+                json.dump({'status': 'starting', 'started_at': datetime.now().isoformat()}, sf)
+        except Exception:
+            pass
         print(f'DEBUG: wrote in-progress marker {IN_PROGRESS_FILE}')
     except Exception as e:
         print(f'WARN: could not write in-progress marker: {e}')
@@ -95,6 +105,13 @@ def _clear_in_progress() -> None:
         if os.path.exists(IN_PROGRESS_FILE):
             os.remove(IN_PROGRESS_FILE)
             print(f'DEBUG: cleared in-progress marker {IN_PROGRESS_FILE}')
+        # remove or update status file
+        status_file = os.path.join(CACHE_DIR, '.optimization_status.json')
+        try:
+            if os.path.exists(status_file):
+                os.remove(status_file)
+        except Exception:
+            pass
     except Exception as e:
         print(f'WARN: could not clear in-progress marker: {e}')
 
