@@ -147,6 +147,32 @@ def main():
         try:
             ts = open(inprog, 'r', encoding='utf-8').read().strip()
             print(f"INFO: Automatische Optimierung läuft (gestartet: {ts})")
+
+            # Wenn eine Statusdatei existiert, zeige Fortschritt (Trials, Ladebalken)
+            status_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_status.json')
+            try:
+                if os.path.exists(status_file):
+                    import json as _json
+                    s = _json.load(open(status_file, 'r', encoding='utf-8'))
+                    trials_done = int(s.get('trials_done', 0))
+                    trials_total = int(s.get('trials_total', 0))
+                    best = s.get('best_value')
+                    symbol = s.get('symbol')
+                    timeframe = s.get('timeframe')
+                    pct = 0
+                    if trials_total:
+                        pct = int((trials_done / trials_total) * 100)
+                    bars = int(pct / 10)
+                    bar = '[' + ('#' * bars).ljust(10, '-') + f'] {pct}%'
+                    print('--- AUTO-OPTIMIZER LIVE STATUS ---')
+                    print(f"Current task: {symbol or 'N/A'} {timeframe or ''}")
+                    print(f"Trials: {trials_done} / {trials_total}  {bar}")
+                    if best is not None:
+                        print(f"Best so far: {best}%")
+                    print('--- Ende Live Status ---')
+            except Exception:
+                pass
+
             # Zeige die letzten Trigger-Log-Einträge direkt in der Console für Sichtbarkeit
             if os.path.exists(trigger_log):
                 try:
