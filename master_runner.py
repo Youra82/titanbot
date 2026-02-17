@@ -5,6 +5,9 @@ import sys
 import os
 import time
 import re
+import threading
+import runpy
+import shutil
 
 # Pfad anpassen, damit die utils importiert werden können
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -158,41 +161,76 @@ def main():
                     print(f"INFO: {cache_file} fehlt — trigger Auto-Optimizer (forced).")
                     scheduler_py = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
                     if os.path.exists(scheduler_py):
-                        # Schreibe Scheduler-Ausgabe in ein dediziertes Log (sichtbar für Debugging)
                         os.makedirs(os.path.join(SCRIPT_DIR, 'logs'), exist_ok=True)
                         trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
-                        print(f"INFO: Starte Scheduler (forced) -> logging to {trigger_log}")
-                        try:
-                            lf = open(trigger_log, 'a', encoding='utf-8')
-                            proc = subprocess.Popen([sys.executable, scheduler_py, '--force'],
-                                                    cwd=SCRIPT_DIR,
-                                                    stdout=lf,
-                                                    stderr=subprocess.STDOUT,
-                                                    start_new_session=True)
-                            time.sleep(0.75)  # kurz warten, ob der Prozess sofort abstürzt
+                        print(f"INFO: Versuche Scheduler (forced) zu starten — logging -> {trigger_log}")
 
-                            # Wenn der Prozess sofort beendet wurde, zeige letzte Log-Zeilen
-                            if proc.poll() is not None:
-                                lf.flush(); lf.close()
-                                print('WARN: Scheduler-Prozess ist sofort beendet (siehe logs/auto_optimizer_trigger.log)')
-                                try:
-                                    with open(trigger_log, 'r', encoding='utf-8') as _r:
-                                        tail = _r.readlines()[-20:]
-                                    print('--- Letzte Zeilen von logs/auto_optimizer_trigger.log ---')
-                                    for l in tail:
-                                        print(l.rstrip())
-                                except Exception:
-                                    pass
+                        # Kandidaten für den Python-Interpreter (plattformübergreifend)
+                        candidates = []
+                        venv_unix = os.path.join(SCRIPT_DIR, '.venv', 'bin', 'python3')
+                        venv_win = os.path.join(SCRIPT_DIR, '.venv', 'Scripts', 'python.exe')
+                        for c in (venv_unix, venv_win, sys.executable, 'python3', 'python'):
+                            # Nur Kandidaten aufnehmen, die existieren oder von PATH gefunden werden
+                            if os.path.isabs(c) and os.path.exists(c):
+                                candidates.append(c)
                             else:
-                                # Prozess läuft; prüfe, ob IN_PROGRESS-Datei angelegt wurde
-                                lf.flush(); lf.close()
-                                time.sleep(0.5)
-                                if os.path.exists(inprog_file):
-                                    print('INFO: Auto-Optimizer wurde gestartet (in-progress marker vorhanden).')
+                                which = shutil.which(c)
+                                if which:
+                                    candidates.append(which)
+
+                        # Entferne Duplikate, behalte Reihenfolge
+                        seen = set(); py_candidates = [x for x in candidates if not (x in seen or seen.add(x))]
+
+                        started = False
+                        lf = None
+                        for py in py_candidates:
+                            try:
+                                lf = open(trigger_log, 'a', encoding='utf-8')
+                                proc = subprocess.Popen([py, scheduler_py, '--force'],
+                                                        cwd=SCRIPT_DIR,
+                                                        stdout=lf,
+                                                        stderr=subprocess.STDOUT,
+                                                        start_new_session=True)
+                                time.sleep(0.75)
+                                if proc.poll() is None:
+                                    started = True
+                                    lf.flush(); lf.close()
+                                    print(f'INFO: Scheduler gestartet mit {py} (PID {proc.pid}).')
+                                    break
                                 else:
-                                    print('WARN: Scheduler gestartet, aber kein in-progress marker gefunden; prüfe logs/auto_optimizer_trigger.log')
-                        except Exception as e:
-                            print(f'WARN: Scheduler konnte nicht gestartet werden: {e}')
+                                    lf.flush(); lf.close()
+                                    print(f'WARN: Start mit {py} schlug fehl (exit={proc.returncode}). Versuche nächsten Kandidaten...')
+                                    continue
+                            except Exception as e:
+                                if lf:
+                                    try: lf.close()
+                                    except Exception: pass
+                                print(f'WARN: Start mit {py} war nicht möglich: {e}')
+
+                        # Fallback: in-proc Ausführung (sicherer, falls Subprocess scheitert)
+                        if not started:
+                            print('WARN: Alle subprocess-Startversuche fehlgeschlagen — fall back to in-process execution (daemon thread).')
+                            try:
+                                def _run_scheduler_inproc():
+                                    try:
+                                        runpy.run_path(scheduler_py, run_name='__main__')
+                                    except Exception as ie:
+                                        with open(trigger_log, 'a', encoding='utf-8') as _lf:
+                                            _lf.write(f"INPROC-ERROR: {ie}\n")
+                                t = threading.Thread(target=_run_scheduler_inproc, daemon=True)
+                                t.start()
+                                time.sleep(0.5)
+                                print('INFO: Scheduler (inproc) gestartet (daemon thread).')
+                                started = True
+                            except Exception as ie:
+                                print(f'ERROR: In-proc fallback fehlgeschlagen: {ie}')
+
+                        # Endgültige Prüfung: wurde IN_PROGRESS gesetzt?
+                        time.sleep(0.5)
+                        if os.path.exists(inprog_file):
+                            print('INFO: Auto-Optimizer wurde gestartet (in-progress marker vorhanden).')
+                        else:
+                            print('WARN: Scheduler-Start erfolgt, aber kein in-progress marker gefunden; prüfe logs/auto_optimizer_trigger.log')
                     else:
                         print('WARN: auto_optimizer_scheduler.py nicht gefunden; kann Optimizer nicht starten.')
         except Exception as _e:
