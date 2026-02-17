@@ -164,8 +164,25 @@ def main():
                     try:
                         logs_dir = os.path.join(SCRIPT_DIR, 'logs')
                         os.makedirs(logs_dir, exist_ok=True)
+                        entry = f"{datetime.now().isoformat()} MASTER_RUNNER TRIGGER reason=cache_missing\n"
+
+                        # primary trigger log
                         with open(os.path.join(logs_dir, 'auto_optimizer_trigger.log'), 'a', encoding='utf-8') as _lf:
-                            _lf.write(f"{datetime.now().isoformat()} MASTER_RUNNER TRIGGER reason=cache_missing\n")
+                            _lf.write(entry)
+
+                        # mirror into master_runner_debug.log and optimizer_output.log for visibility
+                        try:
+                            with open(os.path.join(logs_dir, 'master_runner_debug.log'), 'a', encoding='utf-8') as _m:
+                                _m.write(entry)
+                        except Exception:
+                            pass
+
+                        try:
+                            with open(os.path.join(logs_dir, 'optimizer_output.log'), 'a', encoding='utf-8') as _o:
+                                _o.write(entry)
+                        except Exception:
+                            pass
+
                     except Exception:
                         pass
 

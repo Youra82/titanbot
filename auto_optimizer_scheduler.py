@@ -42,16 +42,37 @@ PIPELINE_SCRIPT = os.path.join(ROOT, 'run_pipeline_automated.sh')
 TRIGGER_LOG = os.path.join(ROOT, 'logs', 'auto_optimizer_trigger.log')
 
 def _write_trigger_log(line: str) -> None:
-    """Append a single-line, timestamped entry to TRIGGER_LOG and stdout.
-    Format is human-friendly and easy to grep (e.g. 'AUTO-OPTIMIZER START reason=forced ...').
+    """Append a single-line, timestamped entry to TRIGGER_LOG and also mirror
+    it into the main `optimizer_output.log` and `master_runner_debug.log` so the
+    trigger is immediately visible in the logs you usually open.
     """
     try:
         os.makedirs(os.path.dirname(TRIGGER_LOG), exist_ok=True)
         ts = datetime.now().isoformat()
         entry = f"{ts} {line}\n"
+
+        # Primary trigger file (short, grep-friendly)
         with open(TRIGGER_LOG, 'a', encoding='utf-8') as f:
             f.write(entry)
-        # Also print so the scheduler output and logs show the same line
+
+        # Mirror into main logs for visibility (best-effort)
+        try:
+            opt_log = os.path.join(ROOT, 'logs', 'optimizer_output.log')
+            os.makedirs(os.path.dirname(opt_log), exist_ok=True)
+            with open(opt_log, 'a', encoding='utf-8') as f2:
+                f2.write(entry)
+        except Exception:
+            pass
+
+        try:
+            mr_log = os.path.join(ROOT, 'logs', 'master_runner_debug.log')
+            os.makedirs(os.path.dirname(mr_log), exist_ok=True)
+            with open(mr_log, 'a', encoding='utf-8') as f3:
+                f3.write(entry)
+        except Exception:
+            pass
+
+        # Also print so the scheduler output and any captured stdout show the same line
         print(entry.strip())
     except Exception as _:
         # Don't fail the scheduler just because logging failed
