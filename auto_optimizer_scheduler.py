@@ -38,6 +38,25 @@ LAST_RUN_FILE = os.path.join(CACHE_DIR, '.last_optimization_run')
 IN_PROGRESS_FILE = os.path.join(CACHE_DIR, '.optimization_in_progress')
 PIPELINE_SCRIPT = os.path.join(ROOT, 'run_pipeline_automated.sh')
 
+# Dedicated, single-line trigger/log file for clear start/skip/finish entries
+TRIGGER_LOG = os.path.join(ROOT, 'logs', 'auto_optimizer_trigger.log')
+
+def _write_trigger_log(line: str) -> None:
+    """Append a single-line, timestamped entry to TRIGGER_LOG and stdout.
+    Format is human-friendly and easy to grep (e.g. 'AUTO-OPTIMIZER START reason=forced ...').
+    """
+    try:
+        os.makedirs(os.path.dirname(TRIGGER_LOG), exist_ok=True)
+        ts = datetime.now().isoformat()
+        entry = f"{ts} {line}\n"
+        with open(TRIGGER_LOG, 'a', encoding='utf-8') as f:
+            f.write(entry)
+        # Also print so the scheduler output and logs show the same line
+        print(entry.strip())
+    except Exception as _:
+        # Don't fail the scheduler just because logging failed
+        print(f"WARN: could not write trigger log: {line}")
+
 
 def _set_in_progress() -> None:
     """Create an "in-progress" marker with an ISO timestamp."""
@@ -86,6 +105,11 @@ def write_last_run(ts: datetime) -> None:
     os.makedirs(CACHE_DIR, exist_ok=True)
     with open(LAST_RUN_FILE, 'w', encoding='utf-8') as f:
         f.write(ts.isoformat())
+    # Mirror last-run into the trigger log for visibility
+    try:
+        _write_trigger_log(f"AUTO-OPTIMIZER LAST_RUN updated={ts.isoformat()}")
+    except Exception:
+        pass
 
 
 def compute_last_scheduled_datetime(schedule: dict, now: datetime) -> datetime:
@@ -225,13 +249,16 @@ def run_pipeline() -> int:
             return 3
 
     print(f'Running pipeline (list form): {bash_cmd}')
+    _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXEC method=bash cmd={bash_cmd}")
 
     try:
         result = subprocess.run(bash_cmd, shell=False)
         print(f'Pipeline exited with return code: {result.returncode}')
+        _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={result.returncode}")
 
         # Wenn der Bash-Aufruf fehlschlägt, versuchen wir eine Python-Direct-Invocation
         if result.returncode != 0:
+            _write_trigger_log('AUTO-OPTIMIZER PIPELINE_WARNING Bash exit != 0 — attempting Python fallback')
             print('WARN: Bash pipeline failed — attempting direct Python fallback (invoke optimizer.py)')
 
             try:
@@ -315,6 +342,7 @@ def run_pipeline() -> int:
                        '--mode', mode]
 
                 print('Running direct optimizer fallback with interpreter:', python_exec)
+                _write_trigger_log(f"AUTO-OPTIMIZER FALLBACK method=python interpreter={python_exec}")
                 print('Running direct optimizer fallback:', ' '.join(map(str, cmd[:6])), '...')
 
                 # If we're on Windows but the chosen interpreter is the unix venv python,
@@ -349,9 +377,11 @@ def run_pipeline() -> int:
 
     except FileNotFoundError:
         # 'bash' not available on PATH — try fallback to calling script directly
+        _write_trigger_log('AUTO-OPTIMIZER PIPELINE_FALLBACK method=direct_shell')
         print('WARN: bash not found on PATH — attempting direct shell execution fallback')
         cmd = f"cd {ROOT} && ./run_pipeline_automated.sh"
         result = subprocess.run(cmd, shell=True)
+        _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={result.returncode}")
         return result.returncode
     except Exception as e:
         print(f'ERROR: Exception while running pipeline: {e}')
@@ -386,6 +416,11 @@ def main() -> int:
         last_run = read_last_run()
 
         if force:
+            # Write a single-line trigger entry with the reason = forced
+            last_run = read_last_run()
+            schedule = settings.get('optimization_settings', {}).get('schedule', {})
+            _write_trigger_log(f"AUTO-OPTIMIZER START reason=forced scheduled={schedule} last_run={last_run}")
+
             print('Force run requested -> executing pipeline now')
             notify = settings.get('optimization_settings', {}).get('send_telegram_on_completion', False)
 
@@ -394,18 +429,22 @@ def main() -> int:
             if notify:
                 _send_telegram_message('🚀 Automatische Optimierung (forced) wurde gestartet.')
 
+            start_ts = datetime.now()
             try:
                 rc = run_pipeline()
             finally:
                 # always clear the in-progress marker so other components don't hang
                 _clear_in_progress()
 
+            elapsed = (datetime.now() - start_ts).total_seconds()
             if rc == 0:
                 write_last_run(datetime.now())
+                _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=success elapsed_s={elapsed:.1f}")
                 print('Pipeline finished successfully; updated last-run timestamp.')
                 if notify:
                     _send_telegram_message('✅ Automatische Optimierung (forced) ist abgeschlossen.')
             else:
+                _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=error code={rc} elapsed_s={elapsed:.1f}")
                 print(f'Pipeline exited with return code {rc}')
                 if notify:
                     _send_telegram_message(f'❌ Automatische Optimierung (forced) ist mit Fehlercode {rc} beendet.')
@@ -413,6 +452,9 @@ def main() -> int:
 
         do_run, reason = should_run(settings, last_run, now)
         print(f'Check at {now.isoformat()}: {reason}')
+        # Log the scheduler decision in a single, easy-to-grep line
+        _write_trigger_log(f"AUTO-OPTIMIZER CHECK now={now.isoformat()} decision={'RUN' if do_run else 'SKIP'} reason={reason} last_run={last_run}")
+
         if do_run:
             notify = settings.get('optimization_settings', {}).get('send_telegram_on_completion', False)
 
@@ -421,18 +463,25 @@ def main() -> int:
             if notify:
                 _send_telegram_message('🚀 Automatische Optimierung wurde gestartet.')
 
+            # Write an explicit START entry (schedule-triggered)
+            _write_trigger_log(f"AUTO-OPTIMIZER START reason=schedule scheduled_dt={compute_last_scheduled_datetime(settings.get('optimization_settings', {}).get('schedule', {}), now)} interval_days={int(settings.get('optimization_settings', {}).get('schedule', {}).get('interval_days', 0) or 0)}")
+
+            start_ts = datetime.now()
             print('Condition met -> executing pipeline...')
             try:
                 rc = run_pipeline()
             finally:
                 _clear_in_progress()
 
+            elapsed = (datetime.now() - start_ts).total_seconds()
             if rc == 0:
                 write_last_run(datetime.now())
+                _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=success elapsed_s={elapsed:.1f}")
                 print('Pipeline finished successfully; updated last-run timestamp.')
                 if notify:
                     _send_telegram_message('✅ Automatische Optimierung ist abgeschlossen.')
             else:
+                _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=error code={rc} elapsed_s={elapsed:.1f}")
                 print(f'Pipeline exited with return code {rc}')
                 if notify:
                     _send_telegram_message(f'❌ Automatische Optimierung ist mit Fehlercode {rc} beendet.')

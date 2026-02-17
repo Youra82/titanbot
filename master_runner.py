@@ -159,6 +159,16 @@ def main():
                 # Wenn Cache fehlt und kein Optimizer bereits läuft → erzwungener Start
                 if (not os.path.exists(cache_file)) and (not os.path.exists(inprog_file)):
                     print(f"INFO: {cache_file} fehlt — trigger Auto-Optimizer (forced).")
+
+                    # Schreibe eine eindeutige, einzeilige Trigger-Info in das Trigger-Log
+                    try:
+                        logs_dir = os.path.join(SCRIPT_DIR, 'logs')
+                        os.makedirs(logs_dir, exist_ok=True)
+                        with open(os.path.join(logs_dir, 'auto_optimizer_trigger.log'), 'a', encoding='utf-8') as _lf:
+                            _lf.write(f"{datetime.now().isoformat()} MASTER_RUNNER TRIGGER reason=cache_missing\n")
+                    except Exception:
+                        pass
+
                     scheduler_py = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
                     if os.path.exists(scheduler_py):
                         os.makedirs(os.path.join(SCRIPT_DIR, 'logs'), exist_ok=True)
