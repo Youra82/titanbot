@@ -30,10 +30,42 @@ def main():
     bot_runner_script = os.path.join(SCRIPT_DIR, 'src', 'titanbot', 'strategy', 'run.py')
     secret_file = os.path.join(SCRIPT_DIR, 'secret.json')
 
-    # Finde den exakten Pfad zum Python-Interpreter in der virtuellen Umgebung
-    python_executable = os.path.join(SCRIPT_DIR, '.venv', 'bin', 'python3')
-    if not os.path.exists(python_executable):
-        print(f"Fehler: Python-Interpreter in der venv nicht gefunden unter {python_executable}")
+    # Bestimme den passenden Python-Interpreter für diese Plattform (robust)
+    def _find_python_exec():
+        candidates = [
+            os.path.join(SCRIPT_DIR, '.venv', 'Scripts', 'python.exe'),
+            os.path.join(SCRIPT_DIR, '.venv', 'bin', 'python3'),
+            sys.executable,
+            shutil.which('python3') or '',
+            shutil.which('python') or ''
+        ]
+        checked = set()
+        for c in candidates:
+            if not c or c in checked:
+                continue
+            checked.add(c)
+            # Absolute path exists?
+            if os.path.isabs(c) and os.path.exists(c):
+                try:
+                    proc = subprocess.run([c, '-c', 'import sys; print(1)'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
+                    if proc.returncode == 0:
+                        return c
+                except Exception:
+                    continue
+            else:
+                found = shutil.which(c)
+                if found:
+                    try:
+                        proc = subprocess.run([found, '-c', 'import sys; print(1)'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
+                        if proc.returncode == 0:
+                            return found
+                    except Exception:
+                        continue
+        return None
+
+    python_executable = _find_python_exec()
+    if not python_executable:
+        print("Fehler: Kein lauffähiger Python-Interpreter für das Projekt gefunden (.venv oder system python).")
         return
 
     print("=======================================================")
@@ -58,6 +90,19 @@ def main():
         print('\n╔════════════════════════════════════════╗')
         print('║       AUTO-OPTIMIZER STATUS (check)    ║')
         print('╠════════════════════════════════════════╣')
+
+        # If optimization is enabled but last-run cache is missing, show a big NOTICE
+        try:
+            cfg = {}
+            if os.path.exists(settings_file):
+                cfg = json.load(open(settings_file))
+            opt_enabled = cfg.get('optimization_settings', {}).get('enabled', False)
+            cache_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.last_optimization_run')
+            if opt_enabled and not os.path.exists(cache_file):
+                print(f"║ {'‼ AUTO-OPTIMIZER WILL BE TRIGGERED (cache missing) ':36} ║")
+        except Exception:
+            pass
+
         if sched_out:
             for line in sched_out.splitlines():
                 print(f'║ {line[:36]:36} ║')
