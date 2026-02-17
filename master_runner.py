@@ -158,11 +158,41 @@ def main():
                     print(f"INFO: {cache_file} fehlt — trigger Auto-Optimizer (forced).")
                     scheduler_py = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
                     if os.path.exists(scheduler_py):
-                        subprocess.Popen([sys.executable, scheduler_py, '--force'],
-                                         cwd=SCRIPT_DIR,
-                                         stdout=subprocess.DEVNULL,
-                                         stderr=subprocess.STDOUT,
-                                         start_new_session=True)
+                        # Schreibe Scheduler-Ausgabe in ein dediziertes Log (sichtbar für Debugging)
+                        os.makedirs(os.path.join(SCRIPT_DIR, 'logs'), exist_ok=True)
+                        trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
+                        print(f"INFO: Starte Scheduler (forced) -> logging to {trigger_log}")
+                        try:
+                            lf = open(trigger_log, 'a', encoding='utf-8')
+                            proc = subprocess.Popen([sys.executable, scheduler_py, '--force'],
+                                                    cwd=SCRIPT_DIR,
+                                                    stdout=lf,
+                                                    stderr=subprocess.STDOUT,
+                                                    start_new_session=True)
+                            time.sleep(0.75)  # kurz warten, ob der Prozess sofort abstürzt
+
+                            # Wenn der Prozess sofort beendet wurde, zeige letzte Log-Zeilen
+                            if proc.poll() is not None:
+                                lf.flush(); lf.close()
+                                print('WARN: Scheduler-Prozess ist sofort beendet (siehe logs/auto_optimizer_trigger.log)')
+                                try:
+                                    with open(trigger_log, 'r', encoding='utf-8') as _r:
+                                        tail = _r.readlines()[-20:]
+                                    print('--- Letzte Zeilen von logs/auto_optimizer_trigger.log ---')
+                                    for l in tail:
+                                        print(l.rstrip())
+                                except Exception:
+                                    pass
+                            else:
+                                # Prozess läuft; prüfe, ob IN_PROGRESS-Datei angelegt wurde
+                                lf.flush(); lf.close()
+                                time.sleep(0.5)
+                                if os.path.exists(inprog_file):
+                                    print('INFO: Auto-Optimizer wurde gestartet (in-progress marker vorhanden).')
+                                else:
+                                    print('WARN: Scheduler gestartet, aber kein in-progress marker gefunden; prüfe logs/auto_optimizer_trigger.log')
+                        except Exception as e:
+                            print(f'WARN: Scheduler konnte nicht gestartet werden: {e}')
                     else:
                         print('WARN: auto_optimizer_scheduler.py nicht gefunden; kann Optimizer nicht starten.')
         except Exception as _e:
