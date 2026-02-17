@@ -229,7 +229,103 @@ def run_pipeline() -> int:
     try:
         result = subprocess.run(bash_cmd, shell=False)
         print(f'Pipeline exited with return code: {result.returncode}')
+
+        # Wenn der Bash-Aufruf fehlschlägt, versuchen wir eine Python-Direct-Invocation
+        if result.returncode != 0:
+            print('WARN: Bash pipeline failed — attempting direct Python fallback (invoke optimizer.py)')
+
+            try:
+                settings = load_settings()
+                opt = settings.get('optimization_settings', {})
+
+                # Resolve symbols
+                syms = opt.get('symbols_to_optimize', 'auto')
+                if isinstance(syms, list):
+                    symbols_arg = ' '.join(syms)
+                elif str(syms).lower() == 'auto':
+                    # scan data/cache for available symbols
+                    import glob, re
+                    files = glob.glob(os.path.join(ROOT, 'data', 'cache', '*-USDT-USDT_*.csv'))
+                    found = set()
+                    for f in files:
+                        m = re.search(r'([A-Z0-9]+)-USDT-USDT_', os.path.basename(f))
+                        if m:
+                            found.add(m.group(1))
+                    if not found:
+                        found = {'BTC','ETH','SOL','XRP','AAVE'}
+                    symbols_arg = ' '.join(sorted(found))
+                else:
+                    symbols_arg = str(syms)
+
+                # Resolve timeframes
+                tfs = opt.get('timeframes_to_optimize', 'auto')
+                if isinstance(tfs, list):
+                    timeframes_arg = ' '.join(tfs)
+                elif str(tfs).lower() == 'auto':
+                    timeframes_arg = '5m 2h 4h 6h'
+                else:
+                    timeframes_arg = str(tfs)
+
+                # Lookback / dates
+                lb = opt.get('lookback_days', 'auto')
+                try:
+                    lookback_days = int(lb)
+                except Exception:
+                    lookback_days = 365
+                from datetime import datetime, timedelta
+                start_date = (datetime.now() - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
+                end_date = datetime.now().strftime('%Y-%m-%d')
+
+                # Other args
+                jobs = int(opt.get('cpu_cores', -1))
+                trials = int(opt.get('num_trials', 10))
+                max_dd = float(opt.get('constraints', {}).get('max_drawdown_pct', 30))
+                min_wr = float(opt.get('constraints', {}).get('min_win_rate_pct', 50))
+                start_capital = float(opt.get('start_capital', 1000))
+                min_pnl = float(opt.get('constraints', {}).get('min_pnl_pct', 0))
+                mode = 'strict'
+
+                optimizer_py = os.path.join(ROOT, 'src', 'titanbot', 'analysis', 'optimizer.py')
+                if not os.path.exists(optimizer_py):
+                    print(f'ERROR: optimizer.py not found at {optimizer_py} — cannot fallback')
+                    return result.returncode
+
+                # Prefer the project's venv Python if available
+                venv_py_unix = os.path.join(ROOT, '.venv', 'bin', 'python3')
+                venv_py_win = os.path.join(ROOT, '.venv', 'Scripts', 'python.exe')
+                python_exec = None
+                if os.path.exists(venv_py_unix):
+                    python_exec = venv_py_unix
+                elif os.path.exists(venv_py_win):
+                    python_exec = venv_py_win
+                else:
+                    python_exec = sys.executable or 'python'
+
+                cmd = [python_exec, optimizer_py,
+                       '--symbols', symbols_arg,
+                       '--timeframes', timeframes_arg,
+                       '--start_date', start_date,
+                       '--end_date', end_date,
+                       '--jobs', str(jobs),
+                       '--max_drawdown', str(max_dd),
+                       '--start_capital', str(start_capital),
+                       '--min_win_rate', str(min_wr),
+                       '--trials', str(trials),
+                       '--min_pnl', str(min_pnl),
+                       '--mode', mode]
+
+                print('Running direct optimizer fallback with interpreter:', python_exec)
+                print('Running direct optimizer fallback:', ' '.join(map(str, cmd[:6])), '...')
+                rc = subprocess.run(cmd)
+                print('Direct optimizer exit code:', rc.returncode)
+                return rc.returncode
+
+            except Exception as e:
+                print('ERROR: Python fallback failed:', e)
+                return 4
+
         return result.returncode
+
     except FileNotFoundError:
         # 'bash' not available on PATH — try fallback to calling script directly
         print('WARN: bash not found on PATH — attempting direct shell execution fallback')
