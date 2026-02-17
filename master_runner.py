@@ -43,12 +43,23 @@ def main():
 
     # Zeige sofort, ob gerade eine automatische Optimierung läuft
     inprog = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
-    if os.path.exists(inprog):
-        try:
-            ts = open(inprog, 'r', encoding='utf-8').read().strip()
-            print(f"INFO: Automatische Optimierung läuft (gestartet: {ts})")
-        except Exception:
-            print("INFO: Automatische Optimierung läuft (Startzeit unbekannt)")
+trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
+if os.path.exists(inprog):
+    try:
+        ts = open(inprog, 'r', encoding='utf-8').read().strip()
+        print(f"INFO: Automatische Optimierung läuft (gestartet: {ts})")
+        # Zeige die letzten Trigger-Log-Einträge direkt in der Console für Sichtbarkeit
+        if os.path.exists(trigger_log):
+            try:
+                with open(trigger_log, 'r', encoding='utf-8') as tf:
+                    lines = tf.read().splitlines()
+                tail = lines[-10:] if len(lines) > 10 else lines
+                print("--- AUTO-OPTIMIZER TRIGGER LOG (letzte Einträge) ---")
+                for l in tail:
+                    print(l)
+                print("--- Ende Trigger-Log ---")
+            except Exception:
+                pass
     else:
         print("INFO: Keine laufende automatische Optimierung gefunden.")
 
@@ -180,6 +191,12 @@ def main():
                         try:
                             with open(os.path.join(logs_dir, 'optimizer_output.log'), 'a', encoding='utf-8') as _o:
                                 _o.write(entry)
+                        except Exception:
+                            pass
+
+                        # UND: sofort in die Konsole ausgeben (sichtbar beim master_runner Start)
+                        try:
+                            print(entry.strip())
                         except Exception:
                             pass
 
