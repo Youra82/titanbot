@@ -41,7 +41,51 @@ def main():
     print("TitanBot Master Runner v1.0")
     print("=======================================================")
 
-    # Zeige sofort, ob gerade eine automatische Optimierung läuft
+    # ----------------------
+    # AUTO-OPTIMIZER STATUS
+    # ----------------------
+    try:
+        scheduler_py = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
+        check_cmd = [python_executable, scheduler_py, '--check-only']
+        try:
+            proc = subprocess.run(check_cmd, cwd=SCRIPT_DIR, capture_output=True, text=True, timeout=6)
+            sched_out = (proc.stdout or '').strip()
+            sched_err = (proc.stderr or '').strip()
+        except Exception as e:
+            sched_out = ''
+            sched_err = f'ERROR running scheduler check: {e}'
+
+        print('\n╔════════════════════════════════════════╗')
+        print('║       AUTO-OPTIMIZER STATUS (check)    ║')
+        print('╠════════════════════════════════════════╣')
+        if sched_out:
+            for line in sched_out.splitlines():
+                print(f'║ {line[:36]:36} ║')
+        if sched_err:
+            for line in sched_err.splitlines():
+                print(f'║ ERR: {line[:30]:30} ║')
+
+        # Show a short tail of optimizer log for context (best-effort)
+        opt_log = os.path.join(SCRIPT_DIR, 'logs', 'optimizer_output.log')
+        if os.path.exists(opt_log):
+            try:
+                with open(opt_log, 'r', encoding='utf-8') as f:
+                    all_lines = f.read().splitlines()
+                tail = all_lines[-6:]
+                print('╠════════════════════════════════════════╣')
+                print('║ Last optimizer log lines:               ║')
+                for l in tail:
+                    print(f'║ {l[:36]:36} ║')
+            except Exception:
+                pass
+
+        print('╚════════════════════════════════════════╝\n')
+
+    except Exception:
+        # non-fatal — continue with master runner
+        pass
+
+    # Zeige sofort, ob gerade eine automatische Optimierung läuft (marker)
     inprog = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
     trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
     if os.path.exists(inprog):
