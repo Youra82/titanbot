@@ -183,7 +183,47 @@ def run_pipeline() -> int:
 
     # Prefer passing args as a list to subprocess to prevent the outer shell from
     # mangling quotes (problem observed when running under PowerShell on Windows).
-    bash_cmd = ['bash', '-lc', f"cd '{ROOT}' && ./run_pipeline_automated.sh"]
+    # On Windows, try to map the Windows path to a bash-accessible path (WSL or MSYS).
+    bash_cmd = None
+
+    # Helper: test whether 'bash -lc "cd '<path>' && pwd"' succeeds
+    def _bash_cd_ok(path_candidate: str) -> bool:
+        try:
+            rc = subprocess.run(['bash', '-lc', f"cd '{path_candidate}' && pwd"], shell=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            return rc.returncode == 0
+        except Exception:
+            return False
+
+    if os.name == 'nt':
+        from pathlib import Path
+        p = Path(ROOT)
+        drive = p.drive.rstrip(':').lower() if p.drive else ''
+        rest = p.as_posix().split(':', 1)[-1] if ':' in p.as_posix() else p.as_posix()
+        candidates = []
+        if drive:
+            candidates.append(f"/mnt/{drive}{rest}")   # WSL style
+            candidates.append(f"/{drive}{rest}")       # MSYS/Git-Bash style
+        candidates.append(ROOT)  # last resort: original Windows path
+
+        for c in candidates:
+            if _bash_cd_ok(c):
+                bash_cmd = ['bash', '-lc', f"cd '{c}' && ./run_pipeline_automated.sh"]
+                print(f'INFO: using bash cd candidate: {c}')
+                break
+
+    else:
+        # POSIX environment — ROOT should be fine as-is
+        bash_cmd = ['bash', '-lc', f"cd '{ROOT}' && ./run_pipeline_automated.sh"]
+
+    if bash_cmd is None:
+        print('WARN: could not determine a bash-accessible path for ROOT — will attempt direct shell execution')
+        try:
+            result = subprocess.run(f"cd {ROOT} && ./run_pipeline_automated.sh", shell=True)
+            return result.returncode
+        except Exception as e:
+            print(f'ERROR: direct pipeline fallback failed: {e}')
+            return 3
+
     print(f'Running pipeline (list form): {bash_cmd}')
 
     try:
@@ -196,6 +236,9 @@ def run_pipeline() -> int:
         cmd = f"cd {ROOT} && ./run_pipeline_automated.sh"
         result = subprocess.run(cmd, shell=True)
         return result.returncode
+    except Exception as e:
+        print(f'ERROR: Exception while running pipeline: {e}')
+        return 3
     except Exception as e:
         print(f'ERROR: Exception while running pipeline: {e}')
         return 3
