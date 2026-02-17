@@ -43,23 +43,25 @@ def main():
 
     # Zeige sofort, ob gerade eine automatische Optimierung läuft
     inprog = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
-trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
-if os.path.exists(inprog):
-    try:
-        ts = open(inprog, 'r', encoding='utf-8').read().strip()
-        print(f"INFO: Automatische Optimierung läuft (gestartet: {ts})")
-        # Zeige die letzten Trigger-Log-Einträge direkt in der Console für Sichtbarkeit
-        if os.path.exists(trigger_log):
-            try:
-                with open(trigger_log, 'r', encoding='utf-8') as tf:
-                    lines = tf.read().splitlines()
-                tail = lines[-10:] if len(lines) > 10 else lines
-                print("--- AUTO-OPTIMIZER TRIGGER LOG (letzte Einträge) ---")
-                for l in tail:
-                    print(l)
-                print("--- Ende Trigger-Log ---")
-            except Exception:
-                pass
+    trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
+    if os.path.exists(inprog):
+        try:
+            ts = open(inprog, 'r', encoding='utf-8').read().strip()
+            print(f"INFO: Automatische Optimierung läuft (gestartet: {ts})")
+            # Zeige die letzten Trigger-Log-Einträge direkt in der Console für Sichtbarkeit
+            if os.path.exists(trigger_log):
+                try:
+                    with open(trigger_log, 'r', encoding='utf-8') as tf:
+                        lines = tf.read().splitlines()
+                    tail = lines[-10:] if len(lines) > 10 else lines
+                    print("--- AUTO-OPTIMIZER TRIGGER LOG (letzte Einträge) ---")
+                    for l in tail:
+                        print(l)
+                    print("--- Ende Trigger-Log ---")
+                except Exception:
+                    pass
+        except Exception:
+            print("INFO: Automatische Optimierung läuft (Startzeit unbekannt)")
     else:
         print("INFO: Keine laufende automatische Optimierung gefunden.")
 
