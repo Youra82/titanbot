@@ -316,6 +316,27 @@ def run_pipeline() -> int:
 
                 print('Running direct optimizer fallback with interpreter:', python_exec)
                 print('Running direct optimizer fallback:', ' '.join(map(str, cmd[:6])), '...')
+
+                # If we're on Windows but the chosen interpreter is the unix venv python,
+                # run it via 'bash -lc' using a /mnt/c/… path so WSL executes the venv python.
+                if os.name == 'nt' and python_exec.endswith(os.path.join('.venv', 'bin', 'python3')):
+                    try:
+                        from pathlib import Path
+                        pe = Path(python_exec)
+                        op = Path(optimizer_py)
+                        drive = pe.drive.rstrip(':').lower() if pe.drive else ''
+                        rest_py = pe.as_posix().split(':', 1)[-1] if ':' in pe.as_posix() else pe.as_posix()
+                        rest_op = op.as_posix().split(':', 1)[-1] if ':' in op.as_posix() else op.as_posix()
+                        bash_venv = f"/mnt/{drive}{rest_py}"
+                        bash_optimizer = f"/mnt/{drive}{rest_op}"
+                        bash_cmd = ['bash', '-lc', f"'{bash_venv}' '{bash_optimizer}' --symbols \"{symbols_arg}\" --timeframes \"{timeframes_arg}\" --start_date {start_date} --end_date {end_date} --jobs {jobs} --max_drawdown {max_dd} --start_capital {start_capital} --min_win_rate {min_wr} --trials {trials} --min_pnl {min_pnl} --mode {mode}"]
+                        print('INFO: executing venv python via WSL bash:', bash_cmd[2])
+                        rc = subprocess.run(bash_cmd)
+                        print('Direct (wsL-venv) optimizer exit code:', rc.returncode)
+                        return rc.returncode
+                    except Exception as e:
+                        print('WARN: WSL venv invocation failed:', e)
+
                 rc = subprocess.run(cmd)
                 print('Direct optimizer exit code:', rc.returncode)
                 return rc.returncode
