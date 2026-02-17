@@ -77,15 +77,25 @@ def main():
     # AUTO-OPTIMIZER STATUS
     # ----------------------
     try:
-        scheduler_py = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
-        check_cmd = [python_executable, scheduler_py, '--check-only']
         try:
-            proc = subprocess.run(check_cmd, cwd=SCRIPT_DIR, capture_output=True, text=True, timeout=6)
-            sched_out = (proc.stdout or '').strip()
-            sched_err = (proc.stderr or '').strip()
+            # Use the scheduler's should_run logic locally to avoid spawning processes
+            import auto_optimizer_scheduler as scheduler_mod
+            last_run = None
+            lr_path = os.path.join(SCRIPT_DIR, 'data', 'cache', '.last_optimization_run')
+            if os.path.exists(lr_path):
+                try:
+                    from datetime import datetime
+                    last_run = datetime.fromisoformat(open(lr_path, 'r', encoding='utf-8').read().strip())
+                except Exception:
+                    last_run = None
+            with open(settings_file, 'r', encoding='utf-8') as _sf:
+                sched_settings = json.load(_sf)
+            do_run, reason = scheduler_mod.should_run(sched_settings, last_run, __import__('datetime').datetime.now())
+            sched_out = f"decision={'RUN' if do_run else 'SKIP'} reason={reason}"
+            sched_err = ''
         except Exception as e:
             sched_out = ''
-            sched_err = f'ERROR running scheduler check: {e}'
+            sched_err = f'ERROR computing scheduler check: {e}'
 
         print('\n╔════════════════════════════════════════╗')
         print('║       AUTO-OPTIMIZER STATUS (check)    ║')
@@ -249,7 +259,15 @@ def main():
                 "--use_macd", str(use_macd) 
             ]
 
-            subprocess.Popen(command)
+            try:
+                subprocess.Popen(command)
+            except Exception as e:
+                print(f"WARN: could not start bot with '{command[0]}': {e} — falling back to sys.executable")
+                try:
+                    fallback_cmd = [sys.executable, bot_runner_script, "--symbol", symbol, "--timeframe", timeframe, "--use_macd", str(use_macd)]
+                    subprocess.Popen(fallback_cmd)
+                except Exception as e2:
+                    print(f"ERROR: fallback start also failed: {e2}")
             time.sleep(2)
 
         # --- Auto-Optimizer: falls der 'last run' Cache gelöscht wurde, starte Scheduler im Forced-Modus ---
