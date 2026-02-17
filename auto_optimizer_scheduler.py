@@ -175,15 +175,30 @@ def _send_telegram_message(text: str) -> bool:
 
 
 def run_pipeline() -> int:
-    # Execute the existing run_pipeline_automated.sh using bash
+    # Execute the existing run_pipeline_automated.sh using bash.
+    # Use list form for subprocess to avoid shell quoting issues on Windows (PowerShell).
     if not os.path.exists(PIPELINE_SCRIPT):
         print(f'ERROR: pipeline script not found: {PIPELINE_SCRIPT}')
         return 2
 
-    cmd = f"bash -lc 'cd {ROOT} && ./run_pipeline_automated.sh'"
-    print(f'Running pipeline: {cmd}')
-    result = subprocess.run(cmd, shell=True)
-    return result.returncode
+    # Prefer passing args as a list to subprocess to prevent the outer shell from
+    # mangling quotes (problem observed when running under PowerShell on Windows).
+    bash_cmd = ['bash', '-lc', f"cd '{ROOT}' && ./run_pipeline_automated.sh"]
+    print(f'Running pipeline (list form): {bash_cmd}')
+
+    try:
+        result = subprocess.run(bash_cmd, shell=False)
+        print(f'Pipeline exited with return code: {result.returncode}')
+        return result.returncode
+    except FileNotFoundError:
+        # 'bash' not available on PATH — try fallback to calling script directly
+        print('WARN: bash not found on PATH — attempting direct shell execution fallback')
+        cmd = f"cd {ROOT} && ./run_pipeline_automated.sh"
+        result = subprocess.run(cmd, shell=True)
+        return result.returncode
+    except Exception as e:
+        print(f'ERROR: Exception while running pipeline: {e}')
+        return 3
 
 
 def parse_args() -> argparse.Namespace:
