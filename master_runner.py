@@ -147,6 +147,27 @@ def main():
             subprocess.Popen(command)
             time.sleep(2)
 
+        # --- Auto-Optimizer: falls der 'last run' Cache gelöscht wurde, starte Scheduler im Forced-Modus ---
+        try:
+            opt_settings = settings.get('optimization_settings', {})
+            if opt_settings.get('enabled', False):
+                cache_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.last_optimization_run')
+                inprog_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
+                # Wenn Cache fehlt und kein Optimizer bereits läuft → erzwungener Start
+                if (not os.path.exists(cache_file)) and (not os.path.exists(inprog_file)):
+                    print(f"INFO: {cache_file} fehlt — trigger Auto-Optimizer (forced).")
+                    scheduler_py = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
+                    if os.path.exists(scheduler_py):
+                        subprocess.Popen([sys.executable, scheduler_py, '--force'],
+                                         cwd=SCRIPT_DIR,
+                                         stdout=subprocess.DEVNULL,
+                                         stderr=subprocess.STDOUT,
+                                         start_new_session=True)
+                    else:
+                        print('WARN: auto_optimizer_scheduler.py nicht gefunden; kann Optimizer nicht starten.')
+        except Exception as _e:
+            print(f'WARN: Auto-Optimizer Trigger fehlgeschlagen: {_e}')
+
     except FileNotFoundError as e:
         print(f"Fehler: Eine wichtige Datei wurde nicht gefunden: {e}")
     except Exception as e:
