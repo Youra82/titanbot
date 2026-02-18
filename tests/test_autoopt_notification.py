@@ -55,12 +55,20 @@ def test_masterrunner_sends_fallback_start_notify_when_scheduler_inprogress(monk
     class DummyPopen:
         def __init__(self, *args, **kwargs):
             self.pid = 99999
+            self.returncode = None
         def poll(self):
             return None
         def wait(self, timeout=None):
             return 0
+        def communicate(self, input=None, timeout=None):
+            # some libraries call communicate() on Popen (ccxt/toolz do this in tests)
+            return (b'', b'')
 
     monkeypatch.setattr(subprocess, 'Popen', DummyPopen)
+
+    # Ensure master_runner can find a python executable in the test environment
+    # _find_python_exec uses subprocess.run to validate candidates — fake success
+    monkeypatch.setattr(subprocess, 'run', lambda *a, **k: Mock(returncode=0))
 
     # Run master_runner (it will execute the AUTO-OPTIMIZER status branch)
     runpy.run_path(os.path.join(PROJECT_ROOT, 'master_runner.py'), run_name='__main__')

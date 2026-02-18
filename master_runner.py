@@ -251,6 +251,13 @@ def main():
                                                 _fs.write(datetime.utcnow().isoformat() + 'Z')
                                         except Exception:
                                             pass
+
+                                        # update status shown to user immediately and record in trigger log
+                                        notify_status = 'Start‑Telegram: gesendet (fallback)'
+                                        try:
+                                            _write_trigger_log('AUTO-OPTIMIZER START fallback=master_runner')
+                                        except Exception:
+                                            pass
                     except Exception:
                         pass
                 else:
