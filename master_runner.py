@@ -241,8 +241,26 @@ def main():
             # non-fatal — continue with master runner
             pass
 
+        # Lade settings.json und secret.json (benötigt für Account/Strategien)
+        try:
+            with open(settings_file, 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+            with open(secret_file, 'r', encoding='utf-8') as f:
+                secrets = json.load(f)
+            # *** Geändert: Account-Name (optional) ***
+            if not secrets.get('titanbot'):
+                print("Fehler: Kein 'titanbot'-Account in secret.json gefunden.")
+                return
+            main_account_config = secrets['titanbot'][0]
+        except Exception as e:
+            print(f"Fehler beim Laden von settings/secret: {e}")
+            return
+
         # Kontostandabfrage (still, keine Anzeige)
-        _ = main_account_config.get('name', 'Standard')  # kept for compatibility
+        try:
+            _ = main_account_config.get('name', 'Standard')  # kept for compatibility
+        except Exception:
+            _ = 'Standard'
         
         live_settings = settings.get('live_trading_settings', {})
         use_autopilot = live_settings.get('use_auto_optimizer_results', False)
@@ -474,7 +492,9 @@ def main():
     except FileNotFoundError as e:
         print(f"Fehler: Eine wichtige Datei wurde nicht gefunden: {e}")
     except Exception as e:
+        import traceback
         print(f"Ein unerwarteter Fehler im Master Runner ist aufgetreten: {e}")
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
