@@ -497,70 +497,6 @@ def main() -> int:
                 _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=success elapsed_s={elapsed:.1f}")
                 print('Pipeline finished successfully; updated last-run timestamp.')
 
-                # Send a single completion message (only once per run)
-                if notify:
-                    comp_msg = '✅ Automatische Optimierung abgeschlossen.'
-                    if run_summary:
-                        saved = [t for t in run_summary.get('tasks', []) if t.get('saved')]
-                        unchanged = [t for t in run_summary.get('tasks', []) if not t.get('saved')]
-                        comp_msg = (
-                            f"✅ Auto‑Optimizer abgeschlossen (Dauer: {int(run_summary.get('duration_s', elapsed))}s)\n"
-                            f"Gesamt: {len(run_summary.get('tasks', []))} Komb., Gespeichert: {len(saved)}, Unverändert: {len(unchanged)}\n"
-                            f"Gespeicherte: {', '.join([f\"{s['symbol']}({s['timeframe']})\" for s in saved][:8])}"
-                        )
-                    _send_telegram_message(comp_msg)
-
-                # clear start-notify sentinel
-                try:
-                    if os.path.exists(start_notify_file):
-                        os.remove(start_notify_file)
-                except Exception:
-                    pass
-            else:
-                _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=error code={rc} elapsed_s={elapsed:.1f}")
-                print(f'Pipeline exited with return code {rc}')
-                if notify:
-                    _send_telegram_message(f'❌ Automatische Optimierung (forced) ist mit Fehlercode {rc} beendet.')
-                try:
-                    if os.path.exists(start_notify_file):
-                        os.remove(start_notify_file)
-                except Exception:
-                    pass
-            return
-
-        do_run, reason = should_run(settings, last_run, now)
-        print(f'Check at {now.isoformat()}: {reason}')
-        # Log the scheduler decision in a single, easy-to-grep line
-        _write_trigger_log(f"AUTO-OPTIMIZER CHECK now={now.isoformat()} decision={'RUN' if do_run else 'SKIP'} reason={reason} last_run={last_run}")
-
-        if do_run:
-            notify = settings.get('optimization_settings', {}).get('send_telegram_on_completion', False)
-
-            # mark in-progress and notify ONCE (use sentinel)
-            _set_in_progress()
-            start_notify_file = os.path.join(CACHE_DIR, '.optimization_start_notified')
-            if notify and (not os.path.exists(start_notify_file)):
-                _send_telegram_message('🚀 Automatische Optimierung wurde gestartet.')
-                try:
-                    os.makedirs(CACHE_DIR, exist_ok=True)
-                    with open(start_notify_file, 'w', encoding='utf-8') as _sn:
-                        _sn.write(datetime.utcnow().isoformat() + 'Z')
-                except Exception:
-                    pass
-
-            # Write an explicit START entry (schedule-triggered)
-            _write_trigger_log(f"AUTO-OPTIMIZER START reason=schedule scheduled_dt={compute_last_scheduled_datetime(settings.get('optimization_settings', {}).get('schedule', {}), now)} interval_days={int(settings.get('optimization_settings', {}).get('schedule', {}).get('interval_days', 0) or 0)}")
-
-            start_ts = datetime.now()
-            print('Condition met -> executing pipeline...')
-            try:
-                rc = run_pipeline()
-            finally:
-                _clear_in_progress()
-
-            elapsed = (datetime.now() - start_ts).total_seconds()
-
-            # Read optimizer run summary (if present) to compose a richer completion message
             summary_path = os.path.join(SCRIPT_DIR, 'artifacts', 'results', 'last_optimizer_run.json')
             run_summary = None
             try:
@@ -581,10 +517,11 @@ def main() -> int:
                     if run_summary:
                         saved = [t for t in run_summary.get('tasks', []) if t.get('saved')]
                         unchanged = [t for t in run_summary.get('tasks', []) if not t.get('saved')]
+                        saved_list = ', '.join(f"{s['symbol']}({s['timeframe']})" for s in saved[:8])
                         comp_msg = (
                             f"✅ Auto‑Optimizer abgeschlossen (Dauer: {int(run_summary.get('duration_s', elapsed))}s)\n"
                             f"Gesamt: {len(run_summary.get('tasks', []))} Komb., Gespeichert: {len(saved)}, Unverändert: {len(unchanged)}\n"
-                            f"Gespeicherte: {', '.join([f\"{s['symbol']}({s['timeframe']})\" for s in saved][:8])}"
+                            f"Gespeicherte: {saved_list}"
                         )
                     _send_telegram_message(comp_msg)
 
