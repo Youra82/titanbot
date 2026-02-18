@@ -26,16 +26,21 @@ def send_message(bot_token, chat_id, message):
 
     try:
         response = requests.post(api_url, data=payload, timeout=10)
-        response.raise_for_status() # Löst einen Fehler aus bei Status >= 400
-        if response.status_code != 200:
-             # Diese Zeile wird durch raise_for_status() unwahrscheinlich
-             logger.error(f"Fehler beim Senden der Telegram-Nachricht (Status {response.status_code}): {response.text}")
-        # Optional: Erfolgsmeldung loggen
-        # logger.debug(f"Telegram-Nachricht erfolgreich gesendet an Chat {chat_id}.")
+        response.raise_for_status()  # raises on 4xx/5xx
+        # success
+        return True
     except requests.exceptions.RequestException as e:
         logger.error(f"Netzwerkfehler beim Senden der Telegram-Nachricht: {e}")
+        # include response text if available
+        try:
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Telegram-API response: {e.response.text}")
+        except Exception:
+            pass
+        return False
     except Exception as e:
         logger.error(f"Allgemeiner Fehler beim Senden der Telegram-Nachricht: {e}")
+        return False
 
 
 def send_document(bot_token, chat_id, file_path, caption=""):

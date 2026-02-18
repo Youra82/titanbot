@@ -259,15 +259,22 @@ def main():
                                 chat = tg.get('chat_id')
                                 if bot and chat:
                                     from titanbot.utils.telegram import send_message
-                                    send_message(bot, chat, (
+                                    sent_ok = send_message(bot, chat, (
                                         f"ℹ️ Auto‑Optimizer läuft bereits — MasterRunner hat den In‑Progress‑Marker erkannt.\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
                                     ))
-                                    try:
-                                        os.makedirs(os.path.dirname(mr_notify_file), exist_ok=True)
-                                        with open(mr_notify_file, 'w', encoding='utf-8') as _sn:
-                                            _sn.write(datetime.utcnow().isoformat() + 'Z')
-                                    except Exception:
-                                        pass
+                                    if sent_ok:
+                                        try:
+                                            os.makedirs(os.path.dirname(mr_notify_file), exist_ok=True)
+                                            with open(mr_notify_file, 'w', encoding='utf-8') as _sn:
+                                                _sn.write(datetime.utcnow().isoformat() + 'Z')
+                                        except Exception:
+                                            pass
+                                    else:
+                                        # log failed notify to trigger log for debugging
+                                        try:
+                                            _write_trigger_log('MASTER_RUNNER NOTIFY inprog=result=failed')
+                                        except Exception:
+                                            pass
                         except Exception:
                             pass
         except Exception:
