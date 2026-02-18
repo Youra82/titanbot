@@ -262,6 +262,13 @@ def main():
                                     sent_ok = send_message(bot, chat, (
                                         f"ℹ️ Auto‑Optimizer läuft bereits — MasterRunner hat den In‑Progress‑Marker erkannt.\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
                                     ))
+                                    # log send result for visibility
+                                    try:
+                                        mr_log = os.path.join(SCRIPT_DIR, 'logs', 'master_runner_debug.log')
+                                        with open(mr_log, 'a', encoding='utf-8') as _m:
+                                            _m.write(f"{datetime.now().isoformat()} MASTER_RUNNER NOTIFY inprog result={sent_ok}\n")
+                                    except Exception:
+                                        pass
                                     if sent_ok:
                                         try:
                                             os.makedirs(os.path.dirname(mr_notify_file), exist_ok=True)
@@ -272,7 +279,9 @@ def main():
                                     else:
                                         # log failed notify to trigger log for debugging
                                         try:
-                                            _write_trigger_log('MASTER_RUNNER NOTIFY inprog=result=failed')
+                                            trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
+                                            with open(trigger_log, 'a', encoding='utf-8') as _t:
+                                                _t.write(f"{datetime.now().isoformat()} MASTER_RUNNER NOTIFY inprog result=failed\n")
                                         except Exception:
                                             pass
                         except Exception:
