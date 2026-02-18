@@ -203,35 +203,29 @@ def main():
             if auto_should_run:
                 print(f"AUTOOPTIMIERUNG NÖTIG — Grund: {auto_reason}")
                 print("Autooptimierung wird gestartet.")
-            else:
-                print(f"AUTOOPTIMIERUNG NICHT NÖTIG — Grund: {auto_reason}")
-                print("Autooptimierung wird nicht gestartet.")
-        except Exception:
-            # Fallback minimal
-            try:
-                print(f"AUTO-OPTIMIZER: {'NEEDED' if auto_should_run else 'NOT DUE'} — reason={auto_reason}")
-            except Exception:
-                pass
 
-    except Exception:
-        # non-fatal — continue with master runner
-        pass
-
-    # Auto-optimizer runtime details are intentionally suppressed here to keep
-    # master_runner console output concise. Logs still contain full details.
-
-    try:
-        with open(settings_file, 'r') as f:
-            settings = json.load(f)
-
-        with open(secret_file, 'r') as f:
-            secrets = json.load(f)
-
-        # *** Geändert: Account-Name (optional) ***
-        if not secrets.get('titanbot'):
-            print("Fehler: Kein 'titanbot'-Account in secret.json gefunden.")
-            return
-        main_account_config = secrets['titanbot'][0]
+                # Wenn Scheduler fällig ist und noch kein Optimizer läuft, starte Scheduler automatisiert
+                inprog_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
+                if not os.path.exists(inprog_file):
+                    scheduler_py = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
+                    if os.path.exists(scheduler_py):
+                        try:
+                            py_exec = _find_python_exec() or 'python'
+                            trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
+                            os.makedirs(os.path.dirname(trigger_log), exist_ok=True)
+                            with open(trigger_log, 'a', encoding='utf-8') as _lf:
+                                proc = subprocess.Popen([py_exec, scheduler_py, '--force'], cwd=SCRIPT_DIR, stdout=_lf, stderr=subprocess.STDOUT, start_new_session=True)
+                                time.sleep(0.75)
+                                if proc.poll() is None:
+                                    print(f'INFO: Scheduler automatisch gestartet (PID {proc.pid}).')
+                                else:
+                                    print(f'WARN: Scheduler-Startversuch schlug fehl (exit={proc.returncode}). Prüfe logs/auto_optimizer_trigger.log')
+                        except Exception as _e:
+                            print(f'WARN: Scheduler-Auto-Start fehlgeschlagen: {_e}')
+                    else:
+                        print('WARN: auto_optimizer_scheduler.py nicht gefunden; Scheduler nicht gestartet.')
+                else:
+                    print('INFO: Scheduler bereits aktiv (in-progress marker vorhanden).')
 
         # Kontostandabfrage (still, keine Anzeige)
         _ = main_account_config.get('name', 'Standard')  # kept for compatibility
