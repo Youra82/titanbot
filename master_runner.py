@@ -198,137 +198,27 @@ def main():
             sched_out = ''
             sched_err = f'ERROR computing scheduler check: {e}'
 
-        print('\n╔════════════════════════════════════════╗')
-        print('║       AUTO-OPTIMIZER STATUS (check)    ║')
-        print('╠════════════════════════════════════════╣')
-
-        # If optimization is enabled but last-run cache is missing, show a big NOTICE
+        # Sehr knappe Auto‑Optimizer‑Statusmeldung (nur nötigste Info)
         try:
-            cfg = {}
-            if os.path.exists(settings_file):
-                cfg = json.load(open(settings_file))
-            opt_enabled = cfg.get('optimization_settings', {}).get('enabled', False)
-            cache_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.last_optimization_run')
-            if opt_enabled and not os.path.exists(cache_file):
-                print(f"║ {'‼ AUTO-OPTIMIZER WILL BE TRIGGERED (cache missing) ':36} ║")
+            if auto_should_run:
+                print(f"AUTOOPTIMIERUNG NÖTIG — Grund: {auto_reason}")
+                print("Autooptimierung wird gestartet.")
+            else:
+                print(f"AUTOOPTIMIERUNG NICHT NÖTIG — Grund: {auto_reason}")
+                print("Autooptimierung wird nicht gestartet.")
         except Exception:
-            pass
-
-        if sched_out:
-            for line in sched_out.splitlines():
-                print(f'║ {line[:36]:36} ║')
-        if sched_err:
-            for line in sched_err.splitlines():
-                print(f'║ ERR: {line[:30]:30} ║')
-
-        # Show a short tail of optimizer log for context (best-effort)
-        opt_log = os.path.join(SCRIPT_DIR, 'logs', 'optimizer_output.log')
-        if os.path.exists(opt_log):
+            # Fallback minimal
             try:
-                with open(opt_log, 'r', encoding='utf-8') as f:
-                    all_lines = f.read().splitlines()
-                tail = all_lines[-6:]
-                print('╠════════════════════════════════════════╣')
-                print('║ Last optimizer log lines:               ║')
-                for l in tail:
-                    print(f'║ {l[:36]:36} ║')
+                print(f"AUTO-OPTIMIZER: {'NEEDED' if auto_should_run else 'NOT DUE'} — reason={auto_reason}")
             except Exception:
                 pass
-
-        print('╚════════════════════════════════════════╝\n')
-
-        # Kurzinfo (kompakte Statuszeile für schnelle Sichtbarkeit)
-        try:
-            short_status = f"AUTO-OPTIMIZER: {'NEEDED' if auto_should_run else 'NOT DUE'} — reason={auto_reason}"
-            print(short_status)
-
-            # Sende (optionale) Telegram-Benachrichtigung bei Fälligkeit (nur wenn konfiguriert)
-            if auto_should_run:
-                try:
-                    # Versuche Symbols/Timeframes aus dem Scheduler-Modul zu holen (best-effort)
-                    syms = []
-                    tfs = []
-                    try:
-                        syms = scheduler_mod.extract_symbols_timeframes(sched_settings, 'symbols')
-                        tfs = scheduler_mod.extract_symbols_timeframes(sched_settings, 'timeframes')
-                    except Exception:
-                        # Fallback: aus live_trading_settings
-                        cfg = sched_settings
-                        strategies = cfg.get('live_trading_settings', {}).get('active_strategies', [])
-                        syms = sorted({s.get('symbol','').split('/')[0] for s in strategies if s.get('active', False)})
-                        tfs = sorted({s.get('timeframe') for s in strategies if s.get('active', False)})
-
-                    # Berechne Lookback (wenn 'auto') — gleiche Logik wie Scheduler
-                    lookback_setting = sched_settings.get('optimization_settings', {}).get('lookback_days', 365)
-                    if isinstance(lookback_setting, str) and lookback_setting == 'auto':
-                        tf_map = { '5m': 60, '15m': 60, '30m': 365, '1h': 365, '2h': 730, '4h': 730, '6h': 1095, '1d': 1095 }
-                        computed = 365
-                        for tf in tfs:
-                            computed = max(computed, tf_map.get(tf, 365))
-                        lookback_desc = f"auto → {computed} days"
-                    else:
-                        lookback_desc = str(lookback_setting)
-
-                    # Nur Konsole/Log: keine Telegram‑Benachrichtigung hier, Scheduler sendet die Start/Finish Messages (vermeidet Spam)
-                    print(f"INFO: Auto‑Optimizer fällig — reason={auto_reason} | Symbole: {', '.join(syms) if syms else 'auto'} | Timeframes: {', '.join(tfs) if tfs else 'auto'} | Lookback: {lookback_desc}")
-                except Exception:
-                    pass
-        except Exception:
-            pass
 
     except Exception:
         # non-fatal — continue with master runner
         pass
 
-    # Zeige sofort, ob gerade eine automatische Optimierung läuft (marker)
-    inprog = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
-    trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
-    if os.path.exists(inprog):
-        try:
-            ts = open(inprog, 'r', encoding='utf-8').read().strip()
-            print(f"INFO: Automatische Optimierung läuft (gestartet: {ts})")
-
-            # Wenn eine Statusdatei existiert, zeige Fortschritt (Trials, Ladebalken)
-            status_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_status.json')
-            try:
-                if os.path.exists(status_file):
-                    import json as _json
-                    s = _json.load(open(status_file, 'r', encoding='utf-8'))
-                    trials_done = int(s.get('trials_done', 0))
-                    trials_total = int(s.get('trials_total', 0))
-                    best = s.get('best_value')
-                    symbol = s.get('symbol')
-                    timeframe = s.get('timeframe')
-                    pct = 0
-                    if trials_total:
-                        pct = int((trials_done / trials_total) * 100)
-                    bars = int(pct / 10)
-                    bar = '[' + ('#' * bars).ljust(10, '-') + f'] {pct}%'
-                    print('--- AUTO-OPTIMIZER LIVE STATUS ---')
-                    print(f"Current task: {symbol or 'N/A'} {timeframe or ''}")
-                    print(f"Trials: {trials_done} / {trials_total}  {bar}")
-                    if best is not None:
-                        print(f"Best so far: {best}%")
-                    print('--- Ende Live Status ---')
-            except Exception:
-                pass
-
-            # Zeige die letzten Trigger-Log-Einträge direkt in der Console für Sichtbarkeit
-            if os.path.exists(trigger_log):
-                try:
-                    with open(trigger_log, 'r', encoding='utf-8') as tf:
-                        lines = tf.read().splitlines()
-                    tail = lines[-10:] if len(lines) > 10 else lines
-                    print("--- AUTO-OPTIMIZER TRIGGER LOG (letzte Einträge) ---")
-                    for l in tail:
-                        print(l)
-                    print("--- Ende Trigger-Log ---")
-                except Exception:
-                    pass
-        except Exception:
-            print("INFO: Automatische Optimierung läuft (Startzeit unbekannt)")
-    else:
-        print("INFO: Keine laufende automatische Optimierung gefunden.")
+    # Auto-optimizer runtime details are intentionally suppressed here to keep
+    # master_runner console output concise. Logs still contain full details.
 
     try:
         with open(settings_file, 'r') as f:
