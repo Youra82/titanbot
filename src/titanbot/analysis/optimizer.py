@@ -7,7 +7,7 @@ import numpy as np
 import argparse
 import logging
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
@@ -102,7 +102,7 @@ def main():
 
     # Run-level summary collector
     run_tasks_summary = []
-    run_start_ts = datetime.utcnow().isoformat() + 'Z'
+    run_start_ts = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
 
     for task in TASKS:
         symbol, timeframe = task['symbol'], task['timeframe']
@@ -142,7 +142,7 @@ def main():
         STATUS_FILE = os.path.join(PROJECT_ROOT, 'data', 'cache', '.optimization_status.json')
 
         def _write_progress_line(line: str):
-            ts = datetime.utcnow().isoformat() + 'Z'
+            ts = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             try:
                 with open(PROGRESS_LOG, 'a', encoding='utf-8') as pf:
                     pf.write(f"{ts} {line}\n")
@@ -185,8 +185,8 @@ def main():
                     'trials_total': trials_total,
                     'best_value': best_val,
                     'best_trial_no': best_no,
-                    'started_at': datetime.utcfromtimestamp(start_time).isoformat() + 'Z',
-                    'last_update': datetime.utcnow().isoformat() + 'Z'
+                    'started_at': datetime.fromtimestamp(start_time, timezone.utc).isoformat().replace('+00:00', 'Z'),
+                    'last_update': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
                 }
                 _write_status_json(status)
             except Exception:
@@ -199,7 +199,7 @@ def main():
             # mark status file as error for visibility
             _write_progress_line(f"ERROR symbol={CURRENT_SYMBOL} timeframe={CURRENT_TIMEFRAME} error={e_opt}")
             try:
-                _write_status_json({'status': 'error', 'error': str(e_opt), 'last_update': datetime.utcnow().isoformat() + 'Z'})
+                _write_status_json({'status': 'error', 'error': str(e_opt), 'last_update': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')})
             except Exception:
                 pass
             continue # Nächsten Task versuchen
@@ -271,7 +271,7 @@ def main():
                     if os.path.exists(history_path):
                         with open(history_path, 'r', encoding='utf-8') as hf:
                             hist = json.load(hf)
-                    hist[key] = {'best_pnl': round(best_trial.value, 2) if best_trial.value is not None else None, 'updated_at': datetime.utcnow().isoformat() + 'Z', 'config': os.path.relpath(config_output_path, PROJECT_ROOT)}
+                    hist[key] = {'best_pnl': round(best_trial.value, 2) if best_trial.value is not None else None, 'updated_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'), 'config': os.path.relpath(config_output_path, PROJECT_ROOT)}
                     with open(history_path, 'w', encoding='utf-8') as hf:
                         json.dump(hist, hf, indent=2)
                 except Exception:
@@ -302,7 +302,7 @@ def main():
         results_dir = os.path.join(PROJECT_ROOT, 'artifacts', 'results')
         os.makedirs(results_dir, exist_ok=True)
         summary_path = os.path.join(results_dir, 'last_optimizer_run.json')
-        run_end_ts = datetime.utcnow().isoformat() + 'Z'
+        run_end_ts = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         summary = {
             'start_time': run_start_ts,
             'end_time': run_end_ts,
