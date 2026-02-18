@@ -272,24 +272,8 @@ def main():
                     else:
                         lookback_desc = str(lookback_setting)
 
-                    # Telegram nur wenn secret.json Telegram-Keys besitzt AND opt 설정 erlaubt (best-effort)
-                    try:
-                        secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
-                        notify_allowed = sched_settings.get('optimization_settings', {}).get('send_telegram_on_completion', True)
-                        if os.path.exists(secret_path) and notify_allowed:
-                            with open(secret_path, 'r', encoding='utf-8') as sf:
-                                secret_data = json.load(sf)
-                            tg = secret_data.get('telegram', {})
-                            bot = tg.get('bot_token')
-                            chat = tg.get('chat_id')
-                            if bot and chat:
-                                from titanbot.utils.telegram import send_message
-                                text = (
-                                    f"🔔 Auto‑Optimizer fällig\nGrund: {auto_reason}\nSymbole: {', '.join(syms) if syms else 'auto'}\nTimeframes: {', '.join(tfs) if tfs else 'auto'}\nLookback: {lookback_desc}\nGestartet: no (master_runner only checked)"
-                                )
-                                send_message(bot, chat, text)
-                    except Exception:
-                        pass
+                    # Nur Konsole/Log: keine Telegram‑Benachrichtigung hier, Scheduler sendet die Start/Finish Messages (vermeidet Spam)
+                    print(f"INFO: Auto‑Optimizer fällig — reason={auto_reason} | Symbole: {', '.join(syms) if syms else 'auto'} | Timeframes: {', '.join(tfs) if tfs else 'auto'} | Lookback: {lookback_desc}")
                 except Exception:
                     pass
         except Exception:
