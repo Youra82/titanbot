@@ -404,37 +404,9 @@ def main():
                                     lf.flush(); lf.close()
                                     print(f'INFO: Scheduler gestartet mit {py} (PID {proc.pid}).')
 
-                                    # Sende Telegram-Startmeldung mit Details (best-effort)
-                                    try:
-                                        secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
-                                        cfg_settings = {}
-                                        if os.path.exists(settings_file):
-                                            with open(settings_file, 'r', encoding='utf-8') as _sf:
-                                                cfg_settings = json.load(_sf)
-                                        syms = []
-                                        tfs = []
-                                        try:
-                                            import auto_optimizer_scheduler as scheduler_mod
-                                            syms = scheduler_mod.extract_symbols_timeframes(cfg_settings, 'symbols')
-                                            tfs = scheduler_mod.extract_symbols_timeframes(cfg_settings, 'timeframes')
-                                        except Exception:
-                                            strategies = cfg_settings.get('live_trading_settings', {}).get('active_strategies', [])
-                                            syms = sorted({s.get('symbol','').split('/')[0] for s in strategies if s.get('active', False)})
-                                            tfs = sorted({s.get('timeframe') for s in strategies if s.get('active', False)})
-
-                                        if os.path.exists(secret_path):
-                                            with open(secret_path, 'r', encoding='utf-8') as sf:
-                                                secret_data = json.load(sf)
-                                            tg = secret_data.get('telegram', {})
-                                            bot = tg.get('bot_token')
-                                            chat = tg.get('chat_id')
-                                            if bot and chat:
-                                                from titanbot.utils.telegram import send_message
-                                                send_message(bot, chat, (
-                                                    f"🚀 Auto‑Optimizer STARTED (forced)\nSymbole: {', '.join(syms) if syms else 'auto'}\nTimeframes: {', '.join(tfs) if tfs else 'auto'}\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                                                ))
-                                    except Exception:
-                                        pass
+                                    # Notification is handled by auto_optimizer_scheduler (avoid duplicate start messages).
+                                    # MasterRunner will only report the presence/absence of the scheduler's start sentinel.
+                                    print('DEBUG: notification responsibility delegated to auto_optimizer_scheduler')
 
                                     break
                                 else:
