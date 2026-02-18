@@ -204,6 +204,17 @@ def main():
                 print(f"AUTOOPTIMIERUNG NÖTIG — Grund: {auto_reason}")
                 print("Autooptimierung wird gestartet.")
 
+                # show current Telegram start-notify status immediately
+                start_notify_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_start_notified')
+                inprog_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
+                if os.path.exists(start_notify_file):
+                    notify_status = 'Start‑Telegram: gesendet'
+                elif os.path.exists(inprog_file):
+                    notify_status = 'Start‑Telegram: ausstehend (Scheduler läuft)'
+                else:
+                    notify_status = 'Start‑Telegram: ausstehend'
+                print(notify_status)
+
                 # Wenn Scheduler fällig ist und noch kein Optimizer läuft, starte Scheduler automatisiert
                 inprog_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
                 if not os.path.exists(inprog_file):
