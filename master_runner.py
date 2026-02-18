@@ -237,6 +237,9 @@ def main():
                         print('WARN: auto_optimizer_scheduler.py nicht gefunden; Scheduler nicht gestartet.')
                 else:
                     print('INFO: Scheduler bereits aktiv (in-progress marker vorhanden).')
+        except Exception:
+            # non-fatal — continue with master runner
+            pass
 
         # Kontostandabfrage (still, keine Anzeige)
         _ = main_account_config.get('name', 'Standard')  # kept for compatibility
