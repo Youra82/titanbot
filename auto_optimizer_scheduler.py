@@ -22,7 +22,7 @@ import json
 import os
 import subprocess
 import sys
-from datetime import datetime, date, time as dtime, timedelta
+from datetime import datetime, date, time as dtime, timedelta, timezone
 
 # HTTP helper for Telegram notifications
 try:
@@ -479,7 +479,7 @@ def main() -> int:
                     try:
                         os.makedirs(CACHE_DIR, exist_ok=True)
                         with open(start_notify_file, 'w', encoding='utf-8') as _sn:
-                            _sn.write(datetime.utcnow().isoformat() + 'Z')
+                            _sn.write(datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'))
                     except Exception:
                         pass
                 else:

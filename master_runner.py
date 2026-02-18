@@ -10,7 +10,7 @@ import runpy
 import shutil
 
 # Pfad anpassen, damit die utils importiert werden können
-from datetime import datetime
+from datetime import datetime, timezone
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = SCRIPT_DIR
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
@@ -243,12 +243,12 @@ def main():
                                         try:
                                             os.makedirs(os.path.dirname(start_notify_file), exist_ok=True)
                                             with open(start_notify_file, 'w', encoding='utf-8') as _sn:
-                                                _sn.write(datetime.utcnow().isoformat() + 'Z')
+                                                _sn.write(datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'))
                                         except Exception:
                                             pass
                                         try:
                                             with open(fallback_sent_file, 'w', encoding='utf-8') as _fs:
-                                                _fs.write(datetime.utcnow().isoformat() + 'Z')
+                                                _fs.write(datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'))
                                         except Exception:
                                             pass
 
@@ -322,7 +322,7 @@ def main():
                                     try:
                                         os.makedirs(os.path.dirname(mr_notify_file), exist_ok=True)
                                         with open(mr_notify_file, 'w', encoding='utf-8') as _sn:
-                                            _sn.write(datetime.utcnow().isoformat() + 'Z')
+                                            _sn.write(datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'))
                                     except Exception:
                                         pass
                                 else:
