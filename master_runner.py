@@ -10,6 +10,7 @@ import runpy
 import shutil
 
 # Pfad anpassen, damit die utils importiert werden können
+from datetime import datetime
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = SCRIPT_DIR
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
@@ -17,6 +18,105 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 # *** Geändert: Importpfad ***
 from titanbot.utils.exchange import Exchange
 
+<<<<<<< HEAD
+=======
+
+def check_and_run_optimizer():
+    """
+    Prüft ob die automatische Optimierung fällig ist und führt sie ggf. aus.
+    
+    Wird bei jedem Cron-Job Aufruf einmal geprüft. Die Logik ist tolerant gegenüber
+    Cron-Intervallen: Wenn der geplante Zeitpunkt in der Vergangenheit liegt (aber
+    noch am selben Tag in der geplanten Stunde), wird die Optimierung gestartet.
+    """
+    now = datetime.now()
+    
+    try:
+        settings_file = os.path.join(SCRIPT_DIR, 'settings.json')
+        with open(settings_file, 'r') as f:
+            settings = json.load(f)
+        
+        opt_settings = settings.get('optimization_settings', {})
+        
+        # Prüfe ob aktiviert
+        if not opt_settings.get('enabled', False):
+            return False
+        
+        schedule = opt_settings.get('schedule', {})
+        day_of_week = schedule.get('day_of_week', 0)
+        hour = schedule.get('hour', 3)
+        minute = schedule.get('minute', 0)
+        interval_days = schedule.get('interval_days', 7)
+        
+        # Prüfe ob heute der richtige Tag ist
+        if now.weekday() != day_of_week:
+            return False
+        
+        # Prüfe ob wir in der geplanten Stunde sind (oder danach, aber am gleichen Tag)
+        if now.hour < hour:
+            return False
+        
+        # Wenn wir in der richtigen Stunde sind, prüfe ob die Minute erreicht wurde
+        if now.hour == hour and now.minute < minute:
+            return False
+        
+        # Ab hier: Wir sind am richtigen Tag und der geplante Zeitpunkt ist erreicht oder überschritten
+        
+        # Prüfe ob heute schon gelaufen (oder innerhalb des Intervalls)
+        cache_dir = os.path.join(SCRIPT_DIR, 'data', 'cache')
+        cache_file = os.path.join(cache_dir, '.last_optimization_run')
+        
+        if os.path.exists(cache_file):
+            with open(cache_file, 'r') as f:
+                last_run = datetime.fromtimestamp(int(f.read().strip()))
+                
+                # Wenn heute schon gelaufen, nicht nochmal
+                if last_run.date() == now.date():
+                    return False
+                
+                # Wenn innerhalb des Intervalls, nicht nochmal
+                if (now - last_run).days < interval_days:
+                    return False
+        
+        # Zeit für Optimierung!
+        print(f"\n[{now.strftime('%Y-%m-%d %H:%M:%S')}] 🔄 Auto-Optimizer: Geplanter Zeitpunkt erreicht!")
+        print(f"    Geplant war: {['Mo','Di','Mi','Do','Fr','Sa','So'][day_of_week]} {hour:02d}:{minute:02d}")
+        print(f"    Starte Optimierung...")
+        
+        python_executable = os.path.join(SCRIPT_DIR, '.venv', 'bin', 'python3')
+        optimizer_script = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
+        log_file = os.path.join(SCRIPT_DIR, 'logs', 'optimizer_output.log')
+        
+        if os.path.exists(optimizer_script):
+            # Stelle sicher, dass logs/ Verzeichnis existiert
+            os.makedirs(os.path.dirname(log_file), exist_ok=True)
+            
+            # Starte den Optimizer SYNCHRON (wartet auf Ende)
+            # So wird die Telegram-Nachricht garantiert gesendet bevor wir weitermachen
+            print(f"    Starte Optimizer im Hintergrund...")
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            with open(log_file, 'a') as log:
+                # Schreibe klaren Start-Eintrag inkl. Grund in die Logdatei
+                log.write(f"[{timestamp}] MasterRunner: Starte Auto-Optimizer — Grund: Geplanter Zeitpunkt erreicht\n")
+                # Starte als Hintergrundprozess - Bots haben Priorität!
+                subprocess.Popen(
+                    [python_executable, optimizer_script, '--force'],
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                    cwd=SCRIPT_DIR,  # Wichtig: Arbeitsverzeichnis setzen!
+                    start_new_session=True  # Läuft unabhängig weiter
+                )
+            return True
+        else:
+            print(f"    Fehler: {optimizer_script} nicht gefunden!")
+            return False
+        
+    except Exception as e:
+        print(f"Optimizer-Check Fehler: {e}")
+        return False
+
+
+>>>>>>> 1ad5168 (support: allow lookback_days: auto; log optimizer start + reason; update automated pipeline)
 def main():
     """
     Der Master Runner für den TitanBot (Voll-Dynamisches Kapital).
@@ -77,6 +177,10 @@ def main():
     # AUTO-OPTIMIZER STATUS
     # ----------------------
     try:
+        auto_should_run = False
+        auto_reason = 'unknown'
+        sched_out = ''
+        sched_err = ''
         try:
             # Use the scheduler's should_run logic locally to avoid spawning processes
             import auto_optimizer_scheduler as scheduler_mod
@@ -84,15 +188,15 @@ def main():
             lr_path = os.path.join(SCRIPT_DIR, 'data', 'cache', '.last_optimization_run')
             if os.path.exists(lr_path):
                 try:
-                    from datetime import datetime
                     last_run = datetime.fromisoformat(open(lr_path, 'r', encoding='utf-8').read().strip())
                 except Exception:
                     last_run = None
             with open(settings_file, 'r', encoding='utf-8') as _sf:
                 sched_settings = json.load(_sf)
-            do_run, reason = scheduler_mod.should_run(sched_settings, last_run, __import__('datetime').datetime.now())
+            do_run, reason = scheduler_mod.should_run(sched_settings, last_run, datetime.now())
+            auto_should_run = bool(do_run)
+            auto_reason = reason
             sched_out = f"decision={'RUN' if do_run else 'SKIP'} reason={reason}"
-            sched_err = ''
         except Exception as e:
             sched_out = ''
             sched_err = f'ERROR computing scheduler check: {e}'
@@ -135,6 +239,61 @@ def main():
                 pass
 
         print('╚════════════════════════════════════════╝\n')
+
+        # Kurzinfo (kompakte Statuszeile für schnelle Sichtbarkeit)
+        try:
+            short_status = f"AUTO-OPTIMIZER: {'NEEDED' if auto_should_run else 'NOT DUE'} — reason={auto_reason}"
+            print(short_status)
+
+            # Sende (optionale) Telegram-Benachrichtigung bei Fälligkeit (nur wenn konfiguriert)
+            if auto_should_run:
+                try:
+                    # Versuche Symbols/Timeframes aus dem Scheduler-Modul zu holen (best-effort)
+                    syms = []
+                    tfs = []
+                    try:
+                        syms = scheduler_mod.extract_symbols_timeframes(sched_settings, 'symbols')
+                        tfs = scheduler_mod.extract_symbols_timeframes(sched_settings, 'timeframes')
+                    except Exception:
+                        # Fallback: aus live_trading_settings
+                        cfg = sched_settings
+                        strategies = cfg.get('live_trading_settings', {}).get('active_strategies', [])
+                        syms = sorted({s.get('symbol','').split('/')[0] for s in strategies if s.get('active', False)})
+                        tfs = sorted({s.get('timeframe') for s in strategies if s.get('active', False)})
+
+                    # Berechne Lookback (wenn 'auto') — gleiche Logik wie Scheduler
+                    lookback_setting = sched_settings.get('optimization_settings', {}).get('lookback_days', 365)
+                    if isinstance(lookback_setting, str) and lookback_setting == 'auto':
+                        tf_map = { '5m': 60, '15m': 60, '30m': 365, '1h': 365, '2h': 730, '4h': 730, '6h': 1095, '1d': 1095 }
+                        computed = 365
+                        for tf in tfs:
+                            computed = max(computed, tf_map.get(tf, 365))
+                        lookback_desc = f"auto → {computed} days"
+                    else:
+                        lookback_desc = str(lookback_setting)
+
+                    # Telegram nur wenn secret.json Telegram-Keys besitzt AND opt 설정 erlaubt (best-effort)
+                    try:
+                        secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
+                        notify_allowed = sched_settings.get('optimization_settings', {}).get('send_telegram_on_completion', True)
+                        if os.path.exists(secret_path) and notify_allowed:
+                            with open(secret_path, 'r', encoding='utf-8') as sf:
+                                secret_data = json.load(sf)
+                            tg = secret_data.get('telegram', {})
+                            bot = tg.get('bot_token')
+                            chat = tg.get('chat_id')
+                            if bot and chat:
+                                from titanbot.utils.telegram import send_message
+                                text = (
+                                    f"🔔 Auto‑Optimizer fällig\nGrund: {auto_reason}\nSymbole: {', '.join(syms) if syms else 'auto'}\nTimeframes: {', '.join(tfs) if tfs else 'auto'}\nLookback: {lookback_desc}\nGestartet: no (master_runner only checked)"
+                                )
+                                send_message(bot, chat, text)
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     except Exception:
         # non-fatal — continue with master runner
@@ -375,6 +534,39 @@ def main():
                                     started = True
                                     lf.flush(); lf.close()
                                     print(f'INFO: Scheduler gestartet mit {py} (PID {proc.pid}).')
+
+                                    # Sende Telegram-Startmeldung mit Details (best-effort)
+                                    try:
+                                        secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
+                                        cfg_settings = {}
+                                        if os.path.exists(settings_file):
+                                            with open(settings_file, 'r', encoding='utf-8') as _sf:
+                                                cfg_settings = json.load(_sf)
+                                        syms = []
+                                        tfs = []
+                                        try:
+                                            import auto_optimizer_scheduler as scheduler_mod
+                                            syms = scheduler_mod.extract_symbols_timeframes(cfg_settings, 'symbols')
+                                            tfs = scheduler_mod.extract_symbols_timeframes(cfg_settings, 'timeframes')
+                                        except Exception:
+                                            strategies = cfg_settings.get('live_trading_settings', {}).get('active_strategies', [])
+                                            syms = sorted({s.get('symbol','').split('/')[0] for s in strategies if s.get('active', False)})
+                                            tfs = sorted({s.get('timeframe') for s in strategies if s.get('active', False)})
+
+                                        if os.path.exists(secret_path):
+                                            with open(secret_path, 'r', encoding='utf-8') as sf:
+                                                secret_data = json.load(sf)
+                                            tg = secret_data.get('telegram', {})
+                                            bot = tg.get('bot_token')
+                                            chat = tg.get('chat_id')
+                                            if bot and chat:
+                                                from titanbot.utils.telegram import send_message
+                                                send_message(bot, chat, (
+                                                    f"🚀 Auto‑Optimizer STARTED (forced)\nSymbole: {', '.join(syms) if syms else 'auto'}\nTimeframes: {', '.join(tfs) if tfs else 'auto'}\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                                                ))
+                                    except Exception:
+                                        pass
+
                                     break
                                 else:
                                     lf.flush(); lf.close()

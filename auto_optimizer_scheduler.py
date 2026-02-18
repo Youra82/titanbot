@@ -143,7 +143,6 @@ def write_last_run(ts: datetime) -> None:
     os.makedirs(CACHE_DIR, exist_ok=True)
     with open(LAST_RUN_FILE, 'w', encoding='utf-8') as f:
         f.write(ts.isoformat())
-    # Mirror last-run into the trigger log for visibility
     try:
         _write_trigger_log(f"AUTO-OPTIMIZER LAST_RUN updated={ts.isoformat()}")
     except Exception:
