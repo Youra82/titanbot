@@ -465,13 +465,25 @@ def main() -> int:
             _set_in_progress()
             start_notify_file = os.path.join(CACHE_DIR, '.optimization_start_notified')
             if notify and (not os.path.exists(start_notify_file)):
-                _send_telegram_message('🚀 Automatische Optimierung (forced) wurde gestartet.')
-                try:
-                    os.makedirs(CACHE_DIR, exist_ok=True)
-                    with open(start_notify_file, 'w', encoding='utf-8') as _sn:
-                        _sn.write(datetime.utcnow().isoformat() + 'Z')
-                except Exception:
-                    pass
+                # try sending start notification and only create the sentinel if successful
+                sent = _send_telegram_message('🚀 Automatische Optimierung (forced) wurde gestartet.')
+                if not sent:
+                    # one quick retry for transient network/API failures
+                    try:
+                        import time as _time
+                        _time.sleep(3)
+                        sent = _send_telegram_message('🚀 Automatische Optimierung (forced) wurde gestartet. (retry)')
+                    except Exception:
+                        sent = False
+                if sent:
+                    try:
+                        os.makedirs(CACHE_DIR, exist_ok=True)
+                        with open(start_notify_file, 'w', encoding='utf-8') as _sn:
+                            _sn.write(datetime.utcnow().isoformat() + 'Z')
+                    except Exception:
+                        pass
+                else:
+                    _write_trigger_log('AUTO-OPTIMIZER NOTIFY start=forced result=failed')
 
             start_ts = datetime.now()
             try:
