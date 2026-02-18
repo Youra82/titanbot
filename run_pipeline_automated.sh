@@ -94,12 +94,30 @@ TIMEFRAMES=${TIMEFRAMES:-"1h 4h"} # Fallback, falls leer
 
 LOOKBACK_DAYS=$(get_setting "['optimization_settings', 'lookback_days']")
 LOOKBACK_DAYS=${LOOKBACK_DAYS:-$DEFAULT_LOOKBACK}
+
+# Unterstütze 'auto' wie in run_pipeline.sh: bestimme Lookback basierend auf Timeframes
+if [ "$LOOKBACK_DAYS" = "auto" ]; then
+    max_days=0
+    for tf in $TIMEFRAMES; do
+        case "$tf" in
+            5m|15m) d=60 ;; 
+            30m|1h) d=365 ;; 
+            2h|4h) d=730 ;; 
+            6h|1d) d=1095 ;; 
+            *) d=365 ;;
+        esac
+        if [ "$d" -gt "$max_days" ]; then max_days=$d; fi
+    done
+    if [ "$max_days" -eq 0 ]; then max_days=$DEFAULT_LOOKBACK; fi
+    LOOKBACK_DAYS=$max_days
+fi
+
 START_CAPITAL=$(get_setting "['optimization_settings', 'start_capital']")
 START_CAPITAL=${START_CAPITAL:-$DEFAULT_START_CAPITAL}
 N_CORES=$(get_setting "['optimization_settings', 'cpu_cores']")
 N_CORES=${N_CORES:-$DEFAULT_CORES}
 N_TRIALS=$(get_setting "['optimization_settings', 'num_trials']")
-N_TRIALS=${N_TRIALS:-$DEFAULT_TRIALS}
+N_TRIALS=${N_TRIALS:-$DEFAULT_TRIALS} 
 
 MAX_DD=$(get_setting "['optimization_settings', 'constraints', 'max_drawdown_pct']")
 MAX_DD=${MAX_DD:-$DEFAULT_MAX_DD}
