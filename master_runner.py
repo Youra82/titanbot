@@ -211,6 +211,48 @@ def main():
                     notify_status = 'Start‑Telegram: gesendet'
                 elif os.path.exists(inprog_file):
                     notify_status = 'Start‑Telegram: ausstehend (Scheduler läuft)'
+
+                    # If scheduler is running but start-notify missing, send a fallback
+                    try:
+                        # only attempt once per master-run (don't spam) — sentinel per master_runner
+                        fallback_sent_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.master_runner_start_notify_fallback')
+                        if not os.path.exists(fallback_sent_file):
+                            secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
+                            if os.path.exists(secret_path):
+                                with open(secret_path, 'r', encoding='utf-8') as _sf:
+                                    secret_data = json.load(_sf)
+                                tg = secret_data.get('telegram', {})
+                                bot = tg.get('bot_token')
+                                chat = tg.get('chat_id')
+                                if bot and chat:
+                                    from titanbot.utils.telegram import send_message
+                                    # Try to enrich message with symbols/timeframes if available
+                                    syms = 'auto'
+                                    tfs = 'auto'
+                                    try:
+                                        import auto_optimizer_scheduler as scheduler_mod
+                                        cfg_settings = json.load(open(settings_file, 'r', encoding='utf-8'))
+                                        syms = ', '.join(scheduler_mod.extract_symbols_timeframes(cfg_settings, 'symbols')) or 'auto'
+                                        tfs = ', '.join(scheduler_mod.extract_symbols_timeframes(cfg_settings, 'timeframes')) or 'auto'
+                                    except Exception:
+                                        pass
+                                    msg = f"🚀 Auto‑Optimizer STARTED (detected)\nSymbole: {syms}\nTimeframes: {tfs}\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                                    sent = send_message(bot, chat, msg)
+                                    # record both scheduler start sentinel and master_runner fallback sentinel on success
+                                    if sent:
+                                        try:
+                                            os.makedirs(os.path.dirname(start_notify_file), exist_ok=True)
+                                            with open(start_notify_file, 'w', encoding='utf-8') as _sn:
+                                                _sn.write(datetime.utcnow().isoformat() + 'Z')
+                                        except Exception:
+                                            pass
+                                        try:
+                                            with open(fallback_sent_file, 'w', encoding='utf-8') as _fs:
+                                                _fs.write(datetime.utcnow().isoformat() + 'Z')
+                                        except Exception:
+                                            pass
+                    except Exception:
+                        pass
                 else:
                     notify_status = 'Start‑Telegram: ausstehend'
                 print(notify_status)
