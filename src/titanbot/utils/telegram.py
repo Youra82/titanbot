@@ -26,20 +26,52 @@ def send_message(bot_token, chat_id, message):
 
     try:
         response = requests.post(api_url, data=payload, timeout=10)
+        # attempt to capture API reply for debugging
+        try:
+            rsp_text = response.text
+        except Exception:
+            rsp_text = ''
+        # write response JSON/text to project logs/telegram_api_debug.log (best-effort)
+        try:
+            from pathlib import Path
+            root = Path(__file__).resolve().parents[2]
+            log_path = root / 'logs' / 'telegram_api_debug.log'
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(log_path, 'a', encoding='utf-8') as lf:
+                lf.write(f"{datetime.now().isoformat()} - status={response.status_code} - text={rsp_text}\n")
+        except Exception:
+            pass
         response.raise_for_status()  # raises on 4xx/5xx
         # success
         return True
     except requests.exceptions.RequestException as e:
         logger.error(f"Netzwerkfehler beim Senden der Telegram-Nachricht: {e}")
-        # include response text if available
+        # log response text if available
         try:
             if hasattr(e, 'response') and e.response is not None:
-                logger.error(f"Telegram-API response: {e.response.text}")
+                try:
+                    from pathlib import Path
+                    root = Path(__file__).resolve().parents[2]
+                    log_path = root / 'logs' / 'telegram_api_debug.log'
+                    log_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(log_path, 'a', encoding='utf-8') as lf:
+                        lf.write(f"{datetime.now().isoformat()} - exception - {e} - response={e.response.text if e.response is not None else ''}\n")
+                except Exception:
+                    pass
         except Exception:
             pass
         return False
     except Exception as e:
         logger.error(f"Allgemeiner Fehler beim Senden der Telegram-Nachricht: {e}")
+        try:
+            from pathlib import Path
+            root = Path(__file__).resolve().parents[2]
+            log_path = root / 'logs' / 'telegram_api_debug.log'
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(log_path, 'a', encoding='utf-8') as lf:
+                lf.write(f"{datetime.now().isoformat()} - unexpected error - {e}\n")
+        except Exception:
+            pass
         return False
 
 
