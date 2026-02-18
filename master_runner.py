@@ -18,9 +18,6 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 # *** Geändert: Importpfad ***
 from titanbot.utils.exchange import Exchange
 
-<<<<<<< HEAD
-=======
-
 def check_and_run_optimizer():
     """
     Prüft ob die automatische Optimierung fällig ist und führt sie ggf. aus.
@@ -116,7 +113,7 @@ def check_and_run_optimizer():
         return False
 
 
->>>>>>> 1ad5168 (support: allow lookback_days: auto; log optimizer start + reason; update automated pipeline)
+
 def main():
     """
     Der Master Runner für den TitanBot (Voll-Dynamisches Kapital).
