@@ -247,45 +247,44 @@ def main():
                     except Exception:
                         pass
 
-                    # send ONE Telegram from MasterRunner if not already sent by this process
-                    if not os.path.exists(mr_notify_file):
-                        try:
-                            secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
-                            if os.path.exists(secret_path):
-                                with open(secret_path, 'r', encoding='utf-8') as _sf:
-                                    secret_data = json.load(_sf)
-                                tg = secret_data.get('telegram', {})
-                                bot = tg.get('bot_token')
-                                chat = tg.get('chat_id')
-                                if bot and chat:
-                                    from titanbot.utils.telegram import send_message
-                                    sent_ok = send_message(bot, chat, (
-                                        f"ℹ️ Auto‑Optimizer läuft bereits — MasterRunner hat den In‑Progress‑Marker erkannt.\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                                    ))
-                                    # log send result for visibility
+                    # ALWAYS send a MasterRunner notification when optimizer is in-progress
+                    try:
+                        secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
+                        if os.path.exists(secret_path):
+                            with open(secret_path, 'r', encoding='utf-8') as _sf:
+                                secret_data = json.load(_sf)
+                            tg = secret_data.get('telegram', {})
+                            bot = tg.get('bot_token')
+                            chat = tg.get('chat_id')
+                            if bot and chat:
+                                from titanbot.utils.telegram import send_message
+                                sent_ok = send_message(bot, chat, (
+                                    f"ℹ️ Auto‑Optimizer läuft bereits — MasterRunner hat den In‑Progress‑Marker erkannt.\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                                ))
+                                # log send result for visibility
+                                try:
+                                    mr_log = os.path.join(SCRIPT_DIR, 'logs', 'master_runner_debug.log')
+                                    with open(mr_log, 'a', encoding='utf-8') as _m:
+                                        _m.write(f"{datetime.now().isoformat()} MASTER_RUNNER NOTIFY inprog result={sent_ok}\n")
+                                except Exception:
+                                    pass
+                                # always (re)write sentinel when send succeeds
+                                if sent_ok:
                                     try:
-                                        mr_log = os.path.join(SCRIPT_DIR, 'logs', 'master_runner_debug.log')
-                                        with open(mr_log, 'a', encoding='utf-8') as _m:
-                                            _m.write(f"{datetime.now().isoformat()} MASTER_RUNNER NOTIFY inprog result={sent_ok}\n")
+                                        os.makedirs(os.path.dirname(mr_notify_file), exist_ok=True)
+                                        with open(mr_notify_file, 'w', encoding='utf-8') as _sn:
+                                            _sn.write(datetime.utcnow().isoformat() + 'Z')
                                     except Exception:
                                         pass
-                                    if sent_ok:
-                                        try:
-                                            os.makedirs(os.path.dirname(mr_notify_file), exist_ok=True)
-                                            with open(mr_notify_file, 'w', encoding='utf-8') as _sn:
-                                                _sn.write(datetime.utcnow().isoformat() + 'Z')
-                                        except Exception:
-                                            pass
-                                    else:
-                                        # log failed notify to trigger log for debugging
-                                        try:
-                                            trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
-                                            with open(trigger_log, 'a', encoding='utf-8') as _t:
-                                                _t.write(f"{datetime.now().isoformat()} MASTER_RUNNER NOTIFY inprog result=failed\n")
-                                        except Exception:
-                                            pass
-                        except Exception:
-                            pass
+                                else:
+                                    try:
+                                        trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
+                                        with open(trigger_log, 'a', encoding='utf-8') as _t:
+                                            _t.write(f"{datetime.now().isoformat()} MASTER_RUNNER NOTIFY inprog result=failed\n")
+                                    except Exception:
+                                        pass
+                    except Exception:
+                        pass
         except Exception:
             # non-fatal — continue with master runner
             pass
