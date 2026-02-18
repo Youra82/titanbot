@@ -233,23 +233,21 @@ def main():
             return
         main_account_config = secrets['titanbot'][0]
 
-        print(f"Frage Kontostand für Account '{main_account_config.get('name', 'Standard')}' ab...")
+        # Kontostandabfrage (still, keine Anzeige)
+        _ = main_account_config.get('name', 'Standard')  # kept for compatibility
         
         live_settings = settings.get('live_trading_settings', {})
         use_autopilot = live_settings.get('use_auto_optimizer_results', False)
 
         strategy_list = []
         if use_autopilot:
-            print("Modus: Autopilot. Lese Strategien aus den Optimierungs-Ergebnissen...")
+            # Autopilot: lade optimale Portfolio‑Konfigurationen (keine Console‑Ausgabe)
             with open(optimization_results_file, 'r') as f:
                 strategy_config = json.load(f)
             strategy_list = strategy_config.get('optimal_portfolio', [])
-            # DEBUG: Zeige, was aus optimization_results.json geladen wurde
-            print(f"DEBUG: optimization_results -> {strategy_list}")
             configs_check_dir = os.path.join(SCRIPT_DIR, 'src', 'titanbot', 'strategy', 'configs')
-            print(f"DEBUG: configs_dir exists: {os.path.isdir(configs_check_dir)} ({configs_check_dir})")
         else:
-            print("Modus: Manuell. Lese Strategien aus den manuellen Einstellungen...")
+            # Manuell: nutze die in settings.json konfigurierten Strategien
             strategy_list = live_settings.get('active_strategies', [])
 
         if not strategy_list:
