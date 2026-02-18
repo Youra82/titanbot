@@ -7,6 +7,7 @@ import numpy as np
 import argparse
 import logging
 import warnings
+from datetime import datetime
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
@@ -99,22 +100,32 @@ def main():
     symbols, timeframes = args.symbols.split(), args.timeframes.split()
     TASKS = [{'symbol': f"{s}/USDT:USDT", 'timeframe': tf} for s in symbols for tf in timeframes]
 
+    # Run-level summary collector
+    run_tasks_summary = []
+    run_start_ts = datetime.utcnow().isoformat() + 'Z'
+
     for task in TASKS:
         symbol, timeframe = task['symbol'], task['timeframe']
-        
+
         # NEU: Globale Variablen setzen
         CURRENT_SYMBOL = symbol
         CURRENT_TIMEFRAME = timeframe
         CURRENT_HTF = determine_htf(timeframe)
-        
+
         print(f"\n===== Optimiere: {symbol} ({timeframe}) | MTF-Bias von {CURRENT_HTF} =====")
         HISTORICAL_DATA = load_data(symbol, timeframe, args.start_date, args.end_date)
-        if HISTORICAL_DATA.empty: print("Keine Daten geladen. Überspringe."); continue
+        if HISTORICAL_DATA.empty:
+            print("Keine Daten geladen. Überspringe.")
+            run_tasks_summary.append({'symbol': symbol, 'timeframe': timeframe, 'status': 'no_data'})
+            continue
 
         print("\n--- Bewertung der Datensatz-Qualität ---")
         evaluation = evaluate_dataset(HISTORICAL_DATA.copy(), timeframe)
         print(f"Note: {evaluation['score']} / 10\n" + "\n".join(evaluation['justification']) + "\n----------------------------------------")
-        if evaluation['score'] < 3: print(f"Datensatz-Qualität zu gering. Überspringe Optimierung."); continue
+        if evaluation['score'] < 3:
+            print(f"Datensatz-Qualität zu gering. Überspringe Optimierung.")
+            run_tasks_summary.append({'symbol': symbol, 'timeframe': timeframe, 'status': 'bad_data', 'score': evaluation['score']})
+            continue
 
         DB_FILE = os.path.join(PROJECT_ROOT, 'artifacts', 'db', 'optuna_studies_smc.db')
         os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
@@ -229,8 +240,81 @@ def main():
             "strategy": strategy_config,
             "risk": risk_config, "behavior": behavior_config
         }
-        with open(config_output_path, 'w') as f: json.dump(config_output, f, indent=4)
-        print(f"\n✔ Beste Konfiguration (PnL: {best_trial.value:.2f}%) wurde in '{config_output_path}' gespeichert.")
+
+        # --- Smart-save: überschreibe nur, wenn die neue Konfiguration besser ist als die gespeicherte ---
+        history_dir = os.path.join(PROJECT_ROOT, 'artifacts', 'results')
+        os.makedirs(history_dir, exist_ok=True)
+        history_path = os.path.join(history_dir, 'optimizer_history.json')
+
+        key = create_safe_filename(symbol, timeframe)
+        existing_best = None
+        try:
+            if os.path.exists(history_path):
+                with open(history_path, 'r', encoding='utf-8') as hf:
+                    history = json.load(hf)
+                existing_best = history.get(key, {}).get('best_pnl')
+        except Exception:
+            existing_best = None
+
+        saved = False
+        status = 'saved'
+        if existing_best is None or (best_trial.value is not None and best_trial.value > existing_best):
+            # besser — schreibe die Config und aktualisiere die Historie
+            try:
+                with open(config_output_path, 'w', encoding='utf-8') as f:
+                    json.dump(config_output, f, indent=4)
+                saved = True
+                status = 'new_best'
+                # update history
+                try:
+                    hist = {}
+                    if os.path.exists(history_path):
+                        with open(history_path, 'r', encoding='utf-8') as hf:
+                            hist = json.load(hf)
+                    hist[key] = {'best_pnl': round(best_trial.value, 2) if best_trial.value is not None else None, 'updated_at': datetime.utcnow().isoformat() + 'Z', 'config': os.path.relpath(config_output_path, PROJECT_ROOT)}
+                    with open(history_path, 'w', encoding='utf-8') as hf:
+                        json.dump(hist, hf, indent=2)
+                except Exception:
+                    pass
+                print(f"\n✔ Beste Konfiguration (PnL: {best_trial.value:.2f}%) wurde in '{config_output_path}' gespeichert.")
+            except Exception as e:
+                print(f"Fehler beim Speichern der Config: {e}")
+                status = 'save_error'
+        else:
+            # schlechteres oder gleiches Ergebnis – NICHT überschreiben
+            saved = False
+            status = 'unchanged'
+            print(f"\nℹ️ Gefundene Konfiguration (PnL: {best_trial.value:.2f}%) ist schlechter/gleich als vorhandene (PnL: {existing_best}). Überschreibe nicht.")
+
+        # Sammle Task-Level Summary für das ganze Run-Report
+        run_tasks_summary.append({
+            'symbol': symbol,
+            'timeframe': timeframe,
+            'pnl': round(best_trial.value, 2) if best_trial.value is not None else None,
+            'saved': saved,
+            'status': status,
+            'config_path': os.path.relpath(config_output_path, PROJECT_ROOT)
+        })
+
+
+    # --- Schreibe Run‑Summary in artifacts/results/last_optimizer_run.json (kurz und maschinenlesbar) ---
+    try:
+        results_dir = os.path.join(PROJECT_ROOT, 'artifacts', 'results')
+        os.makedirs(results_dir, exist_ok=True)
+        summary_path = os.path.join(results_dir, 'last_optimizer_run.json')
+        run_end_ts = datetime.utcnow().isoformat() + 'Z'
+        summary = {
+            'start_time': run_start_ts,
+            'end_time': run_end_ts,
+            'duration_s': int(time.time() - start_time),
+            'tasks': run_tasks_summary
+        }
+        with open(summary_path, 'w', encoding='utf-8') as sf:
+            json.dump(summary, sf, indent=2)
+        print(f"\n✔ Run‑Summary geschrieben nach '{summary_path}'")
+    except Exception as _:
+        pass
+
 
 if __name__ == "__main__":
     main()
