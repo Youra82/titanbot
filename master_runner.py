@@ -469,6 +469,21 @@ def main():
                         time.sleep(0.5)
                         if os.path.exists(inprog_file):
                             print('INFO: Auto-Optimizer wurde gestartet (in-progress marker vorhanden).')
+
+                            # Kurz prüfen, ob der Scheduler die einmalige START‑Telegram gesendet hat.
+                            start_notify_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_start_notified')
+                            notify_found = False
+                            # Poll kurz (max ~6s), ohne Bots/Prozesse zu blockieren
+                            for _poll in range(12):
+                                if os.path.exists(start_notify_file):
+                                    notify_found = True
+                                    break
+                                time.sleep(0.5)
+
+                            if notify_found:
+                                print('INFO: Start‑Telegram wurde gesendet (sentinel vorhanden).')
+                            else:
+                                print('WARN: Start‑Telegram wurde bisher nicht gesendet (kein sentinel gefunden). Prüfe logs/auto_optimizer_trigger.log oder secret.json.')
                         else:
                             print('WARN: Scheduler-Start erfolgt, aber kein in-progress marker gefunden; prüfe logs/auto_optimizer_trigger.log')
                     else:
