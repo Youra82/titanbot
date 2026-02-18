@@ -237,6 +237,39 @@ def main():
                         print('WARN: auto_optimizer_scheduler.py nicht gefunden; Scheduler nicht gestartet.')
                 else:
                     print('INFO: Scheduler bereits aktiv (in-progress marker vorhanden).')
+
+                    # MasterRunner should still notify you that an optimizer is running
+                    mr_notify_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.master_runner_optimization_inprog_notified')
+                    # cleanup old sentinel if optimizer stopped
+                    try:
+                        if os.path.exists(mr_notify_file) and (not os.path.exists(inprog_file)):
+                            os.remove(mr_notify_file)
+                    except Exception:
+                        pass
+
+                    # send ONE Telegram from MasterRunner if not already sent by this process
+                    if not os.path.exists(mr_notify_file):
+                        try:
+                            secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
+                            if os.path.exists(secret_path):
+                                with open(secret_path, 'r', encoding='utf-8') as _sf:
+                                    secret_data = json.load(_sf)
+                                tg = secret_data.get('telegram', {})
+                                bot = tg.get('bot_token')
+                                chat = tg.get('chat_id')
+                                if bot and chat:
+                                    from titanbot.utils.telegram import send_message
+                                    send_message(bot, chat, (
+                                        f"ℹ️ Auto‑Optimizer läuft bereits — MasterRunner hat den In‑Progress‑Marker erkannt.\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                                    ))
+                                    try:
+                                        os.makedirs(os.path.dirname(mr_notify_file), exist_ok=True)
+                                        with open(mr_notify_file, 'w', encoding='utf-8') as _sn:
+                                            _sn.write(datetime.utcnow().isoformat() + 'Z')
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            pass
         except Exception:
             # non-fatal — continue with master runner
             pass
