@@ -49,7 +49,7 @@
         "lookback_days": "auto",
         "start_capital": 1000,
         "cpu_cores": -1,
-        "num_trials": 10,
+        "num_trials": 100,
         "constraints": {
             "max_drawdown_pct": 30,
             "min_win_rate_pct": 50,
