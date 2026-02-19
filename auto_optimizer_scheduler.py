@@ -293,13 +293,28 @@ def run_pipeline() -> int:
     os.makedirs(os.path.dirname(opt_log), exist_ok=True)
 
     try:
+        # Run the bash pipeline and stream stdout/stderr line-by-line into the optimizer log
+        proc = subprocess.Popen(bash_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=ROOT, universal_newlines=True, bufsize=1)
+        rc = None
         with open(opt_log, 'a', encoding='utf-8') as _out:
-            result = subprocess.run(bash_cmd, shell=False, stdout=_out, stderr=subprocess.STDOUT)
-        print(f'Pipeline exited with return code: {result.returncode}')
-        _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={result.returncode}")
+            for ln in proc.stdout:
+                try:
+                    _out.write(ln)
+                    _out.flush()
+                except Exception:
+                    pass
+                try:
+                    print(ln.rstrip())
+                except Exception:
+                    pass
+            proc.wait()
+            rc = proc.returncode
+
+        print(f'Pipeline exited with return code: {rc}')
+        _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={rc}")
 
         # Wenn der Bash-Aufruf fehlschlägt, versuchen wir eine Python-Direct-Invocation
-        if result.returncode != 0:
+        if rc != 0:
             _write_trigger_log('AUTO-OPTIMIZER PIPELINE_WARNING Bash exit != 0 — attempting Python fallback')
             print('WARN: Bash pipeline failed — attempting direct Python fallback (invoke optimizer.py)')
 
@@ -402,16 +417,26 @@ def run_pipeline() -> int:
                         bash_cmd = ['bash', '-lc', f"'{bash_venv}' '{bash_optimizer}' --symbols \"{symbols_arg}\" --timeframes \"{timeframes_arg}\" --start_date {start_date} --end_date {end_date} --jobs {jobs} --max_drawdown {max_dd} --start_capital {start_capital} --min_win_rate {min_wr} --trials {trials} --min_pnl {min_pnl} --mode {mode}"]
                         print('INFO: executing venv python via WSL bash:', bash_cmd[2])
                         with open(opt_log, 'a', encoding='utf-8') as _out:
-                            rc = subprocess.run(bash_cmd, stdout=_out, stderr=subprocess.STDOUT)
-                        print('Direct (wsL-venv) optimizer exit code:', rc.returncode)
-                        return rc.returncode
+                            proc = subprocess.Popen(bash_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                            for ln in proc.stdout:
+                                try: _out.write(ln); _out.flush()
+                                except Exception: pass
+                                try: print(ln.rstrip())
+                                except Exception: pass
+                            proc.wait()
+                            return proc.returncode
                     except Exception as e:
                         print('WARN: WSL venv invocation failed:', e)
 
                 with open(opt_log, 'a', encoding='utf-8') as _out:
-                    rc = subprocess.run(cmd, stdout=_out, stderr=subprocess.STDOUT)
-                print('Direct optimizer exit code:', rc.returncode)
-                return rc.returncode
+                    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                    for ln in proc.stdout:
+                        try: _out.write(ln); _out.flush()
+                        except Exception: pass
+                        try: print(ln.rstrip())
+                        except Exception: pass
+                    proc.wait()
+                    return proc.returncode
 
             except Exception as e:
                 print('ERROR: Python fallback failed:', e)
@@ -425,9 +450,15 @@ def run_pipeline() -> int:
         print('WARN: bash not found on PATH — attempting direct shell execution fallback')
         cmd = f"cd {ROOT} && ./run_pipeline_automated.sh"
         with open(opt_log, 'a', encoding='utf-8') as _out:
-            result = subprocess.run(cmd, shell=True, stdout=_out, stderr=subprocess.STDOUT)
-        _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={result.returncode}")
-        return result.returncode
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            for ln in proc.stdout:
+                try: _out.write(ln); _out.flush()
+                except Exception: pass
+                try: print(ln.rstrip())
+                except Exception: pass
+            proc.wait()
+            _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={proc.returncode}")
+            return proc.returncode
     except Exception as e:
         print(f'ERROR: Exception while running pipeline: {e}')
         return 3
