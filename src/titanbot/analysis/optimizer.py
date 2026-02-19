@@ -138,7 +138,7 @@ def main():
         import time, pathlib
         LOGS_DIR = os.path.join(PROJECT_ROOT, 'logs')
         os.makedirs(LOGS_DIR, exist_ok=True)
-        PROGRESS_LOG = os.path.join(LOGS_DIR, 'optimizer_progress.log')
+        PROGRESS_LOG = os.path.join(LOGS_DIR, 'optimizer_output.log')
         STATUS_FILE = os.path.join(PROJECT_ROOT, 'data', 'cache', '.optimization_status.json')
 
         def _write_progress_line(line: str):
