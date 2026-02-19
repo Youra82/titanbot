@@ -165,6 +165,37 @@ def main():
         print("Fehler: Kein lauffähiger Python-Interpreter für das Projekt gefunden (.venv oder system python).")
         return
 
+    # Helper: print tail of optimizer_output.log and optionally wait for the optimizer banner
+    def _print_optimizer_tail(wait_for_banner: bool = False, timeout: int = 30, lines: int = 200):
+        opt_log = os.path.join(SCRIPT_DIR, 'logs', 'optimizer_output.log')
+        deadline = time.time() + timeout
+        seen_banner = False
+        while True:
+            try:
+                if os.path.exists(opt_log):
+                    with open(opt_log, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                    # check for banner that optimizer.py writes
+                    if 'AUTO-OPTIMIZER' in content or 'AUTO-OPTIMIZER:' in content or 'AUTO-OPTIMIZER: ' in content:
+                        seen_banner = True
+                    lines_list = content.splitlines()
+                    tail_lines = lines_list[-lines:] if len(lines_list) > lines else lines_list
+                    print('\n--- optimizer_output.log (tail %d) ---' % lines)
+                    for l in tail_lines:
+                        print(l)
+                    print('--- end of tail ---\n')
+                else:
+                    print('\n--- optimizer_output.log not found yet ---\n')
+                if not wait_for_banner:
+                    return seen_banner
+                if seen_banner:
+                    return True
+            except Exception:
+                pass
+            if time.time() > deadline:
+                return False
+            time.sleep(1)
+
     print("=======================================================")
     # *** Geändert: Name ***
     print("TitanBot Master Runner v1.0")
@@ -290,15 +321,8 @@ def main():
                     # Zeige die letzten Zeilen von optimizer_output.log, damit MasterRunner
                     # denselben, detaillierten Verlauf wie ./run_pipeline.sh darstellt
                     try:
-                        opt_log_path = os.path.join(SCRIPT_DIR, 'logs', 'optimizer_output.log')
-                        if os.path.exists(opt_log_path):
-                            with open(opt_log_path, 'r', encoding='utf-8') as _opt:
-                                _lines = _opt.read().splitlines()
-                            _tail = _lines[-200:] if len(_lines) > 200 else _lines
-                            print('\n--- Letzte Auto‑Optimizer‑Ausgabe (tail 200) ---')
-                            for _l in _tail:
-                                print(_l)
-                            print('--- Ende (use `tail -f logs/optimizer_output.log` to follow live) ---\n')
+                        # show last lines and wait briefly for optimizer banner if it appears
+                        _print_optimizer_tail(wait_for_banner=True, timeout=10, lines=200)
                     except Exception:
                         pass
 
@@ -594,6 +618,12 @@ def main():
                                 print('INFO: Start‑Telegram wurde gesendet (sentinel vorhanden).')
                             else:
                                 print('WARN: Start‑Telegram wurde bisher nicht gesendet (kein sentinel gefunden). Prüfe logs/auto_optimizer_trigger.log oder secret.json.')
+
+                            # show optimizer log tail and wait (up to 30s) for optimizer banner to appear
+                            try:
+                                _print_optimizer_tail(wait_for_banner=True, timeout=30, lines=200)
+                            except Exception:
+                                pass
                         else:
                             print('WARN: Scheduler-Start erfolgt, aber kein in-progress marker gefunden; prüfe logs/auto_optimizer_trigger.log')
                     else:
