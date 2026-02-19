@@ -287,6 +287,21 @@ def main():
                 else:
                     print('INFO: Scheduler bereits aktiv (in-progress marker vorhanden).')
 
+                    # Zeige die letzten Zeilen von optimizer_output.log, damit MasterRunner
+                    # denselben, detaillierten Verlauf wie ./run_pipeline.sh darstellt
+                    try:
+                        opt_log_path = os.path.join(SCRIPT_DIR, 'logs', 'optimizer_output.log')
+                        if os.path.exists(opt_log_path):
+                            with open(opt_log_path, 'r', encoding='utf-8') as _opt:
+                                _lines = _opt.read().splitlines()
+                            _tail = _lines[-200:] if len(_lines) > 200 else _lines
+                            print('\n--- Letzte Auto‑Optimizer‑Ausgabe (tail 200) ---')
+                            for _l in _tail:
+                                print(_l)
+                            print('--- Ende (use `tail -f logs/optimizer_output.log` to follow live) ---\n')
+                    except Exception:
+                        pass
+
                     # MasterRunner should still notify you that an optimizer is running
                     mr_notify_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.master_runner_optimization_inprog_notified')
                     # cleanup old sentinel if optimizer stopped
