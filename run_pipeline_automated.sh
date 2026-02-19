@@ -139,7 +139,7 @@ echo "Trials: $N_TRIALS | Kerne: $N_CORES | Startkapital: $START_CAPITAL"
 # *** Trainer-Aufruf entfernt ***
 
 echo ">>> Starte Handelsparameter-Optimierung (SMC)..."
-python3 "$OPTIMIZER" \
+python3 -u "$OPTIMIZER" \
     --symbols "$SYMBOLS" \
     --timeframes "$TIMEFRAMES" \
     --start_date "$START_DATE" \

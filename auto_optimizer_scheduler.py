@@ -288,8 +288,13 @@ def run_pipeline() -> int:
     print(f'Running pipeline (list form): {bash_cmd}')
     _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXEC method=bash cmd={bash_cmd}")
 
+    # ensure optimizer_output.log exists and capture full pipeline output there
+    opt_log = os.path.join(ROOT, 'logs', 'optimizer_output.log')
+    os.makedirs(os.path.dirname(opt_log), exist_ok=True)
+
     try:
-        result = subprocess.run(bash_cmd, shell=False)
+        with open(opt_log, 'a', encoding='utf-8') as _out:
+            result = subprocess.run(bash_cmd, shell=False, stdout=_out, stderr=subprocess.STDOUT)
         print(f'Pipeline exited with return code: {result.returncode}')
         _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={result.returncode}")
 
@@ -365,7 +370,7 @@ def run_pipeline() -> int:
                 else:
                     python_exec = sys.executable or 'python'
 
-                cmd = [python_exec, optimizer_py,
+                cmd = [python_exec, '-u', optimizer_py,
                        '--symbols', symbols_arg,
                        '--timeframes', timeframes_arg,
                        '--start_date', start_date,
@@ -378,8 +383,8 @@ def run_pipeline() -> int:
                        '--min_pnl', str(min_pnl),
                        '--mode', mode]
 
-                print('Running direct optimizer fallback with interpreter:', python_exec)
-                _write_trigger_log(f"AUTO-OPTIMIZER FALLBACK method=python interpreter={python_exec}")
+                print('Running direct optimizer fallback with interpreter (unbuffered):', python_exec)
+                _write_trigger_log(f"AUTO-OPTIMIZER FALLBACK method=python interpreter={python_exec} mode=unbuffered")
                 print('Running direct optimizer fallback:', ' '.join(map(str, cmd[:6])), '...')
 
                 # If we're on Windows but the chosen interpreter is the unix venv python,
@@ -396,13 +401,15 @@ def run_pipeline() -> int:
                         bash_optimizer = f"/mnt/{drive}{rest_op}"
                         bash_cmd = ['bash', '-lc', f"'{bash_venv}' '{bash_optimizer}' --symbols \"{symbols_arg}\" --timeframes \"{timeframes_arg}\" --start_date {start_date} --end_date {end_date} --jobs {jobs} --max_drawdown {max_dd} --start_capital {start_capital} --min_win_rate {min_wr} --trials {trials} --min_pnl {min_pnl} --mode {mode}"]
                         print('INFO: executing venv python via WSL bash:', bash_cmd[2])
-                        rc = subprocess.run(bash_cmd)
+                        with open(opt_log, 'a', encoding='utf-8') as _out:
+                            rc = subprocess.run(bash_cmd, stdout=_out, stderr=subprocess.STDOUT)
                         print('Direct (wsL-venv) optimizer exit code:', rc.returncode)
                         return rc.returncode
                     except Exception as e:
                         print('WARN: WSL venv invocation failed:', e)
 
-                rc = subprocess.run(cmd)
+                with open(opt_log, 'a', encoding='utf-8') as _out:
+                    rc = subprocess.run(cmd, stdout=_out, stderr=subprocess.STDOUT)
                 print('Direct optimizer exit code:', rc.returncode)
                 return rc.returncode
 
@@ -417,7 +424,8 @@ def run_pipeline() -> int:
         _write_trigger_log('AUTO-OPTIMIZER PIPELINE_FALLBACK method=direct_shell')
         print('WARN: bash not found on PATH — attempting direct shell execution fallback')
         cmd = f"cd {ROOT} && ./run_pipeline_automated.sh"
-        result = subprocess.run(cmd, shell=True)
+        with open(opt_log, 'a', encoding='utf-8') as _out:
+            result = subprocess.run(cmd, shell=True, stdout=_out, stderr=subprocess.STDOUT)
         _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={result.returncode}")
         return result.returncode
     except Exception as e:
