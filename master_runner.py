@@ -165,36 +165,73 @@ def main():
         print("Fehler: Kein lauffähiger Python-Interpreter für das Projekt gefunden (.venv oder system python).")
         return
 
-    # Helper: print tail of optimizer_output.log and optionally wait for the optimizer banner
-    def _print_optimizer_tail(wait_for_banner: bool = False, timeout: int = 30, lines: int = 200):
+    # Helper: print tail of optimizer_output.log, wait for the optimizer banner if requested,
+    # and optionally follow the file for a short period to show live appends.
+    def _print_optimizer_tail(wait_for_banner: bool = False, timeout: int = 30, lines: int = 200, follow_seconds: int = 0):
         opt_log = os.path.join(SCRIPT_DIR, 'logs', 'optimizer_output.log')
         deadline = time.time() + timeout
         seen_banner = False
-        while True:
+
+        def _read_latest_section():
             try:
-                if os.path.exists(opt_log):
-                    with open(opt_log, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                    # check for banner that optimizer.py writes
-                    if 'AUTO-OPTIMIZER' in content or 'AUTO-OPTIMIZER:' in content or 'AUTO-OPTIMIZER: ' in content:
-                        seen_banner = True
-                    lines_list = content.splitlines()
-                    tail_lines = lines_list[-lines:] if len(lines_list) > lines else lines_list
-                    print('\n--- optimizer_output.log (tail %d) ---' % lines)
-                    for l in tail_lines:
-                        print(l)
-                    print('--- end of tail ---\n')
+                if not os.path.exists(opt_log):
+                    return False, []
+                with open(opt_log, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                lines_list = content.splitlines()
+
+                # detect whether a run marker or banner exists
+                has_banner = any('AUTO-OPTIMIZER START' in ln or ln.startswith('=== AUTO-OPTIMIZER RUN START') for ln in lines_list)
+
+                # show only the most recent run (from the last AUTO-OPTIMIZER START marker)
+                start_idx = None
+                for i in range(len(lines_list) - 1, -1, -1):
+                    if '=== AUTO-OPTIMIZER RUN START' in lines_list[i] or 'AUTO-OPTIMIZER START' in lines_list[i]:
+                        start_idx = i
+                        break
+
+                if start_idx is not None:
+                    recent = lines_list[start_idx:]
                 else:
-                    print('\n--- optimizer_output.log not found yet ---\n')
-                if not wait_for_banner:
-                    return seen_banner
-                if seen_banner:
-                    return True
+                    recent = lines_list[-lines:] if len(lines_list) > lines else lines_list
+
+                return has_banner, recent
+            except Exception:
+                return False, []
+
+        # initial print (may repeat until banner found when wait_for_banner=True)
+        while True:
+            has_banner, recent = _read_latest_section()
+            for l in recent:
+                print(l)
+            print('--- end of latest run ---\n')
+
+            if not wait_for_banner:
+                break
+            if has_banner:
+                seen_banner = True
+                break
+            if time.time() > deadline:
+                break
+            time.sleep(1)
+
+        # follow live appends for follow_seconds, if requested
+        if follow_seconds and os.path.exists(opt_log):
+            end_time = time.time() + follow_seconds
+            try:
+                with open(opt_log, 'r', encoding='utf-8', errors='ignore') as fh:
+                    # seek to end of current content
+                    fh.seek(0, os.SEEK_END)
+                    while time.time() < end_time:
+                        line = fh.readline()
+                        if line:
+                            print(line.rstrip())
+                        else:
+                            time.sleep(0.25)
             except Exception:
                 pass
-            if time.time() > deadline:
-                return False
-            time.sleep(1)
+
+        return seen_banner
 
     print("=======================================================")
     # *** Geändert: Name ***
@@ -322,7 +359,7 @@ def main():
                     # denselben, detaillierten Verlauf wie ./run_pipeline.sh darstellt
                     try:
                         # show last lines and wait briefly for optimizer banner if it appears
-                        _print_optimizer_tail(wait_for_banner=True, timeout=10, lines=200)
+                        _print_optimizer_tail(wait_for_banner=True, timeout=10, lines=200, follow_seconds=12)
                     except Exception:
                         pass
 
@@ -621,7 +658,7 @@ def main():
 
                             # show optimizer log tail and wait (up to 30s) for optimizer banner to appear
                             try:
-                                _print_optimizer_tail(wait_for_banner=True, timeout=30, lines=200)
+                                _print_optimizer_tail(wait_for_banner=True, timeout=30, lines=200, follow_seconds=12)
                             except Exception:
                                 pass
                         else:
