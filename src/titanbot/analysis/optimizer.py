@@ -139,6 +139,10 @@ def main():
         LOGS_DIR = os.path.join(PROJECT_ROOT, 'logs')
         os.makedirs(LOGS_DIR, exist_ok=True)
         PROGRESS_LOG = os.path.join(LOGS_DIR, 'optimizer_output.log')
+        # Ensure the log file always exists (create if missing)
+        if not os.path.exists(PROGRESS_LOG):
+            with open(PROGRESS_LOG, 'w', encoding='utf-8') as pf:
+                pf.write("")
         STATUS_FILE = os.path.join(PROJECT_ROOT, 'data', 'cache', '.optimization_status.json')
 
         def _write_progress_line(line: str):
