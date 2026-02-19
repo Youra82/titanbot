@@ -9,11 +9,20 @@ import threading
 import runpy
 import shutil
 
+
 # Pfad anpassen, damit die utils importiert werden können
 from datetime import datetime, timezone
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = SCRIPT_DIR
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
+
+# Ensure logs/optimizer_output.log always exists
+LOGS_DIR = os.path.join(SCRIPT_DIR, 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
+OPTIMIZER_LOG = os.path.join(LOGS_DIR, 'optimizer_output.log')
+if not os.path.exists(OPTIMIZER_LOG):
+    with open(OPTIMIZER_LOG, 'w', encoding='utf-8') as f:
+        f.write("")
 
 # *** Geändert: Importpfad ***
 from titanbot.utils.exchange import Exchange
