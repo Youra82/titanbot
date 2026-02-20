@@ -80,9 +80,11 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     # --- NEU: MTF-Bias vorbereiten ---
     market_bias = Bias.NEUTRAL
     if htf and htf != timeframe:
-        print(f"MTF-Check: Lade Daten für HTF ({htf})...")
-        # NEU: Lade Daten für HTF (von Startdatum bis Ende der Hauptdaten)
-        htf_data = load_data(symbol, htf, data.index.min().strftime('%Y-%m-%d'), data.index.max().strftime('%Y-%m-%d'))
+        # Verwende pre-loaded HTF data wenn verfügbar (verhindert parallele Cache-Korruption)
+        htf_data = smc_params.get('htf_data')
+        if htf_data is None:
+            print(f"MTF-Check: Lade Daten für HTF ({htf})...")
+            htf_data = load_data(symbol, htf, data.index.min().strftime('%Y-%m-%d'), data.index.max().strftime('%Y-%m-%d'))
         
         if htf_data.empty:
             print("MTF-Check: Konnte HTF-Daten nicht laden. Verwende Bias.NEUTRAL.")

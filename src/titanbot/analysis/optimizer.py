@@ -24,6 +24,7 @@ from titanbot.utils.timeframe_utils import determine_htf # NEU: Import für HTF 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 HISTORICAL_DATA = None
+CURRENT_HTF_DATA = None  # Pre-loaded HTF data — einmal laden, nicht pro Trial
 CURRENT_SYMBOL = None # NEU: Globale Variable für Symbol (wird für Backtester benötigt)
 CURRENT_TIMEFRAME = None
 CURRENT_HTF = None # NEU: Globale Variable für den berechneten HTF
@@ -46,7 +47,8 @@ def objective(trial):
         'adx_threshold': trial.suggest_int('adx_threshold', 20, 30),
         'symbol': CURRENT_SYMBOL, # NEU: Füge Symbol und Timeframe hinzu
         'timeframe': CURRENT_TIMEFRAME,
-        'htf': CURRENT_HTF # NEU: Füge den HTF hinzu
+        'htf': CURRENT_HTF, # NEU: Füge den HTF hinzu
+        'htf_data': CURRENT_HTF_DATA  # Pre-loaded HTF data (verhindert parallele Cache-Korruption)
     }
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.0, 5.0),
@@ -77,7 +79,7 @@ def objective(trial):
     return pnl
 
 def main():
-    global HISTORICAL_DATA, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CURRENT_HTF, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
+    global HISTORICAL_DATA, CURRENT_HTF_DATA, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CURRENT_HTF, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
     parser.add_argument('--symbols', required=False, type=str, default="")
     parser.add_argument('--timeframes', required=False, type=str, default="")
@@ -126,6 +128,12 @@ def main():
 
         print(f"\n===== Optimiere: {symbol} ({timeframe}) | MTF-Bias von {CURRENT_HTF} =====")
         HISTORICAL_DATA = load_data(symbol, timeframe, args.start_date, args.end_date)
+        # HTF-Daten einmalig laden (vor study.optimize) — verhindert parallele Cache-Korruption
+        if CURRENT_HTF and CURRENT_HTF != timeframe:
+            print(f"Lade HTF-Daten ({CURRENT_HTF}) einmalig vor der Optimierung...")
+            CURRENT_HTF_DATA = load_data(symbol, CURRENT_HTF, args.start_date, args.end_date)
+        else:
+            CURRENT_HTF_DATA = None
         if HISTORICAL_DATA.empty:
             print("Keine Daten geladen. Überspringe.")
             run_tasks_summary.append({'symbol': symbol, 'timeframe': timeframe, 'status': 'no_data'})
