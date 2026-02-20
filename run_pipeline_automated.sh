@@ -80,10 +80,18 @@ if [ "$ENABLED_LC" != "true" ]; then
     exit 0
 fi
 
-# Extrahiere Arrays sicher mit jq, falls verfügbar, sonst Fallback
+# Extrahiere Symbole/Zeitfenster oder Paare — "auto" liest aus live_trading_settings
+OPTIM_PAIRS=""
 if command -v jq &> /dev/null; then
-    SYMBOLS=$(jq -r '.optimization_settings.symbols_to_optimize | join(" ") // ""' "$SETTINGS_FILE")
-    TIMEFRAMES=$(jq -r '.optimization_settings.timeframes_to_optimize | join(" ") // ""' "$SETTINGS_FILE")
+    SYM_VALUE=$(jq -r '.optimization_settings.symbols_to_optimize' "$SETTINGS_FILE")
+    TF_VALUE=$(jq -r '.optimization_settings.timeframes_to_optimize' "$SETTINGS_FILE")
+    if [ "$SYM_VALUE" = "auto" ] && [ "$TF_VALUE" = "auto" ]; then
+        # Paare direkt aus den aktiven Live-Strategien ableiten (Symbol:Timeframe)
+        OPTIM_PAIRS=$(jq -r '[.live_trading_settings.active_strategies[] | select(.active == true) | (.symbol | split("/")[0]) + ":" + .timeframe] | unique | join(" ")' "$SETTINGS_FILE")
+    else
+        SYMBOLS=$(jq -r 'if (.optimization_settings.symbols_to_optimize | type) == "array" then .optimization_settings.symbols_to_optimize | join(" ") else "" end' "$SETTINGS_FILE")
+        TIMEFRAMES=$(jq -r 'if (.optimization_settings.timeframes_to_optimize | type) == "array" then .optimization_settings.timeframes_to_optimize | join(" ") else "" end' "$SETTINGS_FILE")
+    fi
 else
     echo "WARNUNG: jq nicht gefunden. Lese Arrays unsicher aus (kann bei Leerzeichen scheitern)."
     SYMBOLS=$(get_setting "['optimization_settings', 'symbols_to_optimize']" | tr -d "[]',\"")
@@ -95,15 +103,20 @@ TIMEFRAMES=${TIMEFRAMES:-"1h 4h"} # Fallback, falls leer
 LOOKBACK_DAYS=$(get_setting "['optimization_settings', 'lookback_days']")
 LOOKBACK_DAYS=${LOOKBACK_DAYS:-$DEFAULT_LOOKBACK}
 
-# Unterstütze 'auto' wie in run_pipeline.sh: bestimme Lookback basierend auf Timeframes
+# Unterstütze 'auto': bestimme Lookback basierend auf den Zeitfenstern (aus Paaren oder TIMEFRAMES)
 if [ "$LOOKBACK_DAYS" = "auto" ]; then
+    if [ -n "$OPTIM_PAIRS" ]; then
+        TF_FOR_LOOKBACK=$(echo "$OPTIM_PAIRS" | tr ' ' '\n' | cut -d: -f2 | tr '\n' ' ')
+    else
+        TF_FOR_LOOKBACK="$TIMEFRAMES"
+    fi
     max_days=0
-    for tf in $TIMEFRAMES; do
+    for tf in $TF_FOR_LOOKBACK; do
         case "$tf" in
-            5m|15m) d=60 ;; 
-            30m|1h) d=365 ;; 
-            2h|4h) d=730 ;; 
-            6h|1d) d=1095 ;; 
+            5m|15m) d=60 ;;
+            30m|1h) d=365 ;;
+            2h|4h) d=730 ;;
+            6h|1d) d=1095 ;;
             *) d=365 ;;
         esac
         if [ "$d" -gt "$max_days" ]; then max_days=$d; fi
@@ -133,24 +146,42 @@ OPTIM_MODE_ARG=${OPTIM_MODE_ARG:-$DEFAULT_OPTIM_MODE} # Standard ist strict
 # --- Pipeline starten ---
 echo "Optimierung ist aktiviert. Starte Prozesse..."
 echo "Verwende Daten der letzten $LOOKBACK_DAYS Tage ($START_DATE bis $END_DATE)."
-echo "Symbole: $SYMBOLS | Zeitfenster: $TIMEFRAMES"
+if [ -n "$OPTIM_PAIRS" ]; then
+    echo "Paare (auto): $OPTIM_PAIRS"
+else
+    echo "Symbole: $SYMBOLS | Zeitfenster: $TIMEFRAMES"
+fi
 echo "Trials: $N_TRIALS | Kerne: $N_CORES | Startkapital: $START_CAPITAL"
 
 # *** Trainer-Aufruf entfernt ***
 
 echo ">>> Starte Handelsparameter-Optimierung (SMC)..."
-python3 -u "$OPTIMIZER" \
-    --symbols "$SYMBOLS" \
-    --timeframes "$TIMEFRAMES" \
-    --start_date "$START_DATE" \
-    --end_date "$END_DATE" \
-    --jobs "$N_CORES" \
-    --max_drawdown "$MAX_DD" \
-    --start_capital "$START_CAPITAL" \
-    --min_win_rate "$MIN_WR" \
-    --trials "$N_TRIALS" \
-    --min_pnl "$MIN_PNL" \
-    --mode "$OPTIM_MODE_ARG"
+if [ -n "$OPTIM_PAIRS" ]; then
+    python3 -u "$OPTIMIZER" \
+        --pairs "$OPTIM_PAIRS" \
+        --start_date "$START_DATE" \
+        --end_date "$END_DATE" \
+        --jobs "$N_CORES" \
+        --max_drawdown "$MAX_DD" \
+        --start_capital "$START_CAPITAL" \
+        --min_win_rate "$MIN_WR" \
+        --trials "$N_TRIALS" \
+        --min_pnl "$MIN_PNL" \
+        --mode "$OPTIM_MODE_ARG"
+else
+    python3 -u "$OPTIMIZER" \
+        --symbols "$SYMBOLS" \
+        --timeframes "$TIMEFRAMES" \
+        --start_date "$START_DATE" \
+        --end_date "$END_DATE" \
+        --jobs "$N_CORES" \
+        --max_drawdown "$MAX_DD" \
+        --start_capital "$START_CAPITAL" \
+        --min_win_rate "$MIN_WR" \
+        --trials "$N_TRIALS" \
+        --min_pnl "$MIN_PNL" \
+        --mode "$OPTIM_MODE_ARG"
+fi
 
 if [ $? -ne 0 ]; then
     echo "Fehler im Optimierer-Skript. Pipeline wird abgebrochen."
