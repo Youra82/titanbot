@@ -29,7 +29,7 @@ fi
 # --- Python-Helper zum sicheren Auslesen der JSON-Datei ---
 # Stellt sicher, dass die Datei existiert und Python verfügbar ist
 get_setting() {
-    python3 -c "import json, sys; f=open('$SETTINGS_FILE'); settings=json.load(f); keys=$1; current=settings; path_ok=True; for k in keys: current=current.get(k); if current is None: path_ok=False; break; print(current if path_ok else ''); f.close()" 2>/dev/null
+    python3 -c "import json; from functools import reduce; d=json.load(open('$SETTINGS_FILE')); v=reduce(lambda a,k: a.get(k) if isinstance(a,dict) else None, $1, d); print('' if v is None else v)" 2>/dev/null
 }
 
 # --- Standardwerte für Einstellungen definieren ---
