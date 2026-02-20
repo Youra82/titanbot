@@ -162,6 +162,7 @@ def main():
                 pass
 
         start_time = time.time()
+        _last_bar_time = [0.0]  # Throttle für ASCII-Fortschrittsbalken
 
         def _trial_callback(study_obj, trial_obj):
             # Called after each trial (including pruned/complete)
@@ -193,6 +194,18 @@ def main():
                     'last_update': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
                 }
                 _write_status_json(status)
+
+                # ASCII-Fortschrittsbalken (alle 5 Sek. oder beim letzten Trial)
+                now_t = time.time()
+                if now_t - _last_bar_time[0] >= 5.0 or trials_done >= trials_total:
+                    _last_bar_time[0] = now_t
+                    bar_width = 25
+                    pct = min(trials_done / trials_total, 1.0) if trials_total > 0 else 0
+                    filled = int(bar_width * pct)
+                    bar = '█' * filled + '░' * (bar_width - filled)
+                    sym_short = CURRENT_SYMBOL.split('/')[0]
+                    best_str = f"{best_val:+.2f}%" if best_val is not None else "---"
+                    print(f"  [{bar}] {sym_short}/{CURRENT_TIMEFRAME}  {trials_done:>4}/{trials_total}  ({pct*100:5.1f}%)  Best: {best_str}  {elapsed}s", flush=True)
             except Exception:
                 pass
 
