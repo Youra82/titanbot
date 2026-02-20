@@ -355,10 +355,17 @@ def run_pipeline() -> int:
                 try:
                     lookback_days = int(lb)
                 except Exception:
-                    lookback_days = 365
+                    # "auto": Lookback je nach Zeitfenster (wie run_pipeline.sh / run_pipeline_automated.sh)
+                    _tf_lookback = {'5m': 60, '15m': 60, '30m': 365, '1h': 365,
+                                    '2h': 730, '4h': 730, '6h': 1095, '1d': 1095}
+                    lookback_days = max(
+                        (_tf_lookback.get(tf, 365) for tf in timeframes_arg.split()),
+                        default=365
+                    )
                 from datetime import datetime, timedelta
-                start_date = (datetime.now() - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
-                end_date = datetime.now().strftime('%Y-%m-%d')
+                yesterday = datetime.now() - timedelta(days=1)
+                end_date = yesterday.strftime('%Y-%m-%d')
+                start_date = (yesterday - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
 
                 # Other args
                 jobs = int(opt.get('cpu_cores', -1))
