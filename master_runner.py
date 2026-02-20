@@ -538,8 +538,9 @@ def main():
             if opt_settings.get('enabled', False):
                 cache_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.last_optimization_run')
                 inprog_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
-                # Wenn Cache fehlt und kein Optimizer bereits läuft → erzwungener Start
-                if (not os.path.exists(cache_file)) and (not os.path.exists(inprog_file)):
+                # Nur starten wenn should_run() True ist UND Cache fehlt UND kein Optimizer läuft.
+                # auto_should_run stellt sicher dass interval_days aus settings.json respektiert wird.
+                if auto_should_run and (not os.path.exists(cache_file)) and (not os.path.exists(inprog_file)):
                     print(f"INFO: {cache_file} fehlt — trigger Auto-Optimizer (forced).")
 
                     # Schreibe eine eindeutige, einzeilige Trigger-Info in das Trigger-Log
