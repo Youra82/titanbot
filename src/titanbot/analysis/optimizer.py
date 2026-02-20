@@ -247,7 +247,10 @@ def main():
             continue # Nächsten Task versuchen
 
         valid_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
-        if not valid_trials: print(f"\n❌ FEHLER: Für {symbol} ({timeframe}) konnte keine Konfiguration gefunden werden."); continue
+        if not valid_trials:
+            print(f"\n❌ FEHLER: Für {symbol} ({timeframe}) konnte keine Konfiguration gefunden werden.")
+            run_tasks_summary.append({'symbol': symbol, 'timeframe': timeframe, 'status': 'no_valid_trials'})
+            continue
 
         best_trial = max(valid_trials, key=lambda t: t.value)
         best_params = best_trial.params
