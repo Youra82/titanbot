@@ -317,6 +317,18 @@ cat ~/titanbot/artifacts/results/optimization_results.json | head -50
 watch -n 1 "ps aux | grep optimizer"
 ```
 
+### Optimizer stoppen
+```bash
+# Alle Optimizer-Prozesse auf einmal stoppen
+pkill -f "auto_optimizer_scheduler" ; pkill -f "run_pipeline_automated" ; pkill -f "optimizer.py"
+
+# Prüfen ob alles gestoppt ist
+pgrep -fa "optimizer" && echo "Noch aktiv!" || echo "Alle gestoppt."
+
+# In-Progress-Marker aufräumen (sauberer Neustart danach)
+rm -f ~/titanbot/data/cache/.optimization_in_progress ~/titanbot/data/cache/.optimization_start_notified
+```
+
 ---
 
 ## 📊 Monitoring & Status
