@@ -163,11 +163,12 @@ def main():
 
         start_time = time.time()
         _last_bar_time = [0.0]  # Throttle für ASCII-Fortschrittsbalken
+        _trials_at_start = [0]  # Anzahl der Trials im DB vor diesem Run
 
         def _trial_callback(study_obj, trial_obj):
             # Called after each trial (including pruned/complete)
             try:
-                trials_done = len([t for t in study_obj.trials if t.state != optuna.trial.TrialState.RUNNING])
+                trials_done = len([t for t in study_obj.trials if t.state != optuna.trial.TrialState.RUNNING]) - _trials_at_start[0]
                 trials_total = N_TRIALS
                 best = None
                 try:
@@ -209,6 +210,7 @@ def main():
             except Exception:
                 pass
 
+        _trials_at_start[0] = len([t for t in study.trials if t.state != optuna.trial.TrialState.RUNNING])
         try:
             study.optimize(objective, n_trials=N_TRIALS, n_jobs=args.jobs, callbacks=[_trial_callback], show_progress_bar=False)
         except Exception as e_opt:
