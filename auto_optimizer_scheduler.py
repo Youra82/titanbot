@@ -393,7 +393,7 @@ def run_pipeline() -> int:
                 optimizer_py = os.path.join(ROOT, 'src', 'titanbot', 'analysis', 'optimizer.py')
                 if not os.path.exists(optimizer_py):
                     print(f'ERROR: optimizer.py not found at {optimizer_py} — cannot fallback')
-                    return result.returncode
+                    return rc
 
                 # Prefer the project's venv Python if available
                 venv_py_unix = os.path.join(ROOT, '.venv', 'bin', 'python3')
@@ -463,7 +463,7 @@ def run_pipeline() -> int:
                 print('ERROR: Python fallback failed:', e)
                 return 4
 
-        return result.returncode
+        return rc
 
     except FileNotFoundError:
         # 'bash' not available on PATH — try fallback to calling script directly
