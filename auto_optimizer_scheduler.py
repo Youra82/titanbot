@@ -41,6 +41,20 @@ PIPELINE_SCRIPT = os.path.join(ROOT, 'run_pipeline_automated.sh')
 # Dedicated, single-line trigger/log file for clear start/skip/finish entries
 TRIGGER_LOG = os.path.join(ROOT, 'logs', 'auto_optimizer_trigger.log')
 
+
+def _format_duration(seconds: int) -> str:
+    """Format seconds into a human-readable duration string."""
+    if seconds < 60:
+        return f"{seconds}s"
+    elif seconds < 3600:
+        m, s = divmod(seconds, 60)
+        return f"{m}m {s}s"
+    else:
+        h, rem = divmod(seconds, 3600)
+        m, s = divmod(rem, 60)
+        return f"{h}h {m}m"
+
+
 def _write_trigger_log(line: str) -> None:
     """Append a single-line, timestamped entry to TRIGGER_LOG and also mirror
     it into the main `optimizer_output.log` and `master_runner_debug.log` so the
@@ -511,14 +525,27 @@ def main() -> int:
             _set_in_progress()
             start_notify_file = os.path.join(CACHE_DIR, '.optimization_start_notified')
             if notify and (not os.path.exists(start_notify_file)):
-                # try sending start notification and only create the sentinel if successful
-                sent = _send_telegram_message('🚀 Automatische Optimierung (forced) wurde gestartet.')
+                # Build enriched start message with pairs and trials info
+                try:
+                    live_strats = settings.get('live_trading_settings', {}).get('active_strategies', [])
+                    start_pairs = [f"{s['symbol'].split('/')[0]}/{s['timeframe']}" for s in live_strats if s.get('active', True)]
+                except Exception:
+                    start_pairs = []
+                _trials_n = settings.get('optimization_settings', {}).get('num_trials', '?')
+                _pairs_str = ', '.join(start_pairs) if start_pairs else 'auto'
+                start_msg = (
+                    f"🚀 Auto-Optimizer GESTARTET\n"
+                    f"Paare: {_pairs_str}\n"
+                    f"Trials: {_trials_n}\n"
+                    f"Start: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                )
+                sent = _send_telegram_message(start_msg)
                 if not sent:
                     # one quick retry for transient network/API failures
                     try:
                         import time as _time
                         _time.sleep(3)
-                        sent = _send_telegram_message('🚀 Automatische Optimierung (forced) wurde gestartet. (retry)')
+                        sent = _send_telegram_message(start_msg + ' (retry)')
                     except Exception:
                         sent = False
                 if sent:
@@ -540,8 +567,8 @@ def main() -> int:
 
             elapsed = (datetime.now() - start_ts).total_seconds()
 
-            # Read optimizer run summary (if present) to compose a richer completion message
-            summary_path = os.path.join(SCRIPT_DIR, 'artifacts', 'results', 'last_optimizer_run.json')
+            # Read optimizer run summary for a richer completion message
+            summary_path = os.path.join(ROOT, 'artifacts', 'results', 'last_optimizer_run.json')
             run_summary = None
             try:
                 if os.path.exists(summary_path):
@@ -555,51 +582,54 @@ def main() -> int:
                 _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=success elapsed_s={elapsed:.1f}")
                 print('Pipeline finished successfully; updated last-run timestamp.')
 
-            summary_path = os.path.join(SCRIPT_DIR, 'artifacts', 'results', 'last_optimizer_run.json')
-            run_summary = None
-            try:
-                if os.path.exists(summary_path):
-                    with open(summary_path, 'r', encoding='utf-8') as sf:
-                        run_summary = json.load(sf)
-            except Exception:
-                run_summary = None
-
-            if rc == 0:
-                write_last_run(datetime.now())
-                _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=success elapsed_s={elapsed:.1f}")
-                print('Pipeline finished successfully; updated last-run timestamp.')
-
-                # Send a single completion message (only once per run)
                 if notify:
-                    comp_msg = '✅ Automatische Optimierung abgeschlossen.'
+                    dur_s = int(run_summary.get('duration_s', elapsed)) if run_summary else int(elapsed)
+                    dur_str = _format_duration(dur_s)
                     if run_summary:
-                        saved = [t for t in run_summary.get('tasks', []) if t.get('saved')]
-                        unchanged = [t for t in run_summary.get('tasks', []) if not t.get('saved')]
-                        saved_list = ', '.join(f"{s['symbol']}({s['timeframe']})" for s in saved[:8])
-                        comp_msg = (
-                            f"✅ Auto‑Optimizer abgeschlossen (Dauer: {int(run_summary.get('duration_s', elapsed))}s)\n"
-                            f"Gesamt: {len(run_summary.get('tasks', []))} Komb., Gespeichert: {len(saved)}, Unverändert: {len(unchanged)}\n"
-                            f"Gespeicherte: {saved_list}"
-                        )
+                        tasks = run_summary.get('tasks', [])
+                        saved = [t for t in tasks if t.get('status') == 'new_best']
+                        unchanged = [t for t in tasks if t.get('status') == 'unchanged']
+                        failed = [t for t in tasks if t.get('status') not in ('new_best', 'unchanged')]
+                        msg_lines = [f"✅ Auto-Optimizer abgeschlossen (Dauer: {dur_str})"]
+                        if saved:
+                            msg_lines.append(f"\n✔ Gespeichert ({len(saved)}/{len(tasks)}):")
+                            for t in saved:
+                                sym = t.get('symbol', '').split('/')[0]
+                                tf = t.get('timeframe', '')
+                                pnl = t.get('pnl')
+                                cfg = os.path.basename(t.get('config_path', ''))
+                                pnl_str = f"+{pnl:.2f}%" if pnl is not None else "?"
+                                msg_lines.append(f"• {sym}/{tf}: {pnl_str} → {cfg}")
+                        if unchanged:
+                            msg_lines.append(f"\n⚠️ Nicht überschrieben ({len(unchanged)}/{len(tasks)}):")
+                            for t in unchanged:
+                                sym = t.get('symbol', '').split('/')[0]
+                                tf = t.get('timeframe', '')
+                                pnl = t.get('pnl')
+                                pnl_str = f"{pnl:.2f}%" if pnl is not None else "?"
+                                msg_lines.append(f"• {sym}/{tf}: {pnl_str} (nicht besser als vorhandene)")
+                        if failed:
+                            msg_lines.append(f"\n❌ Fehlgeschlagen ({len(failed)}/{len(tasks)}):")
+                            for t in failed:
+                                sym = t.get('symbol', '').split('/')[0]
+                                tf = t.get('timeframe', '')
+                                msg_lines.append(f"• {sym}/{tf}: {t.get('status', 'unbekannt')}")
+                        comp_msg = '\n'.join(msg_lines)
+                    else:
+                        comp_msg = f"✅ Auto-Optimizer abgeschlossen (Dauer: {dur_str})"
                     _send_telegram_message(comp_msg)
-
-                # clear start-notify sentinel
-                try:
-                    if os.path.exists(start_notify_file):
-                        os.remove(start_notify_file)
-                except Exception:
-                    pass
             else:
                 _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=error code={rc} elapsed_s={elapsed:.1f}")
                 print(f'Pipeline exited with return code {rc}')
                 if notify:
                     _send_telegram_message(f'❌ Automatische Optimierung ist mit Fehlercode {rc} beendet.')
 
-                try:
-                    if os.path.exists(start_notify_file):
-                        os.remove(start_notify_file)
-                except Exception:
-                    pass
+            # clear start-notify sentinel
+            try:
+                if os.path.exists(start_notify_file):
+                    os.remove(start_notify_file)
+            except Exception:
+                pass
         else:
             print('Not running at this time.')
 
