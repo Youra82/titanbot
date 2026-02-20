@@ -126,8 +126,8 @@ MIN_WR=${MIN_WR:-$DEFAULT_MIN_WR}
 MIN_PNL=$(get_setting "['optimization_settings', 'constraints', 'min_pnl_pct']")
 MIN_PNL=${MIN_PNL:-$DEFAULT_MIN_PNL}
 
-START_DATE=$(date -d "$LOOKBACK_DAYS days ago" +%F)
-END_DATE=$(date +%F)
+END_DATE=$(date -d "yesterday" +%F)
+START_DATE=$(date -d "$LOOKBACK_DAYS days ago $END_DATE" +%F)
 OPTIM_MODE_ARG=${OPTIM_MODE_ARG:-$DEFAULT_OPTIM_MODE} # Standard ist strict
 
 # --- Pipeline starten ---
