@@ -79,8 +79,10 @@ def objective(trial):
 def main():
     global HISTORICAL_DATA, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CURRENT_HTF, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
-    parser.add_argument('--symbols', required=True, type=str)
-    parser.add_argument('--timeframes', required=True, type=str)
+    parser.add_argument('--symbols', required=False, type=str, default="")
+    parser.add_argument('--timeframes', required=False, type=str, default="")
+    parser.add_argument('--pairs', required=False, type=str, default="",
+                        help='Paare im Format "SYM1:TF1 SYM2:TF2" (Alternativ zu --symbols + --timeframes)')
     parser.add_argument('--start_date', required=True, type=str)
     parser.add_argument('--end_date', required=True, type=str)
     parser.add_argument('--jobs', required=True, type=int)
@@ -97,8 +99,18 @@ def main():
     MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT = args.max_drawdown / 100.0, args.min_win_rate, args.min_pnl
     START_CAPITAL, N_TRIALS, OPTIM_MODE = args.start_capital, args.trials, args.mode
 
-    symbols, timeframes = args.symbols.split(), args.timeframes.split()
-    TASKS = [{'symbol': f"{s}/USDT:USDT", 'timeframe': tf} for s in symbols for tf in timeframes]
+    if args.pairs:
+        # Paar-Modus: "AAVE:5m ETH:6h BTC:4h" → direkte Symbol/Timeframe-Zuordnung (kein Kreuzprodukt)
+        TASKS = []
+        for pair_str in args.pairs.split():
+            sym, tf = pair_str.split(':', 1)
+            TASKS.append({'symbol': f"{sym}/USDT:USDT", 'timeframe': tf})
+    elif args.symbols and args.timeframes:
+        symbols, timeframes = args.symbols.split(), args.timeframes.split()
+        TASKS = [{'symbol': f"{s}/USDT:USDT", 'timeframe': tf} for s in symbols for tf in timeframes]
+    else:
+        print("FEHLER: Entweder --pairs oder --symbols + --timeframes muss angegeben werden.")
+        sys.exit(1)
 
     # Run-level summary collector
     run_tasks_summary = []
@@ -168,7 +180,10 @@ def main():
         def _trial_callback(study_obj, trial_obj):
             # Called after each trial (including pruned/complete)
             try:
-                trials_done = len([t for t in study_obj.trials if t.state != optuna.trial.TrialState.RUNNING]) - _trials_at_start[0]
+                trials_done = min(
+                    len([t for t in study_obj.trials if t.state != optuna.trial.TrialState.RUNNING]) - _trials_at_start[0],
+                    N_TRIALS
+                )
                 trials_total = N_TRIALS
                 best = None
                 try:
