@@ -165,7 +165,18 @@ def _is_stale_in_progress(max_hours: int = 24) -> bool:
             except (ProcessLookupError, OSError):
                 return True            # process dead → stale
 
-        # Fallback: age check
+        # No PID stored (legacy format): use pgrep to check for running scheduler
+        try:
+            import subprocess as _sp
+            r = _sp.run(['pgrep', '-f', 'auto_optimizer_scheduler.py'],
+                        capture_output=True, timeout=3)
+            if r.returncode == 0:
+                return False   # scheduler process found → not stale
+            return True        # no scheduler process running → stale
+        except Exception:
+            pass
+
+        # Final fallback: age check
         if started:
             try:
                 started_dt = datetime.fromisoformat(started)
