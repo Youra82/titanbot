@@ -348,6 +348,20 @@ def main():
 
                 # Wenn Scheduler fällig ist und noch kein Optimizer läuft, starte Scheduler automatisiert
                 inprog_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
+
+                # Stale-Marker bereinigen: Prozess tot oder Marker zu alt?
+                if os.path.exists(inprog_file):
+                    try:
+                        _stale = scheduler_mod._is_stale_in_progress()
+                    except Exception:
+                        _stale = False
+                    if _stale:
+                        print('INFO: Staler In-Progress-Marker gefunden (Prozess tot). Wird bereinigt...')
+                        try:
+                            os.remove(inprog_file)
+                        except Exception:
+                            pass
+
                 if not os.path.exists(inprog_file):
                     scheduler_py = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
                     if os.path.exists(scheduler_py):
@@ -543,6 +557,13 @@ def main():
             if opt_settings.get('enabled', False):
                 cache_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.last_optimization_run')
                 inprog_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
+                # Stale-Marker auch hier bereinigen
+                if os.path.exists(inprog_file):
+                    try:
+                        if scheduler_mod._is_stale_in_progress():
+                            os.remove(inprog_file)
+                    except Exception:
+                        pass
                 # Nur starten wenn should_run() True ist UND Cache fehlt UND kein Optimizer läuft.
                 # auto_should_run stellt sicher dass interval_days aus settings.json respektiert wird.
                 if auto_should_run and (not os.path.exists(cache_file)) and (not os.path.exists(inprog_file)):
