@@ -55,8 +55,9 @@ if [ "$MODE" == "3" ]; then
     echo ""
     echo -e "${YELLOW}─────────────────────────────────────────────────${NC}"
     read -p "Sollen die optimalen Ergebnisse automatisch in settings.json eingetragen werden? (j/n): " AUTO_UPDATE
-    
-    if [[ "$AUTO_UPDATE" == "j" || "$AUTO_UPDATE" == "J" ]]; then
+    AUTO_UPDATE="${AUTO_UPDATE//[$'\r\n ']/}"  # Entferne \r, \n, Leerzeichen (Windows/SSH-Fix)
+
+    if [[ "$AUTO_UPDATE" == "j" || "$AUTO_UPDATE" == "J" || "$AUTO_UPDATE" == "y" || "$AUTO_UPDATE" == "Y" ]]; then
         OPTIMIZATION_FILE="artifacts/results/optimization_results.json"
         SETTINGS_FILE="settings.json"
         
