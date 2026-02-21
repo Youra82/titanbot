@@ -44,8 +44,8 @@
             "minute": 0,
             "interval": {
                 "_info": "Einheit: minutes | hours | days | weeks",
-                "value": 7,
-                "unit": "days"
+                "value": 10,
+                "unit": "minutes"
             }
         },
         "symbols_to_optimize": "auto",
