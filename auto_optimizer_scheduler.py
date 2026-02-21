@@ -94,14 +94,14 @@ def _write_trigger_log(line: str) -> None:
 
 
 def _set_in_progress() -> None:
-    """Create an "in-progress" marker with an ISO timestamp and write a
-    lightweight JSON status file that other processes (master_runner) can
-    read to show live progress.
+    """Create an "in-progress" marker with PID and ISO timestamp (JSON) and
+    write a lightweight JSON status file that other processes (master_runner)
+    can read to show live progress.
     """
     try:
         os.makedirs(CACHE_DIR, exist_ok=True)
         with open(IN_PROGRESS_FILE, 'w', encoding='utf-8') as f:
-            f.write(datetime.now().isoformat())
+            json.dump({'pid': os.getpid(), 'started': datetime.now().isoformat()}, f)
         # write a starter status file
         status_file = os.path.join(CACHE_DIR, '.optimization_status.json')
         try:
@@ -137,6 +137,45 @@ def _read_in_progress_ts() -> str | None:
     except Exception:
         return None
     return None
+
+
+def _is_stale_in_progress(max_hours: int = 24) -> bool:
+    """Returns True if the in-progress marker is stale.
+    Stale means: the process (PID) is no longer running, OR the marker is
+    older than max_hours (fallback if no PID stored).
+    """
+    if not os.path.exists(IN_PROGRESS_FILE):
+        return False
+    try:
+        content = open(IN_PROGRESS_FILE, 'r', encoding='utf-8').read().strip()
+        try:
+            data = json.loads(content)
+            pid = data.get('pid')
+            started = data.get('started', '')
+        except (json.JSONDecodeError, ValueError):
+            # Legacy: plain ISO timestamp text
+            pid = None
+            started = content
+
+        # PID check: if PID stored, check if process is still alive
+        if pid:
+            try:
+                os.kill(int(pid), 0)   # signal 0 = existence check
+                return False           # process alive → not stale
+            except (ProcessLookupError, OSError):
+                return True            # process dead → stale
+
+        # Fallback: age check
+        if started:
+            try:
+                started_dt = datetime.fromisoformat(started)
+                age_hours = (datetime.now() - started_dt).total_seconds() / 3600
+                return age_hours > max_hours
+            except Exception:
+                pass
+        return True   # can't determine → treat as stale
+    except Exception:
+        return True   # error reading → treat as stale
 
 
 def load_settings() -> dict:
