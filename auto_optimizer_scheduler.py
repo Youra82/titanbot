@@ -163,8 +163,30 @@ def write_last_run(ts: datetime) -> None:
         pass
 
 
+def _interval_to_minutes(schedule: dict) -> int:
+    """Liest das Intervall aus schedule und gibt es in Minuten zurück.
+    Unterstützt das neue Format {"value": N, "unit": "minutes|hours|days|weeks"}
+    sowie das alte Format interval_days als Fallback."""
+    interval = schedule.get('interval', {})
+    if interval and isinstance(interval, dict):
+        value = int(interval.get('value', 0) or 0)
+        unit = interval.get('unit', 'days').lower().rstrip('s')  # "days" → "day", "hours" → "hour"
+        if unit in ('minute', 'min', 'm'):
+            return value
+        if unit in ('hour', 'h'):
+            return value * 60
+        if unit in ('day', 'd'):
+            return value * 60 * 24
+        if unit in ('week', 'w'):
+            return value * 60 * 24 * 7
+        return value * 60 * 24  # fallback: als Tage interpretieren
+    # Legacy: interval_days
+    legacy = int(schedule.get('interval_days', 0) or 0)
+    return legacy * 60 * 24
+
+
 def compute_last_scheduled_datetime(schedule: dict, now: datetime) -> datetime:
-    # schedule: { day_of_week: 0..6 | None, hour: 0-23, minute: 0-59, interval_days: n }
+    # schedule: { day_of_week: 0..6 | None, hour: 0-23, minute: 0-59, interval: {value, unit} }
     dow = schedule.get('day_of_week')
     hour = int(schedule.get('hour', 0))
     minute = int(schedule.get('minute', 0))
@@ -187,7 +209,7 @@ def should_run(settings: dict, last_run: datetime | None, now: datetime) -> tupl
         return False, 'optimization_settings.enabled is false'
 
     schedule = opt.get('schedule', {})
-    interval_days = int(schedule.get('interval_days', 0) or 0)
+    interval_minutes = _interval_to_minutes(schedule)
 
     scheduled_dt = compute_last_scheduled_datetime(schedule, now)
 
@@ -198,13 +220,15 @@ def should_run(settings: dict, last_run: datetime | None, now: datetime) -> tupl
     if last_run and last_run >= scheduled_dt:
         return False, f'already ran for this scheduled occurrence (last_run={last_run.isoformat()})'
 
-    # If interval_days is set and last_run is too recent -> skip
-    if interval_days > 0 and last_run:
-        delta_days = (now.date() - last_run.date()).days
-        if delta_days < interval_days:
-            return False, f'last run {delta_days} days ago < interval_days ({interval_days})'
+    # If interval is set and last_run is too recent -> skip
+    if interval_minutes > 0 and last_run:
+        delta_minutes = (now - last_run).total_seconds() / 60
+        if delta_minutes < interval_minutes:
+            delta_h = int(delta_minutes // 60)
+            interval_h = int(interval_minutes // 60)
+            return False, f'last run {delta_h}h ago < interval ({interval_h}h = {interval_minutes}min)'
 
-    return True, f'should run (scheduled_dt={scheduled_dt.isoformat()}, interval_days={interval_days})'
+    return True, f'should run (scheduled_dt={scheduled_dt.isoformat()}, interval={interval_minutes}min)'
 
 
 def _send_telegram_message(text: str) -> bool:
