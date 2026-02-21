@@ -261,6 +261,17 @@ def should_run(settings: dict, last_run: datetime | None, now: datetime) -> tupl
     schedule = opt.get('schedule', {})
     interval_minutes = _interval_to_minutes(schedule)
 
+    # --- Reines Intervall-Scheduling (Minuten/Stunden, < 1 Tag) ---
+    # day_of_week/hour sind irrelevant; nur Abstand seit letztem Lauf zählt.
+    if 0 < interval_minutes < 1440:
+        if not last_run:
+            return True, f'kein letzter Lauf (Intervall-Modus: {interval_minutes}min)'
+        delta_minutes = (now - last_run).total_seconds() / 60
+        if delta_minutes < interval_minutes:
+            return False, f'zu frueh: {delta_minutes:.0f}min seit letztem Lauf < {interval_minutes}min'
+        return True, f'interval={interval_minutes}min'
+
+    # --- Tages-/Wochen-Scheduling: day_of_week + hour als Anker ---
     scheduled_dt = compute_last_scheduled_datetime(schedule, now)
 
     if now < scheduled_dt:
