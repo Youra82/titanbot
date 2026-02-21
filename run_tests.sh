@@ -7,8 +7,15 @@ if [ ! -f ".venv/bin/activate" ]; then
 fi
 source .venv/bin/activate
 
+# Windows-Kompatibilität: python3 existiert ggf. nicht im PATH
+PYTHON_CMD=$(command -v python3 2>/dev/null || command -v python 2>/dev/null)
+if [ -z "$PYTHON_CMD" ]; then
+    echo "Fehler: Kein Python-Interpreter gefunden."
+    exit 1
+fi
+
 echo "Führe Pytest aus (inkl. Live-Workflow-Test)..."
-if python3 -m pytest -v -s; then
+if "$PYTHON_CMD" -m pytest -v -s; then
     echo "Pytest erfolgreich durchgelaufen. Alle Tests bestanden."
     EXIT_CODE=0
 else
