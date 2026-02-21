@@ -1,5 +1,5 @@
 # tests/test_workflow.py
-# FÜR 30 USDT, XRP/USDT:USDT, TSL FUNKTIONIERT
+# FÜR PEPE/USDT:USDT, ISOLATED MARGIN, TSL FUNKTIONIERT
 import pytest
 import os
 import sys
@@ -47,15 +47,15 @@ def test_setup():
     except Exception as e:
         pytest.fail(f"Exchange konnte nicht initialisiert werden: {e}")
 
-    # XRP FÜR TEST (ANGEPASSTE PARAMETER FÜR NIEDRIGERES RISIKO UND MARGIN)
-    symbol = 'XRP/USDT:USDT'
+    # PEPE FÜR TEST (ISOLATED MARGIN, NIEDRIGERES RISIKO)
+    symbol = 'PEPE/USDT:USDT'
     timeframe = '5m'
-    
+
     # NEU: Bestimme HTF für den Test-Case
     htf = determine_htf(timeframe)
 
     params = {
-        'market': {'symbol': symbol, 'timeframe': timeframe, 'htf': htf}, # Hinzugefügt: 'htf': htf
+        'market': {'symbol': symbol, 'timeframe': timeframe, 'htf': htf},
         'strategy': { 'swingsLength': 20, 'ob_mitigation': 'High/Low' },
         'risk': {
             'margin_mode': 'isolated',
@@ -65,7 +65,7 @@ def test_setup():
             'trailing_stop_activation_rr': 1.5,
             'trailing_stop_callback_rate_pct': 0.5,
             'atr_multiplier_sl': 1.0,
-            'min_sl_pct': 0.1
+            'min_sl_pct': 0.5
         },
         'behavior': { 'use_longs': True, 'use_shorts': True }
     }

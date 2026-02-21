@@ -307,6 +307,24 @@ def main():
                     print('Start-Telegram: gesendet')
                 elif os.path.exists(inprog_file):
                     print('Start-Telegram: ausstehend (Scheduler läuft)')
+                    # Fallback: MasterRunner sendet START-Telegram falls Scheduler es noch nicht getan hat
+                    _fallback_sentinel = os.path.join(SCRIPT_DIR, 'data', 'cache', '.master_runner_start_notify_fallback')
+                    if not os.path.exists(_fallback_sentinel):
+                        try:
+                            with open(secret_file, 'r', encoding='utf-8') as _sf:
+                                _secrets_tg = json.load(_sf)
+                            _tg_conf = _secrets_tg.get('telegram', {})
+                            import titanbot.utils.telegram as _tg_mod
+                            _tg_mod.send_message(
+                                _tg_conf.get('bot_token', ''),
+                                _tg_conf.get('chat_id', ''),
+                                '🚀 Auto-Optimizer gestartet (Fallback-Benachrichtigung durch MasterRunner)'
+                            )
+                            os.makedirs(os.path.join(SCRIPT_DIR, 'data', 'cache'), exist_ok=True)
+                            with open(_fallback_sentinel, 'w', encoding='utf-8') as _f:
+                                _f.write(datetime.now().isoformat())
+                        except Exception as _te:
+                            print(f'WARN: Fallback-Telegram fehlgeschlagen: {_te}')
                 else:
                     print('Start-Telegram: wird vom Scheduler gesendet')
 

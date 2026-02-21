@@ -186,7 +186,20 @@ class Exchange:
         try:
             order_params = {**params}
             if 'productType' not in order_params:
-                order_params['productType'] = 'USDT-FUTURES' # Behalten wir zur Sicherheit bei
+                order_params['productType'] = 'USDT-FUTURES'
+
+            # Bitget One-Way-Mode: Position schließen → Flash-Close-Endpoint
+            # (regulärer create_order mit reduceOnly gibt Error 40774 im One-Way-Mode)
+            if order_params.get('reduceOnly'):
+                hold_side = 'long' if side == 'sell' else 'short'
+                close_params = {'productType': order_params.get('productType', 'USDT-FUTURES')}
+                return self.exchange.close_position(symbol, hold_side, close_params)
+
+            # Bitget One-Way-Mode: tradeSide='open' ist Pflichtfeld beim Eröffnen
+            # (Fehlt tradeSide → Error 40774 "unilateral position type mismatch")
+            if 'tradeSide' not in order_params:
+                order_params['tradeSide'] = 'open'
+
             rounded_amount = float(self.exchange.amount_to_precision(symbol, amount))
             if rounded_amount <= 0:
                 logger.error(f"FEHLER: Berechneter Order-Betrag ist Null oder negativ ({rounded_amount}).")
@@ -219,6 +232,10 @@ class Exchange:
                 'reduceOnly': params.get('reduceOnly', False)
             }
             order_params.update(params)
+
+            # Bitget One-Way-Mode: tradeSide erforderlich für Plan-Orders
+            if order_params.get('reduceOnly') and 'tradeSide' not in order_params:
+                order_params['tradeSide'] = 'close'
 
             logger.info(f"Sende Trigger Order: Side={side}, Amount={rounded_amount}, Params={order_params}")
             return self.exchange.create_order(symbol, 'market', side, rounded_amount, params=order_params)
@@ -348,10 +365,14 @@ class Exchange:
             # Verwende die Bitget-spezifischen Parameter in den `params`
             order_params = {
                 **params,
-                'trailingTriggerPrice': rounded_activation, 
-                'trailingPercent': callback_rate_float, 
+                'trailingTriggerPrice': rounded_activation,
+                'trailingPercent': callback_rate_float,
                 'productType': 'USDT-FUTURES'
             }
+
+            # Bitget One-Way-Mode: tradeSide='close' für Trailing-Stop-Orders erforderlich
+            if 'tradeSide' not in order_params:
+                order_params['tradeSide'] = 'close'
 
             logger.info(f"Sende TSL Order (MARKET): Side={side}, Amount={rounded_amount}, Activation={rounded_activation}, Callback={callback_rate_float}%")
             
