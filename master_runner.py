@@ -286,70 +286,9 @@ def main():
                 print(f"AUTOOPTIMIERUNG NÖTIG — Grund: {auto_reason}")
                 print("Autooptimierung wird gestartet.")
 
-                # show current Telegram start-notify status immediately
-                start_notify_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_start_notified')
-                inprog_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
-                if os.path.exists(start_notify_file):
-                    notify_status = 'Start‑Telegram: gesendet'
-                elif os.path.exists(inprog_file):
-                    notify_status = 'Start‑Telegram: ausstehend (Scheduler läuft)'
-
-                    # If scheduler is running but start-notify missing, send a fallback
-                    try:
-                        # only attempt once per master-run (don't spam) — sentinel per master_runner
-                        fallback_sent_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.master_runner_start_notify_fallback')
-                        if not os.path.exists(fallback_sent_file):
-                            secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
-                            if os.path.exists(secret_path):
-                                with open(secret_path, 'r', encoding='utf-8') as _sf:
-                                    secret_data = json.load(_sf)
-                                tg = secret_data.get('telegram', {})
-                                bot = tg.get('bot_token')
-                                chat = tg.get('chat_id')
-                                if bot and chat:
-                                    from titanbot.utils.telegram import send_message
-                                    # Try to enrich message with symbols/timeframes if available
-                                    syms = 'auto'
-                                    tfs = 'auto'
-                                    try:
-                                        import auto_optimizer_scheduler as scheduler_mod
-                                        cfg_settings = json.load(open(settings_file, 'r', encoding='utf-8'))
-                                        syms = ', '.join(scheduler_mod.extract_symbols_timeframes(cfg_settings, 'symbols')) or 'auto'
-                                        tfs = ', '.join(scheduler_mod.extract_symbols_timeframes(cfg_settings, 'timeframes')) or 'auto'
-                                    except Exception:
-                                        pass
-                                    msg = f"🚀 Auto‑Optimizer STARTED (detected)\nSymbole: {syms}\nTimeframes: {tfs}\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                                    sent = send_message(bot, chat, msg)
-                                    # record both scheduler start sentinel and master_runner fallback sentinel on success
-                                    if sent:
-                                        try:
-                                            os.makedirs(os.path.dirname(start_notify_file), exist_ok=True)
-                                            with open(start_notify_file, 'w', encoding='utf-8') as _sn:
-                                                _sn.write(datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'))
-                                        except Exception:
-                                            pass
-                                        try:
-                                            with open(fallback_sent_file, 'w', encoding='utf-8') as _fs:
-                                                _fs.write(datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'))
-                                        except Exception:
-                                            pass
-
-                                        # update status shown to user immediately and record in trigger log
-                                        notify_status = 'Start‑Telegram: gesendet (fallback)'
-                                        try:
-                                            _write_trigger_log('AUTO-OPTIMIZER START fallback=master_runner')
-                                        except Exception:
-                                            pass
-                    except Exception:
-                        pass
-                else:
-                    notify_status = 'Start‑Telegram: ausstehend'
-                print(notify_status)
-
-                # Wenn Scheduler fällig ist und noch kein Optimizer läuft, starte Scheduler automatisiert
                 inprog_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_in_progress')
 
-                # Stale-Marker bereinigen: Prozess tot oder Marker zu alt?
+                # Stale-Marker zuerst bereinigen: Prozess tot oder kein Scheduler läuft?
                 if os.path.exists(inprog_file):
                     try:
                         _stale = scheduler_mod._is_stale_in_progress()
@@ -362,6 +301,16 @@ def main():
                         except Exception:
                             pass
 
+                # Start-Telegram-Status anzeigen (nur Info, kein eigenes Telegram senden)
+                start_notify_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.optimization_start_notified')
+                if os.path.exists(start_notify_file):
+                    print('Start-Telegram: gesendet')
+                elif os.path.exists(inprog_file):
+                    print('Start-Telegram: ausstehend (Scheduler läuft)')
+                else:
+                    print('Start-Telegram: wird vom Scheduler gesendet')
+
+                # Scheduler starten wenn kein Optimizer läuft
                 if not os.path.exists(inprog_file):
                     scheduler_py = os.path.join(SCRIPT_DIR, 'auto_optimizer_scheduler.py')
                     if os.path.exists(scheduler_py):
@@ -382,62 +331,6 @@ def main():
                         print('WARN: auto_optimizer_scheduler.py nicht gefunden; Scheduler nicht gestartet.')
                 else:
                     print('INFO: Scheduler bereits aktiv (in-progress marker vorhanden).')
-
-                    # Zeige die letzten Zeilen von optimizer_output.log, damit MasterRunner
-                    # denselben, detaillierten Verlauf wie ./run_pipeline.sh darstellt
-                    try:
-                        # show last lines and wait briefly for optimizer banner if it appears
-                        _print_optimizer_tail(wait_for_banner=True, timeout=10, lines=200, follow_seconds=12)
-                    except Exception:
-                        pass
-
-                    # MasterRunner should still notify you that an optimizer is running
-                    mr_notify_file = os.path.join(SCRIPT_DIR, 'data', 'cache', '.master_runner_optimization_inprog_notified')
-                    # cleanup old sentinel if optimizer stopped
-                    try:
-                        if os.path.exists(mr_notify_file) and (not os.path.exists(inprog_file)):
-                            os.remove(mr_notify_file)
-                    except Exception:
-                        pass
-
-                    # ALWAYS send a MasterRunner notification when optimizer is in-progress
-                    try:
-                        secret_path = os.path.join(SCRIPT_DIR, 'secret.json')
-                        if os.path.exists(secret_path):
-                            with open(secret_path, 'r', encoding='utf-8') as _sf:
-                                secret_data = json.load(_sf)
-                            tg = secret_data.get('telegram', {})
-                            bot = tg.get('bot_token')
-                            chat = tg.get('chat_id')
-                            if bot and chat:
-                                from titanbot.utils.telegram import send_message
-                                sent_ok = send_message(bot, chat, (
-                                    f"ℹ️ Auto‑Optimizer läuft bereits — MasterRunner hat den In‑Progress‑Marker erkannt.\nStart: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                                ))
-                                # log send result for visibility
-                                try:
-                                    mr_log = os.path.join(SCRIPT_DIR, 'logs', 'master_runner_debug.log')
-                                    with open(mr_log, 'a', encoding='utf-8') as _m:
-                                        _m.write(f"{datetime.now().isoformat()} MASTER_RUNNER NOTIFY inprog result={sent_ok}\n")
-                                except Exception:
-                                    pass
-                                # always (re)write sentinel when send succeeds
-                                if sent_ok:
-                                    try:
-                                        os.makedirs(os.path.dirname(mr_notify_file), exist_ok=True)
-                                        with open(mr_notify_file, 'w', encoding='utf-8') as _sn:
-                                            _sn.write(datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'))
-                                    except Exception:
-                                        pass
-                                else:
-                                    try:
-                                        trigger_log = os.path.join(SCRIPT_DIR, 'logs', 'auto_optimizer_trigger.log')
-                                        with open(trigger_log, 'a', encoding='utf-8') as _t:
-                                            _t.write(f"{datetime.now().isoformat()} MASTER_RUNNER NOTIFY inprog result=failed\n")
-                                    except Exception:
-                                        pass
-                    except Exception:
-                        pass
         except Exception:
             # non-fatal — continue with master runner
             pass

@@ -140,12 +140,12 @@ MIN_PNL=$(get_setting "['optimization_settings', 'constraints', 'min_pnl_pct']")
 MIN_PNL=${MIN_PNL:-$DEFAULT_MIN_PNL}
 
 END_DATE=$(date -d "yesterday" +%F)
-START_DATE=$(date -d "$LOOKBACK_DAYS days ago $END_DATE" +%F)
+START_DATE="auto"   # optimizer.py berechnet Startdatum je Paar/Timeframe
 OPTIM_MODE_ARG=${OPTIM_MODE_ARG:-$DEFAULT_OPTIM_MODE} # Standard ist strict
 
 # --- Pipeline starten ---
 echo "Optimierung ist aktiviert. Starte Prozesse..."
-echo "Verwende Daten der letzten $LOOKBACK_DAYS Tage ($START_DATE bis $END_DATE)."
+echo "Datenbereich: auto je Zeitfenster (5m/15m=60d, 30m/1h=365d, 2h/4h=730d, 6h/1d=1095d) | Ende: $END_DATE"
 if [ -n "$OPTIM_PAIRS" ]; then
     echo "Paare (auto): $OPTIM_PAIRS"
 else
