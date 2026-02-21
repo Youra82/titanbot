@@ -583,10 +583,15 @@ def main() -> int:
             print('Force run requested -> executing pipeline now')
             notify = settings.get('optimization_settings', {}).get('send_telegram_on_completion', False)
 
-            # mark in-progress and notify ONCE (use sentinel)
+            # mark in-progress; reset start-notify sentinel so jeder neue Lauf eine Nachricht sendet
             _set_in_progress()
             start_notify_file = os.path.join(CACHE_DIR, '.optimization_start_notified')
-            if notify and (not os.path.exists(start_notify_file)):
+            try:
+                if os.path.exists(start_notify_file):
+                    os.remove(start_notify_file)
+            except Exception:
+                pass
+            if notify:
                 # Build enriched start message with pairs and trials info
                 try:
                     live_strats = settings.get('live_trading_settings', {}).get('active_strategies', [])
