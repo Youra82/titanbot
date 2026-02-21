@@ -7,7 +7,7 @@ import numpy as np
 import argparse
 import logging
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
@@ -22,6 +22,10 @@ from titanbot.analysis.evaluator import evaluate_dataset
 from titanbot.utils.timeframe_utils import determine_htf # NEU: Import für HTF Bestimmung
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+# Empfohlener Lookback je Timeframe (wenn --start_date auto übergeben wird)
+TF_LOOKBACK_DAYS = {'5m': 60, '15m': 60, '30m': 365, '1h': 365,
+                    '2h': 730, '4h': 730, '6h': 1095, '1d': 1095}
 
 HISTORICAL_DATA = None
 CURRENT_HTF_DATA = None  # Pre-loaded HTF data — einmal laden, nicht pro Trial
@@ -127,11 +131,19 @@ def main():
         CURRENT_HTF = determine_htf(timeframe)
 
         print(f"\n===== Optimiere: {symbol} ({timeframe}) | MTF-Bias von {CURRENT_HTF} =====")
-        HISTORICAL_DATA = load_data(symbol, timeframe, args.start_date, args.end_date)
+        # Per-Paar Lookback: wenn --start_date auto, berechne Startdatum je Timeframe
+        if args.start_date.lower() == 'auto':
+            pair_lookback = TF_LOOKBACK_DAYS.get(timeframe, 365)
+            end_dt = datetime.strptime(args.end_date, '%Y-%m-%d')
+            pair_start_date = (end_dt - timedelta(days=pair_lookback)).strftime('%Y-%m-%d')
+            print(f"Datenbereich: {pair_lookback} Tage ({pair_start_date} bis {args.end_date})")
+        else:
+            pair_start_date = args.start_date
+        HISTORICAL_DATA = load_data(symbol, timeframe, pair_start_date, args.end_date)
         # HTF-Daten einmalig laden (vor study.optimize) — verhindert parallele Cache-Korruption
         if CURRENT_HTF and CURRENT_HTF != timeframe:
             print(f"Lade HTF-Daten ({CURRENT_HTF}) einmalig vor der Optimierung...")
-            CURRENT_HTF_DATA = load_data(symbol, CURRENT_HTF, args.start_date, args.end_date)
+            CURRENT_HTF_DATA = load_data(symbol, CURRENT_HTF, pair_start_date, args.end_date)
         else:
             CURRENT_HTF_DATA = None
         if HISTORICAL_DATA.empty:
