@@ -52,36 +52,41 @@ def check_and_run_optimizer():
         day_of_week = schedule.get('day_of_week', 0)
         hour = schedule.get('hour', 3)
         minute = schedule.get('minute', 0)
-        interval_days = schedule.get('interval_days', 7)
-        
+        # Intervall aus settings lesen (neues Format: {value, unit} oder Legacy: interval_days)
+        _iv = schedule.get('interval', {})
+        if _iv and isinstance(_iv, dict):
+            _v = int(_iv.get('value', 0) or 0)
+            _u = _iv.get('unit', 'days').lower().rstrip('s')
+            _mul = {'minute': 1, 'min': 1, 'm': 1, 'hour': 60, 'h': 60,
+                    'day': 1440, 'd': 1440, 'week': 10080, 'w': 10080}.get(_u, 1440)
+            interval_minutes = _v * _mul
+        else:
+            interval_minutes = int(schedule.get('interval_days', 7)) * 1440
+
         # Prüfe ob heute der richtige Tag ist
         if now.weekday() != day_of_week:
             return False
-        
+
         # Prüfe ob wir in der geplanten Stunde sind (oder danach, aber am gleichen Tag)
         if now.hour < hour:
             return False
-        
+
         # Wenn wir in der richtigen Stunde sind, prüfe ob die Minute erreicht wurde
         if now.hour == hour and now.minute < minute:
             return False
-        
+
         # Ab hier: Wir sind am richtigen Tag und der geplante Zeitpunkt ist erreicht oder überschritten
-        
+
         # Prüfe ob heute schon gelaufen (oder innerhalb des Intervalls)
         cache_dir = os.path.join(SCRIPT_DIR, 'data', 'cache')
         cache_file = os.path.join(cache_dir, '.last_optimization_run')
-        
+
         if os.path.exists(cache_file):
             with open(cache_file, 'r') as f:
                 last_run = datetime.fromtimestamp(int(f.read().strip()))
-                
-                # Wenn heute schon gelaufen, nicht nochmal
-                if last_run.date() == now.date():
-                    return False
-                
+
                 # Wenn innerhalb des Intervalls, nicht nochmal
-                if (now - last_run).days < interval_days:
+                if (now - last_run).total_seconds() / 60 < interval_minutes:
                     return False
         
         # Zeit für Optimierung!

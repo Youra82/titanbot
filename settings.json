@@ -42,7 +42,11 @@
             "day_of_week": 0,
             "hour": 3,
             "minute": 0,
-            "interval_days": 7
+            "interval": {
+                "_info": "Einheit: minutes | hours | days | weeks",
+                "value": 7,
+                "unit": "days"
+            }
         },
         "symbols_to_optimize": "auto",
         "timeframes_to_optimize": "auto",
