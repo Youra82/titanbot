@@ -40,12 +40,12 @@
         "schedule": {
             "_info": "day_of_week: 0=Montag, 6=Sonntag | hour: 0-23 (24h Format)",
             "day_of_week": 0,
-            "hour": 3,
+            "hour": 21,
             "minute": 0,
             "interval": {
                 "_info": "Einheit: minutes | hours | days | weeks",
-                "value": 10,
-                "unit": "minutes"
+                "value": 7,
+                "unit": "days"
             }
         },
         "symbols_to_optimize": "auto",
@@ -53,7 +53,7 @@
         "lookback_days": "auto",
         "start_capital": 1000,
         "cpu_cores": -1,
-        "num_trials": 10,
+        "num_trials": 500,
         "constraints": {
             "max_drawdown_pct": 30,
             "min_win_rate_pct": 50,
