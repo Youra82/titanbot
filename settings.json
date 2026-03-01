@@ -1,6 +1,6 @@
 {
     "live_trading_settings": {
-        "max_open_positions": 3,
+        "max_open_positions": 5,
         "use_auto_optimizer_results": true,
         "active_strategies": [
             {
