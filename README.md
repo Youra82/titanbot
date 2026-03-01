@@ -188,13 +188,13 @@ Bearbeite `settings.json`:
 
 ```bash
 # Master Runner starten
-python master_runner.py
+cd /home/ubuntu/titanbot && .venv/bin/python3 master_runner.py
 ```
 
 ### Manuell starten / Cronjob testen
 
 ```bash
-cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu/titanbot/master_runner.py
+cd /home/ubuntu/titanbot && .venv/bin/python3 master_runner.py
 ```
 
 Der Master Runner:
@@ -215,7 +215,7 @@ crontab -e
 
 ```
 # Starte den TitanBot Master-Runner alle 15 Minuten
-*/15 * * * * /usr/bin/flock -n /home/ubuntu/titanbot/titanbot.lock /bin/sh -c "cd /home/ubuntu/titanbot && /home/ubuntu/titanbot/.venv/bin/python3 /home/ubuntu/titanbot/master_runner.py >> /home/ubuntu/titanbot/logs/cron.log 2>&1"
+*/15 * * * * /usr/bin/flock -n /home/ubuntu/titanbot/titanbot.lock /bin/sh -c "cd /home/ubuntu/titanbot && .venv/bin/python3 master_runner.py >> /home/ubuntu/titanbot/logs/cron.log 2>&1"
 ```
 
 Logverzeichnis:
