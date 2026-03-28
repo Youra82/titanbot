@@ -497,6 +497,60 @@ Dieses Projekt ist lizenziert unter der MIT License.
 
 ---
 
+## Coin & Timeframe Empfehlungen
+
+TitanBot kombiniert **Smart Money Concepts (SMC)** mit **MACD+RSI-Momentum** — Liquiditätssweeps und Breaker Blocks aus dem SMC-Framework werden nur dann getradet, wenn das Momentum (MACD-Cross + RSI-Reversal) bestätigt. Benötigt: Coins mit klarer institutioneller Marktstruktur UND ausgeprägten Momentum-Phasen.
+
+### Effektive Zeitspannen je Timeframe
+
+| TF | MACD(26) — Langfrist | RSI(14) | ATR(14) | SMC-Pivots(20) | Geeignet |
+|---|---|---|---|---|---|
+| 15m | 6.5h | 3.5h | 3.5h | 5h | ❌ |
+| 30m | 13h | 7h | 7h | 10h | ⚠️ |
+| **1h** | **26h** | **14h** | **14h** | **20h** | **✅✅** |
+| **2h** | **52h** | **28h** | **28h** | **40h** | **✅✅** |
+| **4h** | **104h** | **56h** | **56h** | **80h** | **✅✅** |
+| **6h** | **156h** | **84h** | **84h** | **120h** | **✅✅** |
+| 1d | 26d | 14d | 14d | 20d | ✅ |
+
+MACD (12, 26, 9): Die langsamste Komponente sind 26 Kerzen. Auf 15m entspricht das 6.5h — Momentum-Signale reagieren auf Stunden-Noise. Ab 1h (26h MACD-Spanne) werden SMC+Momentum-Signale strukturell konsistent. 4h/6h liefern die robustesten Kombinationen.
+
+### Coin-Eignung
+
+| Coin | SMC-Struktur | MACD-Momentum | RSI-Klarheit | Bewertung |
+|---|---|---|---|---|
+| **BTC** | Exzellent — stärkste institutionelle Struktur | Klare MACD-Crosses an Key-Levels | RSI sehr valide | ✅✅ Beste Wahl |
+| **ETH** | Exzellent | Sehr gutes Momentum | Klares RSI-Signal | ✅✅ Sehr gut |
+| **SOL** | Sehr gut — explosive Sweeps | Starkes Momentum | Gutes RSI-Signal | ✅ Gut |
+| **BNB** | Gut — stabile SMC-Basis | Moderates Momentum | Gut | ✅ Gut |
+| **LINK** | Gut — explosive SMC-Moves | Starkes Momentum in Bullphasen | Gut | ✅ Gut |
+| **AVAX** | Gut — klare Liquidity-Sweeps | Gutes Momentum | Gut | ✅ Gut |
+| **ARB** | Mittel — ETH-korreliert | Mittel | Mittel | ⚠️ Mittel |
+| **XRP** | Mittel — Momentum oft schwach | Moderate MACD-Crosses | Mittel | ⚠️ Mittel |
+| **LTC** | Mittel — BTC-korreliert | Moderate Momentum-Phasen | Mittel | ⚠️ Mittel |
+| **ADA** | Schwach — träge Struktur | Schwaches Momentum | RSI meist neutral | ⚠️ Schwach |
+| **DOGE** | Schlecht | Unbrauchbares Momentum | RSI übersteuert | ❌ Schlecht |
+| **SHIB/PEPE** | Nicht vorhanden | Kein Momentum | Nicht anwendbar | ❌❌ Nicht geeignet |
+
+### Empfohlene Kombinationen (Ranking)
+
+| Rang | Kombination | Begründung |
+|---|---|---|
+| 🥇 1 | **BTC 4h** | Stärkste SMC+Momentum-Kombination, MACD auf 4h sehr zuverlässig |
+| 🥇 1 | **ETH 4h** | Ähnlich BTC, exzellente SMC+MACD-Konfluenz |
+| 🥈 2 | **BTC 6h** | Noch robustere MACD-Signale, weniger Trades aber höhere Qualität |
+| 🥈 2 | **SOL 4h** | Explosive Liquiditätssweeps + starkes Momentum |
+| 🥉 3 | **LINK 4h** | Sehr gute SMC-Moves mit starkem Momentum in Bullphasen |
+| 4 | **BNB 4h** | Stabile, vorhersehbare SMC+Momentum-Muster |
+| 4 | **ETH 6h** | Sehr wenige, aber qualitativ hochwertige Signale |
+| ❌ | **15m / 30m** | MACD-Spanne zu kurz, SMC-Pivots instabil |
+| ❌ | **DOGE / SHIB** | Kein valides SMC-Framework, Momentum nicht messbar |
+
+> **Hinweis:** `max_open_positions: 3` schützt vor Overtrading. In Bullphasen ist BTC 4h + ETH 4h die empfohlene Kombination für zwei simultane Positionen.
+
+
+---
+
 ## 🙏 Credits
 
 Entwickelt mit:
