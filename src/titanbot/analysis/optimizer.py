@@ -243,7 +243,8 @@ def main():
 
                 # ASCII-Fortschrittsbalken (alle 5 Sek. oder beim letzten Trial)
                 now_t = time.time()
-                if now_t - _last_bar_time[0] >= 5.0 or trials_done >= trials_total:
+                is_done = trials_done >= trials_total
+                if now_t - _last_bar_time[0] >= 5.0 or is_done:
                     _last_bar_time[0] = now_t
                     bar_width = 25
                     pct = min(trials_done / trials_total, 1.0) if trials_total > 0 else 0
@@ -251,7 +252,9 @@ def main():
                     bar = '█' * filled + '░' * (bar_width - filled)
                     sym_short = CURRENT_SYMBOL.split('/')[0]
                     best_str = f"{best_val:+.2f}%" if best_val is not None else "---"
-                    print(f"  [{bar}] {sym_short}/{CURRENT_TIMEFRAME}  {trials_done:>4}/{trials_total}  ({pct*100:5.1f}%)  Best: {best_str}  {elapsed}s", flush=True)
+                    line = f"  [{bar}] {sym_short}/{CURRENT_TIMEFRAME}  {trials_done:>4}/{trials_total}  ({pct*100:5.1f}%)  Best: {best_str}  {elapsed}s"
+                    # \r überschreibt dieselbe Zeile; Leerzeichen am Ende löschen Reste
+                    print(f"\r{line:<80}", end='\n' if is_done else '', flush=True)
             except Exception:
                 pass
 
