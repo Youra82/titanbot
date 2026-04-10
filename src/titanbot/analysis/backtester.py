@@ -83,19 +83,19 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         # Verwende pre-loaded HTF data wenn verfügbar (verhindert parallele Cache-Korruption)
         htf_data = smc_params.get('htf_data')
         if htf_data is None:
-            print(f"MTF-Check: Lade Daten für HTF ({htf})...")
+            if verbose: print(f"MTF-Check: Lade Daten für HTF ({htf})...")
             htf_data = load_data(symbol, htf, data.index.min().strftime('%Y-%m-%d'), data.index.max().strftime('%Y-%m-%d'))
-        
+
         if htf_data.empty:
-            print("MTF-Check: Konnte HTF-Daten nicht laden. Verwende Bias.NEUTRAL.")
+            if verbose: print("MTF-Check: Konnte HTF-Daten nicht laden. Verwende Bias.NEUTRAL.")
         else:
             # Führe SMC-Analyse auf HTF-Daten durch
-            htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'}) 
+            htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'})
             htf_engine.process_dataframe(htf_data[['open', 'high', 'low', 'close']].copy())
-            
+
             # Der Bias wird durch die letzte festgestellte Swing-Struktur bestimmt
             market_bias = htf_engine.swingTrend
-            print(f"MTF-Check: Initialer HTF-Swing-Bias ({htf}): {market_bias.name}")
+            if verbose: print(f"MTF-Check: Initialer HTF-Swing-Bias ({htf}): {market_bias.name}")
             
     # --- ENDE NEU ---
 
