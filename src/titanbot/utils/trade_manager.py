@@ -199,6 +199,14 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         engine = SMCEngine(settings=smc_params)
         smc_results_full = engine.process_dataframe(recent_data[['open', 'high', 'low', 'close']].copy())
 
+        # SMC-Spalten (P/D, Sweep-State) in recent_data übertragen → current_candle aktualisieren
+        enriched_df = smc_results_full.get('enriched_df')
+        if enriched_df is not None:
+            for col in enriched_df.columns:
+                if col.startswith('smc_'):
+                    recent_data[col] = enriched_df[col].values
+        current_candle = recent_data.iloc[-1]
+
         # Korrigierter Aufruf: SMC-Ergebnisse und Indikator-angereicherte Kerze übergeben
         # GEÄNDERT: market_bias als neuen Parameter übergeben, signal_context empfangen
         # Hole auch die vorherige Kerze für Confirmation-Logik (falls nötig)
@@ -284,7 +292,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # --- SL-Distanz: ATR-basiert (dynamisch & optimal!) ---
         atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0)
         min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0
-        use_structure_sl = risk_params.get('use_structure_sl', False)  # Deaktiviert: ATR ist besser!
+        use_structure_sl = risk_params.get('use_structure_sl', True)   # OB/FVG-Level als SL-Basis
         structure_sl_buffer_pct = risk_params.get('structure_sl_buffer_pct', 0.2) / 100.0  # 0.2% Buffer
 
         current_atr = current_candle.get('atr')
