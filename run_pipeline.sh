@@ -37,7 +37,8 @@ read -p "Startdatum (JJJJ-MM-TT) oder 'a' für Automatik [Standard: a]: " START_
 # *** ENDE DER EINFÜGUNG ***
 
 read -p "Enddatum (JJJJ-MM-TT) [Standard: Heute]: " END_DATE; END_DATE=${END_DATE:-$(date +%F)}
-read -p "Startkapital in USDT [Standard: 1000]: " START_CAPITAL; START_CAPITAL=${START_CAPITAL:-1000}
+_DEFAULT_CAPITAL=$(python3 -c "import json; d=json.load(open('settings.json')); print(int(d['optimization_settings']['start_capital']))" 2>/dev/null || echo "15")
+read -p "Startkapital in USDT [Standard: ${_DEFAULT_CAPITAL} (aus settings.json)]: " START_CAPITAL; START_CAPITAL=${START_CAPITAL:-$_DEFAULT_CAPITAL}
 read -p "CPU-Kerne [Standard: -1 für alle]: " N_CORES; N_CORES=${N_CORES:--1}
 read -p "Anzahl Trials [Standard: 200]: " N_TRIALS; N_TRIALS=${N_TRIALS:-200}
 
