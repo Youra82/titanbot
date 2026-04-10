@@ -5,27 +5,21 @@
         "htf": "30m"
     },
     "strategy": {
-        "swingsLength": 88,
+        "swingsLength": 87,
         "ob_mitigation": "Close",
-        "use_adx_filter": false,
-        "adx_period": 20,
-        "adx_threshold": 29,
-        "use_entry_confirmation": true,
-        "use_volume_filter": true,
-        "volume_ma_period": 20,
-        "volume_threshold_multiplier": 1.5
+        "use_adx_filter": true,
+        "adx_period": 10,
+        "adx_threshold": 22
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 1.95,
-        "risk_reward_ratio": 2.46,
-        "leverage": 9,
-        "trailing_stop_activation_rr": 2.96,
-        "trailing_stop_callback_rate_pct": 0.65,
-        "atr_multiplier_sl": 1.34,
-        "min_sl_pct": 1.15,
-        "use_structure_sl": true,
-        "structure_sl_buffer_pct": 0.2
+        "risk_per_trade_pct": 1.85,
+        "risk_reward_ratio": 1.43,
+        "leverage": 13,
+        "trailing_stop_activation_rr": 1.87,
+        "trailing_stop_callback_rate_pct": 1.88,
+        "atr_multiplier_sl": 2.97,
+        "min_sl_pct": 0.41
     },
     "behavior": {
         "use_longs": true,
