@@ -27,6 +27,7 @@ MarkupSafe==3.0.3
 multidict==6.7.0
 multitasking==0.0.12
 numpy==2.3.4
+openpyxl==3.1.5
 optuna==4.5.0
 packaging==25.0
 pandas==2.3.3
