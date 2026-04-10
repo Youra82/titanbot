@@ -58,8 +58,8 @@ def objective(trial):
         # --- SMC Pro: Premium/Discount + Liquidity ---
         'use_pd_filter': trial.suggest_categorical('use_pd_filter', [True, False]),
         'use_liquidity_sweep_filter': trial.suggest_categorical('use_liquidity_sweep_filter', [True, False]),
-        'liquidity_lookback': trial.suggest_int('liquidity_lookback', 10, 25),
-        'min_fvg_size_pct': trial.suggest_float('min_fvg_size_pct', 0.05, 0.20),
+        'liquidity_lookback': 20,  # Fix in SMCEngine — kein Trial-Param mehr
+        'min_fvg_size_pct': trial.suggest_float('min_fvg_size_pct', 0.05, 0.20),  # Post-Filter in trade_logic
         # --- SMC Pro: Order Block Qualität ---
         'min_ob_quality': trial.suggest_float('min_ob_quality', 0.10, 0.50),
         'max_ob_touches': trial.suggest_int('max_ob_touches', 0, 2),
@@ -83,12 +83,9 @@ def objective(trial):
 
     # SMC-Engine cachen: process_dataframe() nur bei neuen (swingsLength, ob_mitigation,
     # liquidity_lookback, min_fvg_size_pct) aufrufen — alle anderen Params sind Post-Filter
-    _cache_key = (
-        smc_params['swingsLength'],
-        smc_params['ob_mitigation'],
-        smc_params['liquidity_lookback'],
-        round(smc_params['min_fvg_size_pct'], 2),
-    )
+    # Cache-Key: nur die zwei Parameter die SMCEngine-Output beeinflussen
+    # min_fvg_size_pct ist jetzt Post-Filter in trade_logic, liquidity_lookback fix=20
+    _cache_key = (smc_params['swingsLength'], smc_params['ob_mitigation'])
     with _SMC_CACHE_LOCK:
         _precomputed = _SMC_CACHE.get(_cache_key)
 
