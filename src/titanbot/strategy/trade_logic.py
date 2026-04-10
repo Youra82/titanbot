@@ -152,8 +152,11 @@ def get_titan_signal(
 
     if long_pd_ok and long_sweep_ok:
         # Priority 1: FVG long (tighter zone, cleaner entry)
+        min_fvg_size = params.get('strategy', params).get('min_fvg_size_pct', 0.05) / 100.0
         for fvg in unmitigated_fvgs:
             if fvg.bias != Bias.BULLISH:
+                continue
+            if fvg.size_pct < min_fvg_size:
                 continue
             if current_candle['low'] <= fvg.top and current_candle['close'] >= fvg.bottom:
                 if use_entry_confirmation:
@@ -216,6 +219,8 @@ def get_titan_signal(
             # Priority 1: FVG short
             for fvg in unmitigated_fvgs:
                 if fvg.bias != Bias.BEARISH:
+                    continue
+                if fvg.size_pct < min_fvg_size:
                     continue
                 if current_candle['high'] >= fvg.bottom and current_candle['close'] <= fvg.top:
                     if use_entry_confirmation:
