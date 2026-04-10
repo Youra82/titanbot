@@ -198,7 +198,22 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                 pnl_usd = pos['notional_value'] * pnl_pct
                 total_fees = pos['notional_value'] * fee_pct * 2
                 equity += (pnl_usd - total_fees)
-                trade_history.append({'strategy_key': key, 'symbol': strat_data['symbol'], 'pnl': (pnl_usd - total_fees)})
+                trade_history.append({
+                    'strategy_key': key,
+                    'symbol':        strat_data['symbol'],
+                    'timeframe':     pos.get('timeframe', ''),
+                    'direction':     pos['side'],
+                    'entry_time':    str(pos.get('entry_ts', ''))[:16].replace('T', ' '),
+                    'ts':            pos.get('entry_ts', ts),
+                    'entry':         round(pos['entry_price'], 6),
+                    'exit':          round(exit_price, 6),
+                    'leverage':      pos.get('leverage', 0),
+                    'margin_used':   round(pos['margin_used'], 2),
+                    'sl_pct':        pos.get('sl_pct', 0),
+                    'tsl_activation_rr':  pos.get('tsl_activation_rr', 0),
+                    'tsl_callback_pct':   pos.get('tsl_callback_pct', 0),
+                    'pnl':           round(pnl_usd - total_fees, 4),
+                })
                 positions_to_close.append(key)
             else:
                 pnl_mult = 1 if pos['side'] == 'long' else -1
@@ -280,8 +295,15 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                             'activation_price': activation_price,
                             'peak_price': entry_price,
                             'callback_rate': callback_rate,
-                            'last_known_price': entry_price
-                            }
+                            'last_known_price': entry_price,
+                            # Für Trade-History-Export
+                            'entry_ts': ts,
+                            'timeframe': strat_data['timeframe'],
+                            'leverage': leverage,
+                            'sl_pct': round(sl_distance / entry_price * 100, 4),
+                            'tsl_activation_rr': activation_rr,
+                            'tsl_callback_pct': callback_rate * 100,
+                        }
 
         # --- 3c. Equity Curve und Drawdown aktualisieren (Unverändert) ---
         current_total_equity = equity + unrealized_pnl
@@ -329,7 +351,8 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
         "liquidation_date": liquidation_date,
         "pnl_per_strategy": pnl_per_strategy,
         "trades_per_strategy": trades_per_strategy,
-        "equity_curve": equity_df
+        "equity_curve":   equity_df,
+        "trade_history":  trade_history,
     }
 
 # ... (if __name__ == "__main__": bleibt unverändert)

@@ -18,9 +18,293 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.analysis.backtester import load_data, run_smc_backtest
 from titanbot.analysis.portfolio_simulator import run_portfolio_simulation
-# Portfolio Optimizer Import
 from titanbot.analysis.portfolio_optimizer import run_portfolio_optimizer
 from titanbot.utils.telegram import send_document
+
+GREEN  = '\033[0;32m'
+YELLOW = '\033[1;33m'
+NC     = '\033[0m'
+
+
+def _get_telegram_cfg():
+    try:
+        with open(os.path.join(PROJECT_ROOT, 'secret.json'), 'r') as f:
+            s = json.load(f)
+        tg = s.get('telegram', {})
+        return tg.get('bot_token', ''), tg.get('chat_id', '')
+    except Exception:
+        return '', ''
+
+
+def _generate_trades_excel(final_sim, capital):
+    """Erstellt titanbot_trades.xlsx mit allen Portfolio-Trades."""
+    try:
+        import openpyxl
+        from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        print(f"  {YELLOW}openpyxl nicht installiert — Excel übersprungen. (pip install openpyxl){NC}")
+        return
+
+    trade_history = final_sim.get('trade_history', [])
+    if not trade_history:
+        print(f"  {YELLOW}Keine Trades — Excel übersprungen.{NC}")
+        return
+
+    equity = capital
+    rows   = []
+    for i, t in enumerate(trade_history):
+        pnl    = float(t['pnl'])
+        equity += pnl
+        symbol = t.get('symbol', '')
+        tf     = t.get('timeframe', '')
+        strat  = f"{symbol.split('/')[0]}/{tf}" if symbol else tf
+        dir_   = t.get('direction', '').upper()
+        entry  = round(float(t.get('entry', 0)), 6)
+        exit_p = round(float(t.get('exit',  0)), 6)
+        ergebnis = 'TP erreicht' if pnl > 0 else 'SL erreicht'
+        sl_pct   = t.get('sl_pct', 0)
+        act_rr   = t.get('tsl_activation_rr', 0)
+        callback = t.get('tsl_callback_pct', 0)
+        rows.append({
+            'Nr':             i + 1,
+            'Datum':          t.get('entry_time', ''),
+            'Strategie':      strat,
+            'Richtung':       dir_,
+            'Hebel':          t.get('leverage', '—'),
+            'Einsatz (USDT)': round(float(t.get('margin_used', 0)), 2),
+            'SL %':           f"{sl_pct:.3f}%" if sl_pct else '—',
+            'TSL Akt.':       f"@{act_rr:.2f}x" if act_rr else '—',
+            'TSL Callback':   f"{callback:.3f}%" if callback else '—',
+            'Entry':          entry,
+            'Exit':           exit_p,
+            'Ergebnis':       ergebnis,
+            'PnL (USDT)':     round(pnl, 4),
+            'Kapital':        round(equity, 4),
+        })
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Trades'
+
+    header_fill = PatternFill('solid', fgColor='1E3A5F')
+    win_fill    = PatternFill('solid', fgColor='D6F4DC')
+    loss_fill   = PatternFill('solid', fgColor='FAD7D7')
+    alt_fill    = PatternFill('solid', fgColor='F2F2F2')
+    thin_border = Border(
+        left=Side(style='thin', color='CCCCCC'), right=Side(style='thin', color='CCCCCC'),
+        top=Side(style='thin', color='CCCCCC'),  bottom=Side(style='thin', color='CCCCCC'),
+    )
+    col_widths = {
+        'Nr': 5, 'Datum': 18, 'Strategie': 18, 'Richtung': 10,
+        'Hebel': 8, 'Einsatz (USDT)': 16,
+        'SL %': 12, 'TSL Akt.': 10, 'TSL Callback': 13,
+        'Entry': 14, 'Exit': 14, 'Ergebnis': 14, 'PnL (USDT)': 14, 'Kapital': 16,
+    }
+
+    headers = list(rows[0].keys())
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill      = header_fill
+        cell.font      = Font(bold=True, color='FFFFFF', size=11)
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.border    = thin_border
+        ws.column_dimensions[get_column_letter(col)].width = col_widths.get(h, 14)
+    ws.row_dimensions[1].height = 22
+
+    for r_idx, row in enumerate(rows, 2):
+        if row['Ergebnis'] == 'TP erreicht':
+            fill = win_fill
+        elif r_idx % 2 == 0:
+            fill = loss_fill
+        else:
+            fill = alt_fill
+        for col, key in enumerate(headers, 1):
+            cell = ws.cell(row=r_idx, column=col, value=row[key])
+            cell.fill      = fill
+            cell.border    = thin_border
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            if key in ('Entry', 'Exit', 'PnL (USDT)', 'Kapital'):
+                cell.number_format = '#,##0.0000'
+            elif key == 'Einsatz (USDT)':
+                cell.number_format = '#,##0.00'
+        ws.row_dimensions[r_idx].height = 18
+
+    total     = len(rows)
+    wins      = sum(1 for r in rows if r['Ergebnis'] == 'TP erreicht')
+    sr        = total + 3
+    pnl_total = rows[-1]['Kapital'] - capital if rows else 0.0
+    pnl_pct   = pnl_total / capital * 100 if capital else 0.0
+    for label, value in [
+        ('Trades gesamt', total),
+        ('Win-Rate',      f"{wins / total * 100:.1f}%" if total else '—'),
+        ('PnL',           f"{pnl_pct:+.1f}%"),
+        ('Endkapital',    f"{rows[-1]['Kapital']:.2f} USDT" if rows else '—'),
+    ]:
+        ws.cell(row=sr, column=1, value=label).font = Font(bold=True)
+        ws.cell(row=sr, column=2, value=value)
+        sr += 1
+
+    out_dir  = os.path.join(PROJECT_ROOT, 'artifacts', 'charts')
+    os.makedirs(out_dir, exist_ok=True)
+    out_file = os.path.join(out_dir, 'titanbot_trades.xlsx')
+    wb.save(out_file)
+    print(f"  {GREEN}Excel gespeichert: titanbot_trades.xlsx{NC}")
+
+    bot_token, chat_id = _get_telegram_cfg()
+    if bot_token and chat_id:
+        caption = (f"TitanBot Trades — {total} Trades | "
+                   f"WR: {wins / total * 100:.1f}% | PnL: {pnl_pct:+.1f}%" if total else "TitanBot Trades")
+        send_document(bot_token, chat_id, out_file, caption=caption)
+        print(f"  {GREEN}Via Telegram gesendet.{NC}")
+    else:
+        print(f"  {YELLOW}Telegram nicht konfiguriert — nur lokal gespeichert.{NC}")
+
+
+def _generate_portfolio_chart(final_sim, portfolio_files, capital, start_date, end_date):
+    """Erstellt titanbot_portfolio_equity.html mit interaktivem Plotly-Chart."""
+    try:
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+    except ImportError:
+        print(f"  {YELLOW}plotly nicht installiert — Chart übersprungen. (pip install plotly){NC}")
+        return
+
+    eq_df         = final_sim.get('equity_curve')
+    trade_history = final_sim.get('trade_history', [])
+    if eq_df is None or (hasattr(eq_df, 'empty') and eq_df.empty):
+        print(f"  {YELLOW}Keine Equity-Daten — Chart übersprungen.{NC}")
+        return
+
+    eq_times = eq_df['timestamp'].astype(str).tolist()
+    eq_vals  = eq_df['equity'].tolist()
+
+    win_x, win_y   = [], []
+    loss_x, loss_y = [], []
+    for t in trade_history:
+        ts_str = str(t.get('ts', ''))
+        try:
+            row = eq_df[eq_df['timestamp'] <= pd.to_datetime(t['ts'])]
+            eq_at = float(row['equity'].iloc[-1]) if not row.empty else capital
+        except Exception:
+            eq_at = capital
+        if float(t['pnl']) > 0:
+            win_x.append(ts_str);  win_y.append(eq_at)
+        else:
+            loss_x.append(ts_str); loss_y.append(eq_at)
+
+    pairs = []
+    for fname in portfolio_files:
+        name  = fname.replace('config_', '').replace('.json', '')
+        parts = name.split('_')
+        tf    = parts[-1] if parts else ''
+        sym   = parts[0][:4].upper() if parts else ''
+        pairs.append(f"{sym}/{tf}")
+    pairs_str = ', '.join(pairs)
+
+    n_strats = len(portfolio_files)
+    pnl_pct  = final_sim.get('total_pnl_pct', 0)
+    sign     = '+' if pnl_pct >= 0 else ''
+    title = (
+        f"TitanBot Portfolio \u2014 {n_strats} Strategie(n) ({pairs_str}) | "
+        f"Zeitraum: {start_date} \u2192 {end_date} | "
+        f"Trades: {final_sim.get('trade_count', 0)} | WR: {final_sim.get('win_rate', 0):.1f}% | "
+        f"PnL: {sign}{pnl_pct:.1f}% | "
+        f"Endkapital: {final_sim.get('end_capital', capital):.2f} USDT | "
+        f"MaxDD: {final_sim.get('max_drawdown_pct', 0):.1f}%"
+    )
+
+    fig = make_subplots(specs=[[{"secondary_y": False}]])
+
+    fig.add_hline(
+        y=capital,
+        line=dict(color='rgba(100,100,100,0.35)', width=1, dash='dash'),
+        annotation_text=f'Start {capital:.0f} USDT',
+        annotation_position='top left',
+    )
+
+    STRAT_COLORS = [
+        '#f59e0b', '#10b981', '#8b5cf6', '#f97316',
+        '#ec4899', '#14b8a6', '#a3e635', '#fb923c',
+        '#e879f9', '#38bdf8',
+    ]
+    strat_trades = {}
+    for t in trade_history:
+        key = f"{t.get('symbol', '').split('/')[0]}/{t.get('timeframe', '')}"
+        strat_trades.setdefault(key, []).append(t)
+
+    for idx, (strat_key, trades) in enumerate(sorted(strat_trades.items())):
+        trades_sorted = sorted(trades, key=lambda x: str(x.get('ts', '')))
+        eq = capital
+        xs = [str(trades_sorted[0].get('ts', ''))[:16]]
+        ys = [capital]
+        for t in trades_sorted:
+            eq += float(t['pnl'])
+            xs.append(str(t.get('ts', ''))[:16])
+            ys.append(round(eq, 4))
+        color = STRAT_COLORS[idx % len(STRAT_COLORS)]
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys,
+            mode='lines',
+            name=strat_key,
+            line=dict(color=color, width=1.2, dash='dot'),
+            opacity=0.6,
+            hovertemplate=f"{strat_key}: %{{y:.2f}} USDT<extra></extra>",
+        ))
+
+    fig.add_trace(go.Scatter(
+        x=eq_times, y=eq_vals,
+        mode='lines', name='Portfolio Equity',
+        line=dict(color='#2563eb', width=2.5),
+        hovertemplate='Portfolio: %{y:.2f} USDT<extra></extra>',
+    ))
+
+    if win_x:
+        fig.add_trace(go.Scatter(
+            x=win_x, y=win_y, mode='markers',
+            marker=dict(color='#22d3ee', symbol='circle', size=8,
+                        line=dict(width=1, color='#0e7490')),
+            name='TP \u2713',
+        ))
+    if loss_x:
+        fig.add_trace(go.Scatter(
+            x=loss_x, y=loss_y, mode='markers',
+            marker=dict(color='#ef4444', symbol='x', size=8,
+                        line=dict(width=2, color='#7f1d1d')),
+            name='SL \u2717',
+        ))
+
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=12), x=0.5, xanchor='center'),
+        height=600,
+        hovermode='x unified',
+        template='plotly_dark',
+        dragmode='zoom',
+        xaxis=dict(rangeslider=dict(visible=True), fixedrange=False),
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
+        margin=dict(l=60, r=60, t=80, b=40),
+        yaxis=dict(title='Equity (USDT)', fixedrange=False),
+    )
+
+    out_dir  = os.path.join(PROJECT_ROOT, 'artifacts', 'charts')
+    os.makedirs(out_dir, exist_ok=True)
+    out_file = os.path.join(out_dir, 'titanbot_portfolio_equity.html')
+    fig.write_html(out_file)
+    print(f"  {GREEN}Chart gespeichert: titanbot_portfolio_equity.html{NC}")
+
+    bot_token, chat_id = _get_telegram_cfg()
+    if bot_token and chat_id:
+        caption = (
+            f"TitanBot Portfolio-Equity\n"
+            f"{start_date} \u2192 {end_date} | {n_strats} Strategie(n) | "
+            f"PnL: {sign}{pnl_pct:.1f}% | Equity: {final_sim.get('end_capital', capital):.2f} USDT | "
+            f"MaxDD: {final_sim.get('max_drawdown_pct', 0):.1f}%"
+        )
+        send_document(bot_token, chat_id, out_file, caption=caption)
+        print(f"  {GREEN}Chart via Telegram gesendet.{NC}")
+    else:
+        print(f"  {YELLOW}Telegram nicht konfiguriert — Chart nur lokal gespeichert.{NC}")
+
 
 # --- Einzel-Analyse ---
 def run_single_analysis(start_date, end_date, start_capital):
@@ -132,101 +416,65 @@ def run_shared_mode(is_auto: bool, start_date, end_date, start_capital, target_m
     if not strategies_data:
         print("Konnte für keine der gewählten Strategien Daten laden. Breche ab."); return
 
-    equity_df = pd.DataFrame()
-    csv_path = ""
-    caption = ""
+    final_sim = None
+    portfolio_files_used = selected_files
 
     try:
         if is_auto:
             results = run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date, target_max_dd)
-            
-            if results and 'final_result' in results and results['final_result'] is not None: 
-                final_report = results['final_result']
-                print("\n======================================================="); print("     Ergebnis der automatischen Portfolio-Optimierung"); print("=======================================================")
-                print(f"Zeitraum: {start_date} bis {end_date}\nStartkapital: {start_capital:.2f} USDT")
-                print(f"Bedingung: Max Drawdown <= {target_max_dd:.2f}%") 
 
-                if results.get('optimal_portfolio'):
-                    print("\nOptimales Portfolio gefunden (" + str(len(results['optimal_portfolio'])) + " Strategien):")
-                    for strat_filename in results['optimal_portfolio']: print(f"  - {strat_filename}")
-                else: 
+            if results and "final_result" in results and results["final_result"] is not None:
+                final_report = results["final_result"]
+                print("\n======================================================="); print("     Ergebnis der automatischen Portfolio-Optimierung"); print("=======================================================")
+                print(f"Zeitraum: {start_date} bis {end_date}\nStartkapital: {start_capital:.2f} USDT")
+                print(f"Bedingung: Max Drawdown <= {target_max_dd:.2f}%")
+
+                if results.get("optimal_portfolio"):
+                    portfolio_files_used = results["optimal_portfolio"]
+                    print("\nOptimales Portfolio gefunden (" + str(len(portfolio_files_used)) + " Strategien):")
+                    for strat_filename in portfolio_files_used: print(f"  - {strat_filename}")
+                else:
                     print("\nBeste Einzelstrategie gefunden:")
-                    strat_key = final_report.get('strategy_key', 'Unbekannt')
-                    print(f"  - {strat_key}")
+                    strat_key = final_report.get("strategy_key", "Unbekannt")
+                    print(f"  - {strat_key}")
 
                 print("\n--- Simulierte Performance dieses Portfolios/dieser Strategie ---")
-                print(f"Endkapital:         {final_report['end_capital']:.2f} USDT"); print(f"Gesamt PnL:         {final_report['end_capital'] - start_capital:+.2f} USDT ({final_report['total_pnl_pct']:.2f}%)")
-                print(f"Portfolio Max DD:   {final_report['max_drawdown_pct']:.2f}%")
-                liq_date = final_report.get('liquidation_date')
-                print(f"Liquidiert:         {'JA, am ' + liq_date.strftime('%Y-%m-%d') if liq_date else 'NEIN'}")
-
-                csv_path = os.path.join(PROJECT_ROOT, 'optimal_portfolio_equity.csv')
-                caption = f"Automatischer Portfolio-Optimierungsbericht (Max DD <= {target_max_dd:.1f}%)\nEndkapital: {final_report['end_capital']:.2f} USDT"
-                equity_df = final_report.get('equity_curve')
+                print(f"Endkapital:         {final_report['end_capital']:.2f} USDT"); print(f"Gesamt PnL:         {final_report['end_capital'] - start_capital:+.2f} USDT ({final_report['total_pnl_pct']:.2f}%)")
+                print(f"Portfolio Max DD:   {final_report['max_drawdown_pct']:.2f}%")
+                liq_date = final_report.get("liquidation_date")
+                print(f"Liquidiert:         {'JA, am ' + liq_date.strftime('%Y-%m-%d') if liq_date else 'NEIN'}")
+                final_sim = final_report
             else:
-                print(f"\nKein Portfolio gefunden, das die Bedingung Max Drawdown <= {target_max_dd:.2f}% erfüllt.")
+                print(f"\nKein Portfolio gefunden, das die Bedingung Max Drawdown <= {target_max_dd:.2f}% erfuellt.")
 
         # --- Manuelle Simulation ---
         else:
-            sim_data = {v['symbol'] + "_" + v['timeframe']: v for k, v in strategies_data.items()}
+            sim_data = {v["symbol"] + "_" + v["timeframe"]: v for k, v in strategies_data.items()}
             results = run_portfolio_simulation(start_capital, sim_data, start_date, end_date)
             if results:
-                print("\n======================================================="); print("           Portfolio-Simulations-Ergebnis"); print("=======================================================")
+                print("\n======================================================="); print("           Portfolio-Simulations-Ergebnis"); print("=======================================================")
                 print(f"Zeitraum: {start_date} bis {end_date}\nStartkapital: {results['start_capital']:.2f} USDT")
                 print("\n--- Gesamt-Performance ---")
-                print(f"Endkapital:         {results['end_capital']:.2f} USDT"); print(f"Gesamt PnL:         {results['end_capital'] - results['start_capital']:+.2f} USDT ({results['total_pnl_pct']:.2f}%)")
-                print(f"Anzahl Trades:      {results['trade_count']}"); print(f"Win-Rate:           {results['win_rate']:.2f}%")
-                print(f"Portfolio Max DD:   {results['max_drawdown_pct']:.2f}% am {results['max_drawdown_date'].strftime('%Y-%m-%d') if results['max_drawdown_date'] else 'N/A'}")
-                liq_date = results.get('liquidation_date')
-                print(f"Liquidiert:         {'JA, am ' + liq_date.strftime('%Y-%m-%d') if liq_date else 'NEIN'}")
-
-                csv_path = os.path.join(PROJECT_ROOT, 'manual_portfolio_equity.csv')
-                caption = f"Manueller Portfolio-Simulationsbericht\nEndkapital: {results['end_capital']:.2f} USDT"
-                equity_df = results.get('equity_curve')
+                print(f"Endkapital:         {results['end_capital']:.2f} USDT"); print(f"Gesamt PnL:         {results['end_capital'] - results['start_capital']:+.2f} USDT ({results['total_pnl_pct']:.2f}%)")
+                print(f"Anzahl Trades:      {results['trade_count']}"); print(f"Win-Rate:           {results['win_rate']:.2f}%")
+                print(f"Portfolio Max DD:   {results['max_drawdown_pct']:.2f}% am {results['max_drawdown_date'].strftime('%Y-%m-%d') if results['max_drawdown_date'] else 'N/A'}")
+                liq_date = results.get("liquidation_date")
+                print(f"Liquidiert:         {'JA, am ' + liq_date.strftime('%Y-%m-%d') if liq_date else 'NEIN'}")
+                final_sim = results
 
     except Exception as e:
-        print(f"\nFEHLER während der Portfolio-Analyse: {e}")
+        print(f"\nFEHLER waehrend der Portfolio-Analyse: {e}")
         import traceback
-        traceback.print_exc() 
-        equity_df = pd.DataFrame()
+        traceback.print_exc()
 
-    # --- Ergebnisse speichern und senden ---
-    if equity_df is not None and not equity_df.empty and csv_path:
+    # --- Export: Excel + HTML Chart ---
+    if final_sim is not None:
         print("\n--- Export ---")
-        try:
-            export_cols = ['timestamp', 'equity', 'drawdown_pct']
-            available_cols = [col for col in export_cols if col in equity_df.columns]
-            # Ensure timestamp is the index before saving
-            if 'timestamp' in equity_df.columns and not isinstance(equity_df.index, pd.DatetimeIndex):
-                equity_df['timestamp'] = pd.to_datetime(equity_df['timestamp'])
-                equity_df.set_index('timestamp', inplace=True, drop=False)
-
-            # Wähle nur existierende Spalten für den Export
-            equity_df_export = equity_df[available_cols].copy()
-            # Falls timestamp nicht im Index war, füge es als Spalte hinzu
-            if 'timestamp' not in equity_df_export.columns and isinstance(equity_df.index, pd.DatetimeIndex):
-                equity_df_export.insert(0, 'timestamp', equity_df.index)
-
-            equity_df_export.to_csv(csv_path, index=False) # Index nicht mitspeichern
-            print(f"✔ Details zur Equity-Kurve wurden nach '{os.path.basename(csv_path)}' exportiert.")
-            print("=======================================================")
-            try:
-                with open(os.path.join(PROJECT_ROOT, 'secret.json'), 'r') as f: secrets = json.load(f)
-                telegram_config = secrets.get('telegram', {})
-                if telegram_config.get('bot_token'):
-                    print("Sende Bericht an Telegram...")
-                    send_document(telegram_config.get('bot_token'), telegram_config.get('chat_id'), csv_path, caption)
-                    print("✔ Bericht wurde erfolgreich an Telegram gesendet.")
-            except Exception as e_tg:
-                print(f"ⓘ Konnte Bericht nicht an Telegram senden: {e_tg}")
-        except Exception as e_csv:
-            print(f"FEHLER beim Speichern der CSV '{csv_path}': {e_csv}")
-    
-    # Korrekte Einrückung des elif/else Blocks (behebt den SyntaxError)
-    elif csv_path:
-        print(f"\nKeine Equity-Daten zum Exportieren für '{os.path.basename(csv_path)}' vorhanden.")
+        _generate_trades_excel(final_sim, start_capital)
+        _generate_portfolio_chart(final_sim, portfolio_files_used, start_capital, start_date, end_date)
     else:
-        print("\nPortfolio-Analyse fehlgeschlagen oder kein gültiges Portfolio gefunden, kein Export möglich.")
+        print("\nPortfolio-Analyse fehlgeschlagen oder kein gueltiges Portfolio gefunden.")
+
 
 
 if __name__ == "__main__":
