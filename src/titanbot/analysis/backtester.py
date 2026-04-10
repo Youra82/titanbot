@@ -141,7 +141,14 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
 
     engine = SMCEngine(settings=smc_params)
     smc_results = engine.process_dataframe(data[['open', 'high', 'low', 'close']].copy())
-    
+
+    # SMC-Spalten (P/D, Sweep-State) in Haupt-Dataframe übertragen
+    enriched_df = smc_results.get('enriched_df')
+    if enriched_df is not None:
+        for col in enriched_df.columns:
+            if col.startswith('smc_'):
+                data[col] = enriched_df[col].values
+
     # SMC-Strukturen für Visualisierung speichern
     smc_structures = {
         'order_blocks': engine.swingOrderBlocks + engine.internalOrderBlocks,

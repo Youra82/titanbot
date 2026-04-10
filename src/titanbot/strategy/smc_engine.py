@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
-import yfinance as yf
 from dataclasses import dataclass, field
 from enum import Enum
 
-# --- 1. Konstanten (ersetzt Pine-Konstanten) ---
+
+# ==================== ENUMS ====================
 
 class Leg(Enum):
     BULLISH = 1
@@ -15,11 +15,11 @@ class Bias(Enum):
     BEARISH = -1
     NEUTRAL = 0
 
-# --- 2. Datenstrukturen (ersetzt Pine 'type' UDTs) ---
+
+# ==================== DATACLASSES ====================
 
 @dataclass
 class Pivot:
-    """ Speichert den Zustand eines Swing- oder Internal-Pivots """
     currentLevel: float = np.nan
     lastLevel: float = np.nan
     crossed: bool = False
@@ -28,390 +28,492 @@ class Pivot:
 
 @dataclass
 class OrderBlock:
-    """ Speichert die Daten für einen Order Block """
     barHigh: float
     barLow: float
     barTime: int
     bias: Bias
     mitigated: bool = False
+    touch_count: int = 0          # Times price entered zone without mitigating
+    bos_move_pct: float = 0.0    # BOS strength: distance moved after BOS / entry price
+    quality: float = 0.5          # Composite quality score 0.0-1.0
 
 @dataclass
 class FVG:
-    """ Speichert die Daten für ein Fair Value Gap """
-    top: float  # Immer der höhere Preis
-    bottom: float # Immer der niedrigere Preis
+    top: float
+    bottom: float
     bias: Bias
     startTime: int
+    size_pct: float = 0.0        # Size as % of price (filters noise)
     mitigated: bool = False
 
-# --- 3. Die Haupt-Engine-Klasse ---
+@dataclass
+class LiquidityLevel:
+    """
+    BSL (Buy-Side Liquidity): highs where stop-losses of shorts accumulate.
+    SSL (Sell-Side Liquidity): lows where stop-losses of longs accumulate.
+    A sweep = price wicks through the level and closes the other side.
+    After SSL swept → expect long. After BSL swept → expect short.
+    """
+    price: float
+    bias: str                    # 'bsl' (above price) or 'ssl' (below price)
+    bar_index: int
+    bar_time: int
+    is_equal: bool = False       # Equal high/low pool = stronger liquidity
+    swept: bool = False
+    sweep_bar: int = -1
+
+
+# ==================== ENGINE ====================
 
 class SMCEngine:
     """
-    Diese Klasse bildet die zustandsbehaftete Logik des Pine-Skripts nach.
-    Sie wird Kerze für Kerze mit Daten gefüttert.
+    Professional SMC Engine implementing:
+    - Swing/Internal Pivots with BOS and CHoCH detection
+    - Order Blocks (Swing + Internal) with quality scoring
+    - Fair Value Gaps with minimum size filter
+    - Liquidity Levels (BSL/SSL) with sweep detection
+    - Equal High/Low detection (stronger liquidity pools)
+    - Premium/Discount zone tracking
+    - Per-candle state enrichment for downstream signal logic
     """
-    def __init__(self, settings: dict):
-        # --- Inputs ---
-        self.swingsLength = settings.get('swingsLength', 50)
-        self.internalLength = 5  # Fest im Pine-Skript für 'getCurrentStructure(5,...)'
-        self.ob_mitigation = settings.get('ob_mitigation', 'High/Low') # 'Close' oder 'High/Low'
 
-        # --- Interne Zustandsvariablen (ersetzt 'var') ---
+    def __init__(self, settings: dict):
+        self.swingsLength = settings.get('swingsLength', 50)
+        self.internalLength = 5
+        self.ob_mitigation = settings.get('ob_mitigation', 'High/Low')
+        self.min_fvg_size_pct = settings.get('min_fvg_size_pct', 0.05) / 100.0
+        self.equal_level_threshold = 0.001  # 0.1% for equal high/low detection
+        self.liquidity_lookback = settings.get('liquidity_lookback', 20)
+
+        # Pivot state
         self.swingHigh = Pivot()
         self.swingLow = Pivot()
         self.internalHigh = Pivot()
         self.internalLow = Pivot()
-        
         self.swingTrend = Bias.NEUTRAL
         self.internalTrend = Bias.NEUTRAL
-        
-        # Zustand der 'leg'-Funktion
         self.swing_leg_state = Leg.BULLISH
         self.internal_leg_state = Leg.BULLISH
-        
-        # --- Datenspeicherung ---
-        # Wir müssen die gesamte Historie für Lookbacks speichern
-        self.highs = []
-        self.lows = []
-        self.closes = []
-        self.times = []
-        
-        # --- Ergebnislisten ---
+
+        # OHLC storage
+        self.highs: list = []
+        self.lows: list = []
+        self.closes: list = []
+        self.opens: list = []
+        self.times: list = []
+
+        # SMC structures
         self.swingOrderBlocks: list[OrderBlock] = []
         self.internalOrderBlocks: list[OrderBlock] = []
         self.fairValueGaps: list[FVG] = []
-        
-        # Ein Protokoll aller erkannten Ereignisse
-        self.event_log = []
+        self.liquidityLevels: list[LiquidityLevel] = []
+        self.event_log: list = []
 
-    # --- 1. Logik zur Pivot-Erkennung (leg & getCurrentStructure) ---
-    
+        # Per-candle state (one dict per bar)
+        self.bar_states: list = []
+
+        # Premium/Discount range tracking
+        self.pd_high: float = np.nan   # Last confirmed swing high
+        self.pd_low: float = np.nan    # Last confirmed swing low
+
+    # ==================== PIVOT DETECTION ====================
+
     def _leg(self, size: int, index: int, current_leg_state: Leg) -> Leg:
-        """ Portierung der 'leg'-Funktion """
-        # `high[size]` in Pine ist `self.highs[index - size]`
+        """Pine Script 'leg' function port: confirms a pivot `size` bars ago."""
         if index < size:
-            return current_leg_state  # Nicht genügend Daten
-
-        # `ta.highest(size)` in Pine ist `max(high[0]...high[size-1])`
-        # bezogen auf den aktuellen `index` ist das `max(self.highs[index-size+1 : index+1])`
+            return current_leg_state
         try:
-            window_highs = self.highs[index - size + 1 : index + 1]
-            window_lows = self.lows[index - size + 1 : index + 1]
-            
+            window_highs = self.highs[index - size + 1: index + 1]
+            window_lows = self.lows[index - size + 1: index + 1]
             if not window_highs or not window_lows:
                 return current_leg_state
-
             pivot_high_candidate = self.highs[index - size]
             pivot_low_candidate = self.lows[index - size]
-
             newLegHigh = pivot_high_candidate > max(window_highs)
             newLegLow = pivot_low_candidate < min(window_lows)
         except Exception:
-            return current_leg_state # Fallback bei Datenproblemen
+            return current_leg_state
 
         if newLegHigh:
             return Leg.BEARISH
         elif newLegLow:
             return Leg.BULLISH
         else:
-            return current_leg_state  # Kein Wechsel
+            return current_leg_state
 
     def _getCurrentStructure(self, size: int, index: int, internal: bool):
-        """ Portierung von 'getCurrentStructure' """
-        
+        """Detect and confirm new swing/internal pivots."""
         prev_leg = self.internal_leg_state if internal else self.swing_leg_state
         new_leg = self._leg(size, index, prev_leg)
-        
-        # Zustand aktualisieren
+
         if internal:
             self.internal_leg_state = new_leg
         else:
             self.swing_leg_state = new_leg
 
-        # Auf Änderung prüfen (startOfNewLeg)
         if new_leg == prev_leg:
             return
 
-        # Ein neuer Pivot wurde `size` Kerzen zuvor bestätigt
         pivot_index = index - size
-        if pivot_index < 0: return
-        
+        if pivot_index < 0:
+            return
+
         pivot_time = self.times[pivot_index]
 
-        if new_leg == Leg.BULLISH:  # Ein Pivot-Tief (Low) wurde bestätigt
-            p_ivot = self.internalLow if internal else self.swingLow
-            p_ivot.lastLevel = p_ivot.currentLevel
-            p_ivot.currentLevel = self.lows[pivot_index]
-            p_ivot.crossed = False
-            p_ivot.barTime = pivot_time
-            p_ivot.barIndex = pivot_index
-            
-        elif new_leg == Leg.BEARISH:  # Ein Pivot-Hoch (High) wurde bestätigt
-            p_ivot = self.internalHigh if internal else self.swingHigh
-            p_ivot.lastLevel = p_ivot.currentLevel
-            p_ivot.currentLevel = self.highs[pivot_index]
-            p_ivot.crossed = False
-            p_ivot.barTime = pivot_time
-            p_ivot.barIndex = pivot_index
+        if new_leg == Leg.BULLISH:  # Confirmed pivot LOW
+            p = self.internalLow if internal else self.swingLow
+            p.lastLevel = p.currentLevel
+            p.currentLevel = self.lows[pivot_index]
+            p.crossed = False
+            p.barTime = pivot_time
+            p.barIndex = pivot_index
+            if not internal:
+                self._addLiquidityLevel(self.lows[pivot_index], 'ssl', pivot_index, pivot_time)
+                self.pd_low = self.lows[pivot_index]
 
-    # --- 2. Logik für BOS/CHoCH & OB-Speicherung ---
+        elif new_leg == Leg.BEARISH:  # Confirmed pivot HIGH
+            p = self.internalHigh if internal else self.swingHigh
+            p.lastLevel = p.currentLevel
+            p.currentLevel = self.highs[pivot_index]
+            p.crossed = False
+            p.barTime = pivot_time
+            p.barIndex = pivot_index
+            if not internal:
+                self._addLiquidityLevel(self.highs[pivot_index], 'bsl', pivot_index, pivot_time)
+                self.pd_high = self.highs[pivot_index]
 
-    def _storeOrdeBlock(self, p_ivot: Pivot, index: int, internal: bool, bias: Bias):
-        """ Portierung von 'storeOrdeBlock' """
-        if p_ivot.barIndex >= index or p_ivot.barIndex < 0:
-            return  # Ungültiger Bereich
+    # ==================== BOS / CHOCH ====================
 
-        # Finde die Kerze mit dem Extremum im Bereich zwischen Pivot und Break
+    def _storeOrderBlock(self, pivot: Pivot, index: int, internal: bool,
+                         bias: Bias, bos_move: float):
+        """Store the OB candle created by a BOS/CHoCH with quality scoring."""
+        if pivot.barIndex >= index or pivot.barIndex < 0:
+            return
         try:
-            window_highs = self.highs[p_ivot.barIndex : index]
-            window_lows = self.lows[p_ivot.barIndex : index]
+            if bias == Bias.BULLISH:
+                ob_idx_in_window = int(np.argmax(self.highs[pivot.barIndex: index]))
+            else:
+                ob_idx_in_window = int(np.argmin(self.lows[pivot.barIndex: index]))
 
-            if bias == Bias.BULLISH:  # Sucht nach bärischem OB (letzte rote Kerze)
-                ob_index_in_window = np.argmax(window_highs)
-            else:  # Sucht nach bullischem OB (letzte grüne Kerze)
-                ob_index_in_window = np.argmin(window_lows)
-            
-            ob_index = p_ivot.barIndex + ob_index_in_window
+            ob_index = pivot.barIndex + ob_idx_in_window
+            ob_high = self.highs[ob_index]
+            ob_low = self.lows[ob_index]
+            ob_size = ob_high - ob_low
+            entry_price = self.closes[ob_index] if self.closes[ob_index] > 0 else 1.0
+
+            # Quality: BOS strength relative to OB size, capped at 1.0
+            bos_strength = (bos_move / ob_size) if ob_size > 0 else 0.0
+            quality = min(1.0, bos_strength / 5.0)
 
             new_ob = OrderBlock(
-                barHigh=self.highs[ob_index],
-                barLow=self.lows[ob_index],
+                barHigh=ob_high,
+                barLow=ob_low,
                 barTime=self.times[ob_index],
-                bias=bias
+                bias=bias,
+                bos_move_pct=bos_move / entry_price,
+                quality=quality,
             )
-            
             ob_list = self.internalOrderBlocks if internal else self.swingOrderBlocks
             ob_list.append(new_ob)
-        except Exception as e:
-            # Dieser Fehler kann auftreten, wenn das Fenster leer ist (z.B. p_ivot.barIndex == index)
-            # print(f"Fehler beim Speichern des OB: {e} | Pivot Index: {p_ivot.barIndex}, Current Index: {index}")
+        except Exception:
             pass
 
     def _displayStructure(self, index: int, internal: bool):
-        """ Portierung von 'displayStructure' (BOS/CHoCH-Erkennung) """
+        """Check for BOS/CHoCH and store resulting Order Block."""
         current_close = self.closes[index]
         current_time = self.times[index]
-
-        p_ivot_high = self.internalHigh if internal else self.swingHigh
-        p_ivot_low = self.internalLow if internal else self.swingLow
+        pivot_high = self.internalHigh if internal else self.swingHigh
+        pivot_low = self.internalLow if internal else self.swingLow
         trend = self.internalTrend if internal else self.swingTrend
-        
-        # --- Bullischer Bruch ---
-        if (not p_ivot_high.crossed and  
-            not pd.isna(p_ivot_high.currentLevel) and  
-            current_close > p_ivot_high.currentLevel):
-            
+        prefix = 'Internal' if internal else 'Swing'
+
+        # Bullish break
+        if (not pivot_high.crossed and
+                not pd.isna(pivot_high.currentLevel) and
+                current_close > pivot_high.currentLevel):
             tag = "CHoCH" if trend == Bias.BEARISH else "BOS"
-            p_ivot_high.crossed = True
-            new_trend = Bias.BULLISH
-            
+            pivot_high.crossed = True
+            bos_move = current_close - pivot_high.currentLevel
             self.event_log.append({
                 "time": current_time, "index": index,
-                "type": f"{'Internal' if internal else 'Swing'} Bullish {tag}",
-                "level": p_ivot_high.currentLevel
+                "type": f"{prefix} Bullish {tag}",
+                "level": pivot_high.currentLevel,
             })
-            
-            self._storeOrdeBlock(p_ivot_high, index, internal, Bias.BULLISH)
-            
-            if internal: self.internalTrend = new_trend
-            else: self.swingTrend = new_trend
+            self._storeOrderBlock(pivot_high, index, internal, Bias.BULLISH, bos_move)
+            if internal:
+                self.internalTrend = Bias.BULLISH
+            else:
+                self.swingTrend = Bias.BULLISH
 
-        # --- Bärischer Bruch ---
-        if (not p_ivot_low.crossed and  
-            not pd.isna(p_ivot_low.currentLevel) and  
-            current_close < p_ivot_low.currentLevel):
-
+        # Bearish break
+        if (not pivot_low.crossed and
+                not pd.isna(pivot_low.currentLevel) and
+                current_close < pivot_low.currentLevel):
             tag = "CHoCH" if trend == Bias.BULLISH else "BOS"
-            p_ivot_low.crossed = True
-            new_trend = Bias.BEARISH
-            
+            pivot_low.crossed = True
+            bos_move = pivot_low.currentLevel - current_close
             self.event_log.append({
                 "time": current_time, "index": index,
-                "type": f"{'Internal' if internal else 'Swing'} Bearish {tag}",
-                "level": p_ivot_low.currentLevel
+                "type": f"{prefix} Bearish {tag}",
+                "level": pivot_low.currentLevel,
             })
+            self._storeOrderBlock(pivot_low, index, internal, Bias.BEARISH, bos_move)
+            if internal:
+                self.internalTrend = Bias.BEARISH
+            else:
+                self.swingTrend = Bias.BEARISH
 
-            self._storeOrdeBlock(p_ivot_low, index, internal, Bias.BEARISH)
-            
-            if internal: self.internalTrend = new_trend
-            else: self.swingTrend = new_trend
-
-    # --- 3. Logik zur Mitigation (Löschung) ---
+    # ==================== OB MITIGATION ====================
 
     def _deleteOrderBlocks(self, index: int):
-        """ Portierung von 'deleteOrderBlocks' (OB-Mitigation) """
-        current_high = self.highs[index]
-        current_low = self.lows[index]
-        current_close = self.closes[index]
-        
-        bearish_mit_source = current_close if self.ob_mitigation == 'Close' else current_high
-        bullish_mit_source = current_close if self.ob_mitigation == 'Close' else current_low
-        
+        """Mitigate OBs when price closes through them. Track touch count."""
+        c_high = self.highs[index]
+        c_low = self.lows[index]
+        c_close = self.closes[index]
+
+        bearish_source = c_close if self.ob_mitigation == 'Close' else c_high
+        bullish_source = c_close if self.ob_mitigation == 'Close' else c_low
+
         for ob in self.internalOrderBlocks + self.swingOrderBlocks:
             if ob.mitigated:
                 continue
-            
-            if ob.bias == Bias.BEARISH and bearish_mit_source > ob.barHigh:
+            if ob.bias == Bias.BEARISH and bearish_source > ob.barHigh:
                 ob.mitigated = True
-            elif ob.bias == Bias.BULLISH and bullish_mit_source < ob.barLow:
+            elif ob.bias == Bias.BULLISH and bullish_source < ob.barLow:
                 ob.mitigated = True
+            else:
+                # Price entered zone without mitigation → increment touch count
+                if ob.bias == Bias.BULLISH and c_low <= ob.barHigh and c_close >= ob.barLow:
+                    ob.touch_count += 1
+                elif ob.bias == Bias.BEARISH and c_high >= ob.barLow and c_close <= ob.barHigh:
+                    ob.touch_count += 1
+
+    # ==================== FVG ====================
 
     def _drawFairValueGaps(self, index: int):
-        """ Portierung von 'drawFairValueGaps' (FVG-Erkennung) """
-        if index < 2: return # Braucht 3 Kerzen
+        """Detect Fair Value Gaps (3-candle pattern) with minimum size filter."""
+        if index < 2:
+            return
+        c_high = self.highs[index]
+        c_low = self.lows[index]
+        c_close = self.closes[index]
+        c2_high = self.highs[index - 2]
+        c2_low = self.lows[index - 2]
+        c_time = self.times[index]
 
-        last_close = self.closes[index - 1]
-        current_high = self.highs[index]
-        current_low = self.lows[index]
-        last_2_high = self.highs[index - 2]
-        last_2_low = self.lows[index - 2]
-        current_time = self.times[index]
+        bullish_fvg = (c_low > c2_high) and (c_close > c2_high)
+        bearish_fvg = (c_high < c2_low) and (c_close < c2_low)
 
-        # Pine-Logik (vereinfacht, ohne 'threshold')
-        bullish_fvg = (current_low > last_2_high) and (last_close > last_2_high)
-        bearish_fvg = (current_high < last_2_low) and (last_close < last_2_low)
-        
         if bullish_fvg:
-            new_fvg = FVG(
-                top = current_low,
-                bottom = last_2_high,
-                bias = Bias.BULLISH,
-                startTime = current_time
-            )
-            self.fairValueGaps.append(new_fvg)
-            self.event_log.append({
-                "time": current_time, "index": index, "type": "Bullish FVG",
-                "level": (new_fvg.top, new_fvg.bottom)
-            })
+            size = c_low - c2_high
+            size_pct = size / c2_high if c2_high > 0 else 0.0
+            if size_pct >= self.min_fvg_size_pct:
+                self.fairValueGaps.append(FVG(
+                    top=c_low, bottom=c2_high,
+                    bias=Bias.BULLISH, startTime=c_time, size_pct=size_pct
+                ))
+                self.event_log.append({
+                    "time": c_time, "index": index,
+                    "type": "Bullish FVG", "level": (c_low, c2_high),
+                })
 
         if bearish_fvg:
-            new_fvg = FVG(
-                top = last_2_low,
-                bottom = current_high,
-                bias = Bias.BEARISH,
-                startTime = current_time
-            )
-            self.fairValueGaps.append(new_fvg)
-            self.event_log.append({
-                "time": current_time, "index": index, "type": "Bearish FVG",
-                "level": (new_fvg.top, new_fvg.bottom)
-            })
+            size = c2_low - c_high
+            size_pct = size / c2_low if c2_low > 0 else 0.0
+            if size_pct >= self.min_fvg_size_pct:
+                self.fairValueGaps.append(FVG(
+                    top=c2_low, bottom=c_high,
+                    bias=Bias.BEARISH, startTime=c_time, size_pct=size_pct
+                ))
+                self.event_log.append({
+                    "time": c_time, "index": index,
+                    "type": "Bearish FVG", "level": (c2_low, c_high),
+                })
 
     def _deleteFairValueGaps(self, index: int):
-        """ Portierung von 'deleteFairValueGaps' (FVG-Mitigation) """
-        current_low = self.lows[index]
-        current_high = self.highs[index]
-
+        """Mitigate FVGs when price closes through them."""
+        c_low = self.lows[index]
+        c_high = self.highs[index]
         for fvg in self.fairValueGaps:
             if fvg.mitigated:
                 continue
-            
-            if fvg.bias == Bias.BULLISH and current_low < fvg.bottom:
+            if fvg.bias == Bias.BULLISH and c_low < fvg.bottom:
                 fvg.mitigated = True
-            elif fvg.bias == Bias.BEARISH and current_high > fvg.top:
+            elif fvg.bias == Bias.BEARISH and c_high > fvg.top:
                 fvg.mitigated = True
 
-    # --- 4. Öffentliche Hauptmethode ---
-    
-    def process_dataframe(self, df: pd.DataFrame):
+    # ==================== LIQUIDITY ====================
+
+    def _addLiquidityLevel(self, price: float, bias: str, bar_index: int, bar_time: int):
         """
-        Verarbeitet einen gesamten Pandas DataFrame und gibt die Ergebnisse zurück.
+        Register a new liquidity level (BSL from swing high, SSL from swing low).
+        Mark as equal high/low if within threshold of an existing unswept level.
         """
-        # 1. Daten vorbereiten
+        threshold = price * self.equal_level_threshold
+        is_equal = False
+        for lvl in self.liquidityLevels:
+            if not lvl.swept and lvl.bias == bias and abs(lvl.price - price) <= threshold:
+                is_equal = True
+                lvl.is_equal = True
+                break
+        self.liquidityLevels.append(LiquidityLevel(
+            price=price, bias=bias,
+            bar_index=bar_index, bar_time=bar_time,
+            is_equal=is_equal,
+        ))
+
+    def _checkLiquiditySweep(self, index: int):
+        """
+        Detect liquidity sweeps: price wicks through a level and closes the other side.
+        BSL sweep: wick above high → close below → bearish reversal setup.
+        SSL sweep: wick below low → close above → bullish reversal setup.
+        """
+        c_high = self.highs[index]
+        c_low = self.lows[index]
+        c_close = self.closes[index]
+        c_time = self.times[index]
+
+        for lvl in self.liquidityLevels:
+            if lvl.swept or lvl.bar_index >= index:
+                continue
+            if lvl.bias == 'bsl' and c_high > lvl.price and c_close < lvl.price:
+                lvl.swept = True
+                lvl.sweep_bar = index
+                self.event_log.append({
+                    "time": c_time, "index": index,
+                    "type": "BSL Sweep", "level": lvl.price,
+                    "is_equal": lvl.is_equal,
+                })
+            elif lvl.bias == 'ssl' and c_low < lvl.price and c_close > lvl.price:
+                lvl.swept = True
+                lvl.sweep_bar = index
+                self.event_log.append({
+                    "time": c_time, "index": index,
+                    "type": "SSL Sweep", "level": lvl.price,
+                    "is_equal": lvl.is_equal,
+                })
+
+    # ==================== PREMIUM / DISCOUNT ====================
+
+    def _get_pd_pct(self, price: float) -> float:
+        """
+        Position in the current P/D range.
+        0.0 = at SSL (deepest discount), 1.0 = at BSL (deepest premium).
+        0.5 = equilibrium.
+        """
+        if np.isnan(self.pd_high) or np.isnan(self.pd_low):
+            return 0.5
+        rng = self.pd_high - self.pd_low
+        if rng <= 0:
+            return 0.5
+        return max(0.0, min(1.0, (price - self.pd_low) / rng))
+
+    def _get_pd_zone(self, price: float) -> str:
+        pct = self._get_pd_pct(price)
+        if pct >= 0.618:
+            return 'premium'
+        elif pct <= 0.382:
+            return 'discount'
+        return 'equilibrium'
+
+    # ==================== PER-CANDLE STATE ====================
+
+    def _build_bar_state(self, index: int) -> dict:
+        """Snapshot of all SMC state for this specific bar."""
+        current_price = self.closes[index]
+        lb = self.liquidity_lookback
+
+        recent_bsl_sweep = False
+        recent_ssl_sweep = False
+        for lvl in self.liquidityLevels:
+            if lvl.swept and 0 <= (index - lvl.sweep_bar) <= lb:
+                if lvl.bias == 'bsl':
+                    recent_bsl_sweep = True
+                elif lvl.bias == 'ssl':
+                    recent_ssl_sweep = True
+
+        pd_pct = self._get_pd_pct(current_price)
+        pd_zone = self._get_pd_zone(current_price)
+
+        swing_bias = (
+            'bullish' if self.swingTrend == Bias.BULLISH
+            else 'bearish' if self.swingTrend == Bias.BEARISH
+            else 'neutral'
+        )
+        internal_bias = (
+            'bullish' if self.internalTrend == Bias.BULLISH
+            else 'bearish' if self.internalTrend == Bias.BEARISH
+            else 'neutral'
+        )
+
+        return {
+            'pd_pct': pd_pct,
+            'pd_zone': pd_zone,
+            'pd_high': self.pd_high,
+            'pd_low': self.pd_low,
+            'recent_bsl_sweep': recent_bsl_sweep,
+            'recent_ssl_sweep': recent_ssl_sweep,
+            'swing_bias': swing_bias,
+            'internal_bias': internal_bias,
+        }
+
+    # ==================== MAIN ENTRY POINT ====================
+
+    def process_dataframe(self, df: pd.DataFrame) -> dict:
+        """
+        Process all candles and return SMC results + enriched DataFrame.
+
+        Returns dict with:
+          - events: list of all SMC events (BOS, CHoCH, FVG, Sweeps)
+          - unmitigated_swing_obs: active swing order blocks
+          - unmitigated_internal_obs: active internal order blocks
+          - unmitigated_fvgs: active fair value gaps
+          - liquidity_levels: all liquidity levels (swept and unswept)
+          - bar_states: per-candle state list
+          - enriched_df: original df with added smc_* columns
+        """
         df = df.sort_index()
         self.highs = df['high'].tolist()
         self.lows = df['low'].tolist()
         self.closes = df['close'].tolist()
-        
-        if pd.api.types.is_datetime64_any_dtype(df.index):
-            self.times = df.index.astype(np.int64).tolist() # Zeit als int
-        else:
-            self.times = df.index.astype(int).tolist()
+        self.opens = df['open'].tolist() if 'open' in df.columns else self.closes.copy()
 
-        # 2. Schleife durch jede Kerze (jeden 'Bar')
+        if pd.api.types.is_datetime64_any_dtype(df.index):
+            self.times = df.index.astype(np.int64).tolist()
+        else:
+            self.times = list(range(len(df)))
+
+        self.bar_states = []
+
         for i in range(len(df)):
-            # Die Ausführungsreihenfolge ist wichtig!
-            # Wir approximieren die Reihenfolge aus dem Pine-Skript.
-            
-            # 1. FVG-Mitigation
+            # Order matters — mirrors Pine Script execution order
             self._deleteFairValueGaps(i)
-            
-            # 2. Struktur-Pivots finden
             self._getCurrentStructure(self.swingsLength, i, internal=False)
             self._getCurrentStructure(self.internalLength, i, internal=True)
-            
-            # 3. BOS/CHoCH prüfen
             self._displayStructure(i, internal=True)
             self._displayStructure(i, internal=False)
-            
-            # 4. OB-Mitigation
             self._deleteOrderBlocks(i)
-            
-            # 5. Neue FVGs finden
+            self._checkLiquiditySweep(i)
             self._drawFairValueGaps(i)
+            self.bar_states.append(self._build_bar_state(i))
 
-        # 3. Ergebnisse zurückgeben
+        # Build enriched DataFrame with per-candle SMC columns
+        enriched_df = df.copy()
+        enriched_df['smc_pd_pct'] = [s['pd_pct'] for s in self.bar_states]
+        enriched_df['smc_pd_zone'] = [s['pd_zone'] for s in self.bar_states]
+        enriched_df['smc_pd_high'] = [s['pd_high'] for s in self.bar_states]
+        enriched_df['smc_pd_low'] = [s['pd_low'] for s in self.bar_states]
+        enriched_df['smc_recent_bsl_sweep'] = [s['recent_bsl_sweep'] for s in self.bar_states]
+        enriched_df['smc_recent_ssl_sweep'] = [s['recent_ssl_sweep'] for s in self.bar_states]
+        enriched_df['smc_swing_bias'] = [s['swing_bias'] for s in self.bar_states]
+        enriched_df['smc_internal_bias'] = [s['internal_bias'] for s in self.bar_states]
+
         return {
             "events": self.event_log,
             "unmitigated_swing_obs": [ob for ob in self.swingOrderBlocks if not ob.mitigated],
             "unmitigated_internal_obs": [ob for ob in self.internalOrderBlocks if not ob.mitigated],
-            "unmitigated_fvgs": [fvg for fvg in self.fairValueGaps if not fvg.mitigated]
+            "unmitigated_fvgs": [fvg for fvg in self.fairValueGaps if not fvg.mitigated],
+            "liquidity_levels": self.liquidityLevels,
+            "bar_states": self.bar_states,
+            "enriched_df": enriched_df,
         }
-
-
-# --- 4. Anwendungsbeispiel ---
-
-if __name__ == "__main__":
-    # Dieser Teil wird nur ausgeführt, wenn das Skript direkt gestartet wird.
-    
-    # --- 1. Beispieldaten laden ---
-    # Stellen Sie sicher, dass der DataFrame 'high', 'low', 'close' enthält
-    # und einen Zeit-Index hat.
-    print("Lade Daten von yfinance...")
-    data = yf.download("EURUSD=X", period="3mo", interval="1h")
-    data = data.rename(columns={
-        "Open": "open", "High": "high", "Low": "low",  
-        "Close": "close", "Volume": "volume"
-    })
-
-    print(f"Daten geladen: {len(data)} Kerzen")
-
-    # --- 2. Engine initialisieren ---
-    # Hier kannst du die Einstellungen übergeben
-    smc_settings = {
-        'swingsLength': 50,          # Entspricht 'swingsLengthInput'
-        'ob_mitigation': 'High/Low' # Entspricht 'orderBlockMitigationInput'
-    }
-    engine = SMCEngine(settings=smc_settings)
-
-    # --- 3. Analyse durchführen ---
-    print("Starte SMC-Analyse...")
-    results = engine.process_dataframe(data)
-
-    # --- 4. Ergebnisse anzeigen ---
-    print("\n--- Analyse-Ergebnisse ---")
-
-    print(f"\nGefundene Events (BOS/CHoCH/FVG): {len(results['events'])}")
-    # Zeige die letzten 10 Events
-    for event in results['events'][-10:]:
-        # Zeitstempel lesbar machen
-        event_time = pd.to_datetime(event['time'])
-        # Runde die Preislevels für eine saubere Anzeige
-        level_str = ""
-        if isinstance(event['level'], (int, float)):
-            level_str = f"{event['level']:.5f}"
-        elif isinstance(event['level'], tuple):
-            level_str = f"({event['level'][0]:.5f}, {event['level'][1]:.5f})"
-            
-        print(f"  {event_time} - {event['type']:<20} @ {level_str}")
-
-    print(f"\nAktive (unmitigierte) Swing Order Blocks: {len(results['unmitigated_swing_obs'])}")
-    for ob in results['unmitigated_swing_obs'][-5:]:
-        ob_time = pd.to_datetime(ob.barTime)
-        print(f"  {ob_time} - {ob.bias.name:<7} OB: High={ob.barHigh:.5f}, Low={ob.barLow:.5f}")
-
-    print(f"\nAktive (unmitigierte) Fair Value Gaps: {len(results['unmitigated_fvgs'])}")
-    for fvg in results['unmitigated_fvgs'][-5:]:
-        fvg_time = pd.to_datetime(fvg.startTime)
-        print(f"  {fvg_time} - {fvg.bias.name:<7} FVG: Top={fvg.top:.5f}, Bottom={fvg.bottom:.5f}")

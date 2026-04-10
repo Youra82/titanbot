@@ -49,10 +49,20 @@ def objective(trial):
         'use_adx_filter': trial.suggest_categorical('use_adx_filter', [True, False]),
         'adx_period': trial.suggest_int('adx_period', 10, 20),
         'adx_threshold': trial.suggest_int('adx_threshold', 20, 30),
-        'symbol': CURRENT_SYMBOL, # NEU: Füge Symbol und Timeframe hinzu
+        # --- SMC Pro: Premium/Discount + Liquidity ---
+        'use_pd_filter': trial.suggest_categorical('use_pd_filter', [True, False]),
+        'use_liquidity_sweep_filter': trial.suggest_categorical('use_liquidity_sweep_filter', [True, False]),
+        'liquidity_lookback': trial.suggest_int('liquidity_lookback', 5, 30),
+        'min_fvg_size_pct': trial.suggest_float('min_fvg_size_pct', 0.03, 0.30),
+        # --- SMC Pro: Order Block Qualität ---
+        'min_ob_quality': trial.suggest_float('min_ob_quality', 0.05, 0.60),
+        'max_ob_touches': trial.suggest_int('max_ob_touches', 0, 2),
+        # --- SMC Pro: Entry Confirmation ---
+        'use_rejection_candle': trial.suggest_categorical('use_rejection_candle', [True, False]),
+        'symbol': CURRENT_SYMBOL,
         'timeframe': CURRENT_TIMEFRAME,
-        'htf': CURRENT_HTF, # NEU: Füge den HTF hinzu
-        'htf_data': CURRENT_HTF_DATA  # Pre-loaded HTF data (verhindert parallele Cache-Korruption)
+        'htf': CURRENT_HTF,
+        'htf_data': CURRENT_HTF_DATA
     }
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.0, 5.0),
