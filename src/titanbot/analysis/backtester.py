@@ -141,8 +141,21 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     max_allowed_effective_leverage = 10
     absolute_max_notional_value = 1000000
 
-    engine = SMCEngine(settings=smc_params)
-    smc_results = engine.process_dataframe(data[['open', 'high', 'low', 'close']].copy())
+    # SMC-Engine — nutze vorberechnete Ergebnisse wenn vorhanden (Optimizer-Cache)
+    precomputed = smc_params.get('_precomputed_smc')
+    if precomputed is not None:
+        smc_results   = precomputed['smc_results']
+        smc_structures = precomputed['smc_structures']
+        engine = None
+    else:
+        engine = SMCEngine(settings=smc_params)
+        smc_results = engine.process_dataframe(data[['open', 'high', 'low', 'close']].copy())
+        smc_structures = {
+            'order_blocks': engine.swingOrderBlocks + engine.internalOrderBlocks,
+            'fair_value_gaps': engine.fairValueGaps,
+            'events': engine.event_log,
+            'data_times': engine.times,
+        }
 
     # SMC-Spalten (P/D, Sweep-State) in Haupt-Dataframe übertragen
     enriched_df = smc_results.get('enriched_df')
@@ -150,14 +163,6 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         for col in enriched_df.columns:
             if col.startswith('smc_'):
                 data[col] = enriched_df[col].values
-
-    # SMC-Strukturen für Visualisierung speichern
-    smc_structures = {
-        'order_blocks': engine.swingOrderBlocks + engine.internalOrderBlocks,
-        'fair_value_gaps': engine.fairValueGaps,
-        'events': engine.event_log,
-        'data_times': engine.times  # Für Zeitstempel-Konvertierung
-    }
 
     current_capital = start_capital
     peak_capital = start_capital
