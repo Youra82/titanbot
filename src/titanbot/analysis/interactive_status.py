@@ -100,10 +100,11 @@ def run_backtest_for_chart(df, config, start_capital=1000):
         strategy_params = config.get('strategy', {})
         risk_params = config.get('risk', {})
         
-        # Symbol und Timeframe für SMC hinzufügen
+        # Symbol, Timeframe und HTF für SMC hinzufügen (HTF für MTF-Bias benötigt)
         market = config.get('market', {})
         strategy_params['symbol'] = market.get('symbol', '')
         strategy_params['timeframe'] = market.get('timeframe', '')
+        strategy_params['htf'] = market.get('htf')
         
         # Existierenden Backtester nutzen - gibt jetzt auch trades_list, equity_curve und smc_structures zurück
         logger_backtest = logging.getLogger('titanbot.analysis.backtester')
