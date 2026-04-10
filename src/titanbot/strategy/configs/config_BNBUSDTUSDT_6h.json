@@ -1,25 +1,25 @@
 {
     "market": {
-        "symbol": "XRP/USDT:USDT",
+        "symbol": "BNB/USDT:USDT",
         "timeframe": "6h",
         "htf": "1d"
     },
     "strategy": {
-        "swingsLength": 100,
+        "swingsLength": 98,
         "ob_mitigation": "High/Low",
         "use_adx_filter": false,
-        "adx_period": 17,
-        "adx_threshold": 28
+        "adx_period": 20,
+        "adx_threshold": 27
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 1.91,
-        "risk_reward_ratio": 1.07,
-        "leverage": 9,
-        "trailing_stop_activation_rr": 1.32,
-        "trailing_stop_callback_rate_pct": 0.5,
+        "risk_per_trade_pct": 1.93,
+        "risk_reward_ratio": 3.88,
+        "leverage": 7,
+        "trailing_stop_activation_rr": 1.08,
+        "trailing_stop_callback_rate_pct": 0.67,
         "atr_multiplier_sl": 1.0,
-        "min_sl_pct": 1.76
+        "min_sl_pct": 1.04
     },
     "behavior": {
         "use_longs": true,
