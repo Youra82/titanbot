@@ -25,7 +25,7 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 # Empfohlener Lookback je Timeframe (wenn --start_date auto übergeben wird)
 TF_LOOKBACK_DAYS = {'5m': 60, '15m': 60, '30m': 365, '1h': 365,
-                    '2h': 730, '4h': 730, '6h': 1095, '1d': 1095}
+                    '2h': 730, '4h': 730, '6h': 730, '1d': 1095}
 
 HISTORICAL_DATA = None
 CURRENT_HTF_DATA = None  # Pre-loaded HTF data — einmal laden, nicht pro Trial
@@ -44,18 +44,18 @@ def create_safe_filename(symbol, timeframe):
 
 def objective(trial):
     smc_params = {
-        'swingsLength': trial.suggest_int('swingsLength', 10, 100),
+        'swingsLength': trial.suggest_int('swingsLength', 15, 60),
         'ob_mitigation': trial.suggest_categorical('ob_mitigation', ['High/Low', 'Close']),
         'use_adx_filter': trial.suggest_categorical('use_adx_filter', [True, False]),
-        'adx_period': trial.suggest_int('adx_period', 10, 20),
+        'adx_period': 14,  # Standard-ATR-Periode, kein Mehrwert beim Optimieren
         'adx_threshold': trial.suggest_int('adx_threshold', 20, 30),
         # --- SMC Pro: Premium/Discount + Liquidity ---
         'use_pd_filter': trial.suggest_categorical('use_pd_filter', [True, False]),
         'use_liquidity_sweep_filter': trial.suggest_categorical('use_liquidity_sweep_filter', [True, False]),
-        'liquidity_lookback': trial.suggest_int('liquidity_lookback', 5, 30),
-        'min_fvg_size_pct': trial.suggest_float('min_fvg_size_pct', 0.03, 0.30),
+        'liquidity_lookback': trial.suggest_int('liquidity_lookback', 10, 25),
+        'min_fvg_size_pct': trial.suggest_float('min_fvg_size_pct', 0.05, 0.20),
         # --- SMC Pro: Order Block Qualität ---
-        'min_ob_quality': trial.suggest_float('min_ob_quality', 0.05, 0.60),
+        'min_ob_quality': trial.suggest_float('min_ob_quality', 0.10, 0.50),
         'max_ob_touches': trial.suggest_int('max_ob_touches', 0, 2),
         # --- SMC Pro: Entry Confirmation ---
         'use_rejection_candle': trial.suggest_categorical('use_rejection_candle', [True, False]),
@@ -65,13 +65,13 @@ def objective(trial):
         'htf_data': CURRENT_HTF_DATA
     }
     risk_params = {
-        'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.0, 5.0),
+        'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
         'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.5, 2.0),
-        'leverage': trial.suggest_int('leverage', 5, 15), # Leverage zwischen 5x und 15x
-        'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 4.0),
-        'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 3.0),
-        'atr_multiplier_sl': trial.suggest_float('atr_multiplier_sl', 1.0, 4.0),
-        'min_sl_pct': trial.suggest_float('min_sl_pct', 0.3, 2.0) # Als % (0.3% bis 2.0%)
+        'leverage': trial.suggest_int('leverage', 5, 15),
+        'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 3.5),
+        'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5),
+        'atr_multiplier_sl': trial.suggest_float('atr_multiplier_sl', 1.0, 3.0),
+        'min_sl_pct': trial.suggest_float('min_sl_pct', 0.3, 1.5)  # Als % (0.3% bis 1.5%)
     }
 
     # Übergebe BEIDE Parameter-Dictionaries an den Backtester

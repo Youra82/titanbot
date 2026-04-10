@@ -40,7 +40,8 @@ read -p "Enddatum (JJJJ-MM-TT) [Standard: Heute]: " END_DATE; END_DATE=${END_DAT
 _DEFAULT_CAPITAL=$(python3 -c "import json; d=json.load(open('settings.json')); print(int(d['optimization_settings']['start_capital']))" 2>/dev/null || echo "15")
 read -p "Startkapital in USDT [Standard: ${_DEFAULT_CAPITAL} (aus settings.json)]: " START_CAPITAL; START_CAPITAL=${START_CAPITAL:-$_DEFAULT_CAPITAL}
 read -p "CPU-Kerne [Standard: -1 für alle]: " N_CORES; N_CORES=${N_CORES:--1}
-read -p "Anzahl Trials [Standard: 200]: " N_TRIALS; N_TRIALS=${N_TRIALS:-200}
+_DEFAULT_TRIALS=$(python3 -c "import json; d=json.load(open('settings.json')); print(int(d['optimization_settings']['num_trials']))" 2>/dev/null || echo "200")
+read -p "Anzahl Trials [Standard: ${_DEFAULT_TRIALS} (aus settings.json)]: " N_TRIALS; N_TRIALS=${N_TRIALS:-$_DEFAULT_TRIALS}
 
 echo -e "\n${YELLOW}Wähle einen Optimierungs-Modus:${NC}"; echo "  1) Strenger Modus (Profitabel & Sicher)"; echo "  2) 'Finde das Beste'-Modus (Max Profit)"
 read -p "Auswahl (1-2) [Standard: 1]: " OPTIM_MODE; OPTIM_MODE=${OPTIM_MODE:-1}
