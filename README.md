@@ -481,13 +481,14 @@ git fetch origin
 ./update.sh
 ```
 
-### Hochladen
+### Configs pushen
 
 ```bash
-git add artifacts/optimal_configs/*.json
-git commit -m "Update: Optimierte Parameter"
-git push origin main
+chmod +x push_configs.sh
+./push_configs.sh
 ```
+
+Staged automatisch alle Configs + `settings.json`, holt Remote-Stand via Rebase und pusht — ohne manuelle git-Befehle.
 
 ---
 
