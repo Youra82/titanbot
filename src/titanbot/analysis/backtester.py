@@ -99,25 +99,27 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 if verbose: print(f"MTF-Check: HTF-Swing-Bias ({htf}): {market_bias.name}")
     # --- ENDE MTF ---
 
-    # --- Indikator-Berechnungen (Unverändert) ---
+    # --- Indikator-Berechnungen ---
+    # Wenn ATR/ADX/volume_ma schon vorberechnet in den Daten (vom Optimizer),
+    # überspringen wir die teure Neuberechnung pro Trial.
     adx_period = smc_params.get('adx_period', 14)
     volume_ma_period = smc_params.get('volume_ma_period', 20)
 
     try:
-        # ATR-Berechnung
-        atr_indicator = ta.volatility.AverageTrueRange(high=data['high'], low=data['low'], close=data['close'], window=14)
-        data['atr'] = atr_indicator.average_true_range()
+        if 'atr' not in data.columns or data['atr'].isna().all():
+            atr_indicator = ta.volatility.AverageTrueRange(high=data['high'], low=data['low'], close=data['close'], window=14)
+            data['atr'] = atr_indicator.average_true_range()
 
-        # ADX-Berechnung
-        adx_indicator = ta.trend.ADXIndicator(high=data['high'], low=data['low'], close=data['close'], window=adx_period)
-        data['adx'] = adx_indicator.adx()
-        data['adx_pos'] = adx_indicator.adx_pos()
-        data['adx_neg'] = adx_indicator.adx_neg()
-        
-        # Volume MA (NEU für Volume-Filter)
-        data['volume_ma'] = data['volume'].rolling(window=volume_ma_period).mean()
-        
-        data.dropna(subset=['atr', 'adx'], inplace=True) 
+        if 'adx' not in data.columns or data['adx'].isna().all():
+            adx_indicator = ta.trend.ADXIndicator(high=data['high'], low=data['low'], close=data['close'], window=adx_period)
+            data['adx'] = adx_indicator.adx()
+            data['adx_pos'] = adx_indicator.adx_pos()
+            data['adx_neg'] = adx_indicator.adx_neg()
+
+        if 'volume_ma' not in data.columns or data['volume_ma'].isna().all():
+            data['volume_ma'] = data['volume'].rolling(window=volume_ma_period).mean()
+
+        data.dropna(subset=['atr', 'adx'], inplace=True)
 
         if data.empty:
             return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
