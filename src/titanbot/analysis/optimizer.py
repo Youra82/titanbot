@@ -28,10 +28,11 @@ TF_LOOKBACK_DAYS = {'5m': 60, '15m': 60, '30m': 365, '1h': 365,
                     '2h': 730, '4h': 730, '6h': 730, '1d': 1095}
 
 HISTORICAL_DATA = None
-CURRENT_HTF_DATA = None  # Pre-loaded HTF data — einmal laden, nicht pro Trial
-CURRENT_SYMBOL = None # NEU: Globale Variable für Symbol (wird für Backtester benötigt)
+CURRENT_HTF_DATA = None   # Pre-loaded HTF data — einmal laden, nicht pro Trial
+CURRENT_HTF_BIAS = None   # Pre-computed HTF market_bias — einmal berechnen, nicht pro Trial
+CURRENT_SYMBOL = None
 CURRENT_TIMEFRAME = None
-CURRENT_HTF = None # NEU: Globale Variable für den berechneten HTF
+CURRENT_HTF = None
 CONFIG_SUFFIX = ""
 MAX_DRAWDOWN_CONSTRAINT = 0.30
 MIN_WIN_RATE_CONSTRAINT = 55.0
@@ -62,7 +63,8 @@ def objective(trial):
         'symbol': CURRENT_SYMBOL,
         'timeframe': CURRENT_TIMEFRAME,
         'htf': CURRENT_HTF,
-        'htf_data': CURRENT_HTF_DATA
+        'htf_data': CURRENT_HTF_DATA,
+        'htf_bias': CURRENT_HTF_BIAS  # Pre-computed — kein process_dataframe() pro Trial
     }
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
@@ -93,7 +95,7 @@ def objective(trial):
     return pnl
 
 def main():
-    global HISTORICAL_DATA, CURRENT_HTF_DATA, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CURRENT_HTF, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
+    global HISTORICAL_DATA, CURRENT_HTF_DATA, CURRENT_HTF_BIAS, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CURRENT_HTF, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
     parser.add_argument('--symbols', required=False, type=str, default="")
     parser.add_argument('--timeframes', required=False, type=str, default="")
@@ -150,10 +152,19 @@ def main():
         else:
             pair_start_date = args.start_date
         HISTORICAL_DATA = load_data(symbol, timeframe, pair_start_date, args.end_date)
-        # HTF-Daten einmalig laden (vor study.optimize) — verhindert parallele Cache-Korruption
+        # HTF-Daten + Bias einmalig berechnen (vor study.optimize)
+        # market_bias ist für alle Trials identisch → einmal reicht
+        CURRENT_HTF_BIAS = None
         if CURRENT_HTF and CURRENT_HTF != timeframe:
-            print(f"Lade HTF-Daten ({CURRENT_HTF}) einmalig vor der Optimierung...")
+            print(f"Lade HTF-Daten ({CURRENT_HTF}) und berechne Bias einmalig...")
             CURRENT_HTF_DATA = load_data(symbol, CURRENT_HTF, pair_start_date, args.end_date)
+            if not CURRENT_HTF_DATA.empty:
+                from titanbot.strategy.smc_engine import SMCEngine
+                from titanbot.strategy.smc_engine import Bias
+                _htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'})
+                _htf_engine.process_dataframe(CURRENT_HTF_DATA[['open', 'high', 'low', 'close']].copy())
+                CURRENT_HTF_BIAS = _htf_engine.swingTrend
+                print(f"HTF-Swing-Bias ({CURRENT_HTF}): {CURRENT_HTF_BIAS.name}")
         else:
             CURRENT_HTF_DATA = None
         if HISTORICAL_DATA.empty:
