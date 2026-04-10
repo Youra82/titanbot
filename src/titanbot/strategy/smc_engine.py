@@ -83,7 +83,7 @@ class SMCEngine:
         self.ob_mitigation = settings.get('ob_mitigation', 'High/Low')
         self.min_fvg_size_pct = 0.0  # Kein Filter in der Engine — wird in trade_logic angewendet
         self.equal_level_threshold = 0.001  # 0.1% for equal high/low detection
-        self.liquidity_lookback = 20  # Fix — unabhängig von Settings (Cache-Key nur swingsLength+ob_mitigation)
+        self.liquidity_lookback = settings.get('liquidity_lookback', 20)
 
         # Pivot state
         self.swingHigh = Pivot()

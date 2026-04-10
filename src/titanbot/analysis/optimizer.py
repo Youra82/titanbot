@@ -58,7 +58,7 @@ def objective(trial):
         # --- SMC Pro: Premium/Discount + Liquidity ---
         'use_pd_filter': trial.suggest_categorical('use_pd_filter', [True, False]),
         'use_liquidity_sweep_filter': trial.suggest_categorical('use_liquidity_sweep_filter', [True, False]),
-        'liquidity_lookback': 20,  # Fix in SMCEngine — kein Trial-Param mehr
+        'liquidity_lookback': trial.suggest_categorical('liquidity_lookback', [10, 15, 20, 25]),  # 4 Werte statt 16
         'min_fvg_size_pct': trial.suggest_float('min_fvg_size_pct', 0.05, 0.20),  # Post-Filter in trade_logic
         # --- SMC Pro: Order Block Qualität ---
         'min_ob_quality': trial.suggest_float('min_ob_quality', 0.10, 0.50),
@@ -83,9 +83,10 @@ def objective(trial):
 
     # SMC-Engine cachen: process_dataframe() nur bei neuen (swingsLength, ob_mitigation,
     # liquidity_lookback, min_fvg_size_pct) aufrufen — alle anderen Params sind Post-Filter
-    # Cache-Key: nur die zwei Parameter die SMCEngine-Output beeinflussen
-    # min_fvg_size_pct ist jetzt Post-Filter in trade_logic, liquidity_lookback fix=20
-    _cache_key = (smc_params['swingsLength'], smc_params['ob_mitigation'])
+    # Cache-Key: Parameter die SMCEngine-Output beeinflussen
+    # liquidity_lookback auf 4 diskrete Werte quantisiert → 46×2×4=368 Kombos statt 5888
+    # min_fvg_size_pct ist Post-Filter in trade_logic → nicht im Key
+    _cache_key = (smc_params['swingsLength'], smc_params['ob_mitigation'], smc_params['liquidity_lookback'])
     with _SMC_CACHE_LOCK:
         _precomputed = _SMC_CACHE.get(_cache_key)
 
