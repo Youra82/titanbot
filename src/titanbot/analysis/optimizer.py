@@ -152,6 +152,27 @@ def main():
         else:
             pair_start_date = args.start_date
         HISTORICAL_DATA = load_data(symbol, timeframe, pair_start_date, args.end_date)
+
+        # Indikatoren einmalig vorberechnen — ATR/ADX/volume_ma sind trial-unabhängig
+        # (adx_period=14 ist fix, volume_ma_period=20 ist fix)
+        if not HISTORICAL_DATA.empty:
+            import ta as _ta
+            try:
+                _atr = _ta.volatility.AverageTrueRange(
+                    high=HISTORICAL_DATA['high'], low=HISTORICAL_DATA['low'],
+                    close=HISTORICAL_DATA['close'], window=14)
+                HISTORICAL_DATA['atr'] = _atr.average_true_range()
+                _adx = _ta.trend.ADXIndicator(
+                    high=HISTORICAL_DATA['high'], low=HISTORICAL_DATA['low'],
+                    close=HISTORICAL_DATA['close'], window=14)
+                HISTORICAL_DATA['adx']     = _adx.adx()
+                HISTORICAL_DATA['adx_pos'] = _adx.adx_pos()
+                HISTORICAL_DATA['adx_neg'] = _adx.adx_neg()
+                HISTORICAL_DATA['volume_ma'] = HISTORICAL_DATA['volume'].rolling(window=20).mean()
+                print(f"Indikatoren vorberechnet (ATR/ADX/volume_ma) — werden pro Trial wiederverwendet.")
+            except Exception as _e:
+                print(f"Warnung: Indikator-Vorberechnung fehlgeschlagen ({_e}), wird pro Trial berechnet.")
+
         # HTF-Daten + Bias einmalig berechnen (vor study.optimize)
         # market_bias ist für alle Trials identisch → einmal reicht
         CURRENT_HTF_BIAS = None

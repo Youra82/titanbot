@@ -61,7 +61,8 @@ for symbol in $SYMBOLS; do
                  5m|15m) lookback_days=60 ;; 
                  30m|1h) lookback_days=365 ;; 
                  2h|4h) lookback_days=730 ;; 
-                 6h|1d) lookback_days=1095 ;; 
+                 6h) lookback_days=730 ;;
+                 1d) lookback_days=1095 ;; 
              esac
              # Berechne das Startdatum basierend auf dem Lookback
              FINAL_START_DATE=$(date -d "$lookback_days days ago" +%F)
