@@ -27,12 +27,17 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 TF_LOOKBACK_DAYS = {'5m': 60, '15m': 60, '30m': 365, '1h': 365,
                     '2h': 730, '4h': 730, '6h': 730, '1d': 1095}
 
+import threading as _threading
 HISTORICAL_DATA = None
 CURRENT_HTF_DATA = None   # Pre-loaded HTF data — einmal laden, nicht pro Trial
 CURRENT_HTF_BIAS = None   # Pre-computed HTF market_bias — einmal berechnen, nicht pro Trial
 CURRENT_SYMBOL = None
 CURRENT_TIMEFRAME = None
 CURRENT_HTF = None
+# SMC-Ergebnis-Cache: key=(swingsLength, ob_mitigation, liquidity_lookback, min_fvg_size_pct_r)
+# → process_dataframe() wird nur bei neuen Parameterkombinationen aufgerufen
+_SMC_CACHE: dict = {}
+_SMC_CACHE_LOCK = _threading.Lock()
 CONFIG_SUFFIX = ""
 MAX_DRAWDOWN_CONSTRAINT = 0.30
 MIN_WIN_RATE_CONSTRAINT = 55.0
@@ -76,8 +81,36 @@ def objective(trial):
         'min_sl_pct': trial.suggest_float('min_sl_pct', 0.3, 1.5)  # Als % (0.3% bis 1.5%)
     }
 
+    # SMC-Engine cachen: process_dataframe() nur bei neuen (swingsLength, ob_mitigation,
+    # liquidity_lookback, min_fvg_size_pct) aufrufen — alle anderen Params sind Post-Filter
+    _cache_key = (
+        smc_params['swingsLength'],
+        smc_params['ob_mitigation'],
+        smc_params['liquidity_lookback'],
+        round(smc_params['min_fvg_size_pct'], 2),
+    )
+    with _SMC_CACHE_LOCK:
+        _precomputed = _SMC_CACHE.get(_cache_key)
+
+    if _precomputed is None:
+        from titanbot.strategy.smc_engine import SMCEngine as _SMCEng
+        _eng = _SMCEng(settings=smc_params)
+        _smc_res = _eng.process_dataframe(HISTORICAL_DATA[['open', 'high', 'low', 'close']].copy())
+        _precomputed = {
+            'smc_results': _smc_res,
+            'smc_structures': {
+                'order_blocks': _eng.swingOrderBlocks + _eng.internalOrderBlocks,
+                'fair_value_gaps': _eng.fairValueGaps,
+                'events': _eng.event_log,
+                'data_times': _eng.times,
+            },
+        }
+        with _SMC_CACHE_LOCK:
+            _SMC_CACHE.setdefault(_cache_key, _precomputed)  # erster Writer gewinnt
+    smc_params['_precomputed_smc'] = _precomputed
+
     # Übergebe BEIDE Parameter-Dictionaries an den Backtester
-    result = run_smc_backtest( HISTORICAL_DATA.copy(), smc_params, risk_params, START_CAPITAL, verbose=False )
+    result = run_smc_backtest(HISTORICAL_DATA.copy(), smc_params, risk_params, START_CAPITAL, verbose=False)
     pnl = result.get('total_pnl_pct', -1000)
     drawdown = result.get('max_drawdown_pct', 1.0) # Backtester gibt Dezimal zurück
     trades = result.get('trades_count', 0)
@@ -302,6 +335,10 @@ def main():
             except Exception:
                 pass
             continue # Nächsten Task versuchen
+
+        # Cache nach jedem Task leeren (neues Symbol/Timeframe = andere Daten)
+        with _SMC_CACHE_LOCK:
+            _SMC_CACHE.clear()
 
         valid_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
         if not valid_trials:
