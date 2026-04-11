@@ -115,12 +115,16 @@ def objective(trial):
     win_rate = result.get('win_rate', 0)
 
     # Pruning
+    # Mindest-Trades abhängig vom Datensatz — verhindert Overfitting auf 1-2 Zufallstrades
+    n_candles = len(HISTORICAL_DATA)
+    min_trades = max(3, n_candles // 300)  # z.B. 1983 Kerzen → 6 Trades Minimum
+
     if OPTIM_MODE == "strict" and (
         drawdown > MAX_DRAWDOWN_CONSTRAINT or win_rate < MIN_WIN_RATE_CONSTRAINT or
-        pnl < MIN_PNL_CONSTRAINT or trades < 50):
+        pnl < MIN_PNL_CONSTRAINT or trades < min_trades):
         raise optuna.exceptions.TrialPruned()
     elif OPTIM_MODE == "best_profit" and (
-        drawdown > MAX_DRAWDOWN_CONSTRAINT or trades < 50):
+        drawdown > MAX_DRAWDOWN_CONSTRAINT or trades < min_trades):
         raise optuna.exceptions.TrialPruned()
 
     return pnl
