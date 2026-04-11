@@ -355,8 +355,8 @@ def main():
             'swingsLength': best_params['swingsLength'],
             'ob_mitigation': best_params['ob_mitigation'],
             'use_adx_filter': best_params['use_adx_filter'],
-            'adx_period': best_params['adx_period'],
-            'adx_threshold': best_params['adx_threshold']
+            'adx_period': best_params.get('adx_period', 14),
+            'adx_threshold': best_params.get('adx_threshold', 25)
         }
         
         risk_config = {
