@@ -400,8 +400,7 @@ def main():
 
         saved = False
         status = 'saved'
-        config_missing = not os.path.exists(config_output_path)
-        if existing_best is None or config_missing or (best_trial.value is not None and best_trial.value > existing_best):
+        if existing_best is None or (best_trial.value is not None and best_trial.value > existing_best):
             # besser — schreibe die Config und aktualisiere die Historie
             try:
                 with open(config_output_path, 'w', encoding='utf-8') as f:
