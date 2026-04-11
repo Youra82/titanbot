@@ -126,7 +126,14 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
             strat['smc_params']['htf'] = strat['htf'] # HTF hinzufügen
 
             engine = SMCEngine(settings=strat.get('smc_params', {}))
-            smc_results_by_strategy[key] = engine.process_dataframe(strat['data'][['open','high','low','close']].copy())
+            smc_result = engine.process_dataframe(strat['data'][['open','high','low','close']].copy())
+            smc_results_by_strategy[key] = smc_result
+            # SMC-Spalten (P/D, Sweep-Flags) in Strategie-Daten übertragen — wie in backtester.py
+            enriched_df = smc_result.get('enriched_df')
+            if enriched_df is not None:
+                for col in enriched_df.columns:
+                    if col.startswith('smc_'):
+                        strat['data'][col] = enriched_df[col].values
             valid_strategies[key] = strat
         except Exception as e:
             print(f"FEHLER bei SMC-Analyse für {key}: {e}")
