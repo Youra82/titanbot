@@ -305,7 +305,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                             'last_known_price': entry_price,
                             # Für Trade-History-Export
                             'entry_ts': ts,
-                            'timeframe': strat_data['timeframe'],
+                            'timeframe': strat['timeframe'],
                             'leverage': leverage,
                             'sl_pct': round(sl_distance / entry_price * 100, 4),
                             'tsl_activation_rr': activation_rr,
