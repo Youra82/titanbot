@@ -144,6 +144,8 @@ def get_titan_signal(
     signal_price = None
     signal_context = {}
 
+    min_fvg_size = params.get('strategy', params).get('min_fvg_size_pct', 0.05) / 100.0
+
     # ==================== LONG SETUP ====================
     # Gate 1: P/D zone — must be in discount (price below midpoint of range)
     long_pd_ok = (not use_pd_filter) or (pd_pct <= 0.5)
@@ -152,7 +154,6 @@ def get_titan_signal(
 
     if long_pd_ok and long_sweep_ok:
         # Priority 1: FVG long (tighter zone, cleaner entry)
-        min_fvg_size = params.get('strategy', params).get('min_fvg_size_pct', 0.05) / 100.0
         for fvg in unmitigated_fvgs:
             if fvg.bias != Bias.BULLISH:
                 continue
