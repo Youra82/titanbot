@@ -21,7 +21,7 @@ echo -e "${GREEN}✔ Virtuelle Umgebung wurde erfolgreich aktiviert.${NC}"
 echo -e "\n${YELLOW}Möchtest du alle alten, generierten Configs vor dem Start löschen?${NC}"
 read -p "Dies wird für einen kompletten Neustart empfohlen. (j/n) [Standard: n]: " CLEANUP_CHOICE; CLEANUP_CHOICE=${CLEANUP_CHOICE:-n}
 if [[ "$CLEANUP_CHOICE" == "j" || "$CLEANUP_CHOICE" == "J" ]]; then
-    echo -e "${YELLOW}Lösche alte Konfigurationen und History...${NC}"; rm -f src/titanbot/strategy/configs/config_*.json; rm -f artifacts/results/optimizer_history.json; echo -e "${GREEN}✔ Aufräumen abgeschlossen.${NC}"
+    echo -e "${YELLOW}Lösche alte Konfigurationen, History und Optuna-DB...${NC}"; rm -f src/titanbot/strategy/configs/config_*.json; rm -f artifacts/results/optimizer_history.json; rm -f artifacts/db/optuna_studies_smc.db; echo -e "${GREEN}✔ Aufräumen abgeschlossen.${NC}"
 else
     echo -e "${GREEN}✔ Alte Ergebnisse werden beibehalten.${NC}"
 fi
