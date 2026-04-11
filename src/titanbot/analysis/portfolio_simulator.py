@@ -252,6 +252,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                         risk_per_trade_pct = risk_params.get('risk_per_trade_pct', 1.0) / 100
                         risk_reward_ratio = risk_params.get('risk_reward_ratio', 2.0)
                         max_leverage = risk_params.get('max_leverage', 20)
+                        min_leverage = risk_params.get('min_leverage', 3)
                         sl_buffer_atr_mult = risk_params.get('sl_buffer_atr_mult', 0.2)
                         activation_rr = risk_params.get('trailing_stop_activation_rr', 2.0)
                         callback_rate = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100
@@ -281,13 +282,15 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                             continue
 
                         target_notional = risk_amount_usd / sl_pct
-                        max_notional = equity * max_leverage
-                        final_notional_value = min(target_notional, max_notional, absolute_max_notional_value)
+                        # Hebel klemmen: min_leverage ≤ eff_leverage ≤ max_leverage
+                        eff_leverage = target_notional / equity
+                        eff_leverage = max(min_leverage, min(eff_leverage, max_leverage))
+                        final_notional_value = min(equity * eff_leverage, absolute_max_notional_value)
 
                         if final_notional_value < min_notional:
                             continue
 
-                        margin_used = math.ceil((final_notional_value / max_leverage) * 100) / 100
+                        margin_used = math.ceil((final_notional_value / eff_leverage) * 100) / 100
 
                         current_total_margin = sum(p['margin_used'] for p in open_positions.values())
                         if current_total_margin + margin_used > equity:
@@ -311,7 +314,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                             # Für Trade-History-Export
                             'entry_ts': ts,
                             'timeframe': strat['timeframe'],
-                            'leverage': round(final_notional_value / entry_price * entry_price / equity, 1),
+                            'leverage': round(eff_leverage, 1),
                             'sl_pct': round(sl_distance / entry_price * 100, 4),
                             'tsl_activation_rr': activation_rr,
                             'tsl_callback_pct': callback_rate * 100,

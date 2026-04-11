@@ -74,7 +74,8 @@ def objective(trial):
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
         'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.5, 2.0),
-        'max_leverage': trial.suggest_int('max_leverage', 5, 30),
+        'min_leverage': trial.suggest_int('min_leverage', 2, 8),
+        'max_leverage': trial.suggest_int('max_leverage', 8, 30),
         'sl_buffer_atr_mult': trial.suggest_float('sl_buffer_atr_mult', 0.05, 0.5),
         'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 3.5),
         'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5)
@@ -367,6 +368,7 @@ def main():
             'margin_mode': "isolated",
             'risk_per_trade_pct': round(best_params['risk_per_trade_pct'], 2),
             'risk_reward_ratio': round(best_params['risk_reward_ratio'], 2),
+            'min_leverage': best_params['min_leverage'],
             'max_leverage': best_params['max_leverage'],
             'sl_buffer_atr_mult': round(best_params['sl_buffer_atr_mult'], 3),
             'trailing_stop_activation_rr': round(best_params['trailing_stop_activation_rr'], 2),

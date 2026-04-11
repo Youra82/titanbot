@@ -133,6 +133,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     activation_rr = risk_params.get('trailing_stop_activation_rr', 2.0)
     callback_rate = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100
     max_leverage = risk_params.get('max_leverage', 20)
+    min_leverage = risk_params.get('min_leverage', 3)
     sl_buffer_atr_mult = risk_params.get('sl_buffer_atr_mult', 0.2)
     fee_pct = 0.05 / 100
 
@@ -269,12 +270,13 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 if sl_pct <= 1e-6: continue
 
                 target_notional = risk_amount_usd / sl_pct
-                max_notional = current_capital * max_leverage
-                final_notional_value = min(target_notional, max_notional, absolute_max_notional_value)
+                # Hebel klemmen: min_leverage ≤ eff_leverage ≤ max_leverage
+                eff_leverage = target_notional / current_capital
+                eff_leverage = max(min_leverage, min(eff_leverage, max_leverage))
+                final_notional_value = min(current_capital * eff_leverage, absolute_max_notional_value)
                 if final_notional_value < 1.0: continue
 
-                eff_leverage = final_notional_value / current_capital
-                margin_used = math.ceil((final_notional_value / max(eff_leverage, 1.0)) * 100) / 100
+                margin_used = math.ceil((final_notional_value / eff_leverage) * 100) / 100
                 if margin_used > current_capital: continue
 
                 take_profit = entry_price + sl_distance * risk_reward_ratio if side == 'buy' else entry_price - sl_distance * risk_reward_ratio
