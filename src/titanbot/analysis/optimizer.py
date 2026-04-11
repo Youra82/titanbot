@@ -268,6 +268,7 @@ def main():
 
         start_time = time.time()
         _last_bar_time = [0.0]  # Throttle für ASCII-Fortschrittsbalken
+        _bar_final_printed = [False]  # verhindert Doppeldruck der letzten Zeile (parallele Jobs)
         _trials_at_start = [0]  # Anzahl der Trials im DB vor diesem Run
 
         def _trial_callback(study_obj, trial_obj):
@@ -307,6 +308,8 @@ def main():
                 # ASCII-Fortschrittsbalken (alle 5 Sek. oder beim letzten Trial)
                 now_t = time.time()
                 is_done = trials_done >= trials_total
+                if is_done and _bar_final_printed[0]:
+                    return  # parallele Jobs: finalen Druck nur einmal
                 if now_t - _last_bar_time[0] >= 5.0 or is_done:
                     _last_bar_time[0] = now_t
                     bar_width = 25
@@ -318,6 +321,8 @@ def main():
                     line = f"  [{bar}] {sym_short}/{CURRENT_TIMEFRAME}  {trials_done:>4}/{trials_total}  ({pct*100:5.1f}%)  Best: {best_str}  {elapsed}s"
                     # \r überschreibt dieselbe Zeile; Leerzeichen am Ende löschen Reste
                     print(f"\r{line:<80}", end='\n' if is_done else '', flush=True)
+                    if is_done:
+                        _bar_final_printed[0] = True
             except Exception:
                 pass
 
@@ -395,7 +400,8 @@ def main():
 
         saved = False
         status = 'saved'
-        if existing_best is None or (best_trial.value is not None and best_trial.value > existing_best):
+        config_missing = not os.path.exists(config_output_path)
+        if existing_best is None or config_missing or (best_trial.value is not None and best_trial.value > existing_best):
             # besser — schreibe die Config und aktualisiere die Historie
             try:
                 with open(config_output_path, 'w', encoding='utf-8') as f:
