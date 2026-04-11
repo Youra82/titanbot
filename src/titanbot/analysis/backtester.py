@@ -276,8 +276,8 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 final_notional_value = min(current_capital * eff_leverage, absolute_max_notional_value)
                 if final_notional_value < 1.0: continue
 
-                margin_used = math.ceil((final_notional_value / eff_leverage) * 100) / 100
-                if margin_used > current_capital: continue
+                # Backtester: Single-Position — margin check entfällt (Floating-Point-Bug vermieden)
+                margin_used = round(final_notional_value / eff_leverage, 2)
 
                 take_profit = entry_price + sl_distance * risk_reward_ratio if side == 'buy' else entry_price - sl_distance * risk_reward_ratio
                 activation_price = entry_price + sl_distance * activation_rr if side == 'buy' else entry_price - sl_distance * activation_rr
