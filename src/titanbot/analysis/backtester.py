@@ -13,7 +13,7 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.utils.exchange import Exchange
 from titanbot.strategy.smc_engine import SMCEngine, Bias
-from titanbot.strategy.trade_logic import get_titan_signal
+from titanbot.strategy.trade_logic import get_titan_signal, get_zone_based_tp
 from titanbot.utils.timeframe_utils import determine_htf # NEU: Import determine_htf
 
 secrets_cache = None
@@ -279,7 +279,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 # Backtester: Single-Position — margin check entfällt (Floating-Point-Bug vermieden)
                 margin_used = round(final_notional_value / eff_leverage, 2)
 
-                take_profit = entry_price + sl_distance * risk_reward_ratio if side == 'buy' else entry_price - sl_distance * risk_reward_ratio
+                take_profit = get_zone_based_tp(side, entry_price, sl_distance, risk_reward_ratio, smc_results, i)
                 activation_price = entry_price + sl_distance * activation_rr if side == 'buy' else entry_price - sl_distance * activation_rr
 
                 position = {

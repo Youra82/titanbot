@@ -6,6 +6,50 @@ from titanbot.strategy.smc_engine import Bias, FVG, OrderBlock
 
 # ==================== HELPERS ====================
 
+def get_zone_based_tp(
+    side: str,
+    entry_price: float,
+    sl_distance: float,
+    risk_reward_ratio: float,
+    smc_results: dict,
+    current_bar_index: int,
+) -> float:
+    """
+    Zonenbasiertes TP nach SMC-Regeln:
+    - Short → nächstes ungesweeptes SSL unterhalb des Entry (Liquidität als Ziel)
+    - Long  → nächstes ungesweeptes BSL oberhalb des Entry
+    Fallback: R:R-basiertes TP wenn kein Level gefunden.
+    """
+    liquidity_levels = smc_results.get('liquidity_levels', [])
+    target_bias = 'ssl' if side == 'sell' else 'bsl'
+    fallback_tp = (
+        entry_price - sl_distance * risk_reward_ratio if side == 'sell'
+        else entry_price + sl_distance * risk_reward_ratio
+    )
+
+    candidates = []
+    for lvl in liquidity_levels:
+        if lvl.swept:
+            continue
+        if lvl.bar_index >= current_bar_index:
+            continue
+        if lvl.bias != target_bias:
+            continue
+        if side == 'sell' and lvl.price < entry_price:
+            candidates.append(lvl.price)
+        elif side == 'buy' and lvl.price > entry_price:
+            candidates.append(lvl.price)
+
+    if not candidates:
+        return fallback_tp
+
+    # Nächstes Level zum Entry (konservativstes Ziel)
+    if side == 'sell':
+        return max(candidates)   # höchstes SSL unter Entry = nächstes
+    else:
+        return min(candidates)   # niedrigstes BSL über Entry = nächstes
+
+
 def _is_rejection_candle(candle: pd.Series, side: str) -> bool:
     """
     Rejection candle (pin bar / hammer / shooting star).

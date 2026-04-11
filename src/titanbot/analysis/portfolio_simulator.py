@@ -12,7 +12,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.strategy.smc_engine import SMCEngine, Bias
-from titanbot.strategy.trade_logic import get_titan_signal # Nutzt die Live-Logik
+from titanbot.strategy.trade_logic import get_titan_signal, get_zone_based_tp
 from titanbot.analysis.backtester import load_data # Importiere load_data für HTF-Daten
 from titanbot.utils.timeframe_utils import determine_htf # NEU: Import für determine_htf
 
@@ -297,7 +297,8 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                         if current_total_margin + margin_used > equity:
                             continue
 
-                        take_profit = entry_price + sl_distance * risk_reward_ratio if side == 'buy' else entry_price - sl_distance * risk_reward_ratio
+                        bar_idx = strat['data'].index.get_loc(ts)
+                        take_profit = get_zone_based_tp(side, entry_price, sl_distance, risk_reward_ratio, smc_results_by_strategy.get(key, {}), bar_idx)
                         activation_price = entry_price + sl_distance * activation_rr if side == 'buy' else entry_price - sl_distance * activation_rr
 
                         open_positions[key] = {
