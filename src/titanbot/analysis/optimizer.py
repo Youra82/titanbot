@@ -74,11 +74,10 @@ def objective(trial):
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
         'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.5, 2.0),
-        'leverage': trial.suggest_int('leverage', 5, 15),
+        'max_leverage': trial.suggest_int('max_leverage', 5, 30),
+        'sl_buffer_atr_mult': trial.suggest_float('sl_buffer_atr_mult', 0.05, 0.5),
         'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 3.5),
-        'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5),
-        'atr_multiplier_sl': trial.suggest_float('atr_multiplier_sl', 1.0, 3.0),
-        'min_sl_pct': trial.suggest_float('min_sl_pct', 0.3, 1.5)  # Als % (0.3% bis 1.5%)
+        'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5)
     }
 
     # SMC-Engine cachen: process_dataframe() nur bei neuen (swingsLength, ob_mitigation,
@@ -368,11 +367,10 @@ def main():
             'margin_mode': "isolated",
             'risk_per_trade_pct': round(best_params['risk_per_trade_pct'], 2),
             'risk_reward_ratio': round(best_params['risk_reward_ratio'], 2),
-            'leverage': best_params['leverage'],
+            'max_leverage': best_params['max_leverage'],
+            'sl_buffer_atr_mult': round(best_params['sl_buffer_atr_mult'], 3),
             'trailing_stop_activation_rr': round(best_params['trailing_stop_activation_rr'], 2),
-            'trailing_stop_callback_rate_pct': round(best_params['trailing_stop_callback_rate_pct'], 2),
-            'atr_multiplier_sl': round(best_params['atr_multiplier_sl'], 2),
-            'min_sl_pct': round(best_params['min_sl_pct'], 2)
+            'trailing_stop_callback_rate_pct': round(best_params['trailing_stop_callback_rate_pct'], 2)
         }
         behavior_config = {"use_longs": True, "use_shorts": True}
         

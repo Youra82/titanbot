@@ -251,43 +251,48 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                         entry_price = current_candle['close']
                         risk_per_trade_pct = risk_params.get('risk_per_trade_pct', 1.0) / 100
                         risk_reward_ratio = risk_params.get('risk_reward_ratio', 2.0)
-                        leverage = risk_params.get('leverage', 10)
+                        max_leverage = risk_params.get('max_leverage', 20)
+                        sl_buffer_atr_mult = risk_params.get('sl_buffer_atr_mult', 0.2)
                         activation_rr = risk_params.get('trailing_stop_activation_rr', 2.0)
                         callback_rate = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100
-
-                        # --- NEU: Hole optimierte SL-Parameter ---
-                        atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0)
-                        min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0
 
                         current_atr = current_candle.get('atr')
                         if pd.isna(current_atr) or current_atr <= 0:
                             continue
 
-                        sl_distance_atr = current_atr * atr_multiplier_sl
-                        sl_distance_min = entry_price * min_sl_pct
-                        sl_distance = max(sl_distance_atr, sl_distance_min)
+                        # --- SMC-Zonenbasierter SL (hinter die Zone) ---
+                        buffer = current_atr * sl_buffer_atr_mult
+                        zone_low = signal_context.get('level_low', entry_price)
+                        zone_high = signal_context.get('level_high', entry_price)
+                        if side == 'buy':
+                            stop_loss = zone_low - buffer
+                        else:
+                            stop_loss = zone_high + buffer
+
+                        sl_distance = abs(entry_price - stop_loss)
+                        sl_distance = max(sl_distance, entry_price * 0.001)
                         if sl_distance <= 0:
                             continue
 
+                        # --- Variabler Hebel: Risk-basiertes Position Sizing ---
                         risk_amount_usd = equity * risk_per_trade_pct
-                        sl_distance_pct_equivalent = sl_distance / entry_price
-                        if sl_distance_pct_equivalent <= 1e-6:
+                        sl_pct = sl_distance / entry_price
+                        if sl_pct <= 1e-6:
                             continue
 
-                        calculated_notional_value = risk_amount_usd / sl_distance_pct_equivalent
-                        max_notional_by_leverage = equity * max_allowed_effective_leverage
-                        final_notional_value = min(calculated_notional_value, max_notional_by_leverage, absolute_max_notional_value)
+                        target_notional = risk_amount_usd / sl_pct
+                        max_notional = equity * max_leverage
+                        final_notional_value = min(target_notional, max_notional, absolute_max_notional_value)
 
                         if final_notional_value < min_notional:
                             continue
 
-                        margin_used = math.ceil((final_notional_value / leverage) * 100) / 100
+                        margin_used = math.ceil((final_notional_value / max_leverage) * 100) / 100
 
                         current_total_margin = sum(p['margin_used'] for p in open_positions.values())
                         if current_total_margin + margin_used > equity:
                             continue
 
-                        stop_loss = entry_price - sl_distance if side == 'buy' else entry_price + sl_distance
                         take_profit = entry_price + sl_distance * risk_reward_ratio if side == 'buy' else entry_price - sl_distance * risk_reward_ratio
                         activation_price = entry_price + sl_distance * activation_rr if side == 'buy' else entry_price - sl_distance * activation_rr
 
@@ -306,7 +311,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                             # Für Trade-History-Export
                             'entry_ts': ts,
                             'timeframe': strat['timeframe'],
-                            'leverage': leverage,
+                            'leverage': round(final_notional_value / entry_price * entry_price / equity, 1),
                             'sl_pct': round(sl_distance / entry_price * 100, 4),
                             'tsl_activation_rr': activation_rr,
                             'tsl_callback_pct': callback_rate * 100,
