@@ -135,16 +135,19 @@ def objective(trial):
     test_wr      = test_result.get('win_rate', 0)
 
     min_test_trades = max(2, len(TEST_DATA) // 300)
-    if test_trades < min_test_trades or test_dd > MAX_DRAWDOWN_CONSTRAINT or test_pnl <= 0:
+    if test_trades < min_test_trades or test_dd > MAX_DRAWDOWN_CONSTRAINT:
         raise optuna.exceptions.TrialPruned()
-    if OPTIM_MODE == "strict" and (test_wr < MIN_WIN_RATE_CONSTRAINT or test_pnl < MIN_PNL_CONSTRAINT):
-        raise optuna.exceptions.TrialPruned()
+    # strict: pnl>0 + win_rate + min_pnl zwingend
+    # best_profit: pnl>0 wird nicht erzwungen — Composite Score bestraft negative PnL indirekt
+    if OPTIM_MODE == "strict":
+        if test_pnl <= 0 or test_wr < MIN_WIN_RATE_CONSTRAINT or test_pnl < MIN_PNL_CONSTRAINT:
+            raise optuna.exceptions.TrialPruned()
 
     # ── Kombinierter Score (von jaegerbot inspiriert) ────────────────────────
     # log1p komprimiert extreme Ausreißer; DD im Nenner bestraft Risiko
     train_score = math.log1p(max(0, train_pnl)) / max(train_dd * 100, 1.0)
     test_score  = math.log1p(max(0, test_pnl))  / max(test_dd  * 100, 1.0)
-    trade_bonus = math.log1p(test_trades) * 2.0          # mehr Trades = mehr Compounding
+    trade_bonus = math.log1p(test_trades) * 4.0          # mehr Trades = mehr Compounding (stärker gewichtet)
     wr_bonus    = max(0.0, (test_wr - 40.0) / 10.0)      # Bonus ab 40% Win-Rate
 
     final_score = train_score * 0.30 + test_score * 0.70 + trade_bonus + wr_bonus
