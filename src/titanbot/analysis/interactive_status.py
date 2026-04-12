@@ -367,7 +367,39 @@ def create_interactive_chart(symbol, timeframe, df, trades, equity_df, stats, st
             marker=dict(color="#ef4444", symbol="diamond", size=12, line=dict(width=1.1, color="#7f1d1d")),
             name="Exit Short", showlegend=True
         ), secondary_y=False)
-    
+
+    # ===== SL / TP LINIEN (horizontal von Entry bis Exit) =====
+    sl_added, tp_added = False, False
+    for trade in trades:
+        sl_price = trade.get('stop_loss')
+        tp_price = trade.get('take_profit')
+        t_entry  = trade.get('entry_time')
+        t_exit   = trade.get('exit_time')
+        if not (sl_price and tp_price and t_entry and t_exit):
+            continue
+        t_entry = pd.to_datetime(t_entry)
+        t_exit  = pd.to_datetime(t_exit)
+
+        # SL — rote gestrichelte Linie
+        fig.add_trace(go.Scatter(
+            x=[t_entry, t_exit], y=[sl_price, sl_price],
+            mode='lines',
+            line=dict(color='#ef4444', width=1.2, dash='dash'),
+            name='SL', legendgroup='sl',
+            showlegend=not sl_added,
+        ), secondary_y=False)
+        sl_added = True
+
+        # TP — grüne gestrichelte Linie
+        fig.add_trace(go.Scatter(
+            x=[t_entry, t_exit], y=[tp_price, tp_price],
+            mode='lines',
+            line=dict(color='#22c55e', width=1.2, dash='dash'),
+            name='TP', legendgroup='tp',
+            showlegend=not tp_added,
+        ), secondary_y=False)
+        tp_added = True
+
     # ===== EQUITY CURVE AUF ZWEITER Y-ACHSE (rechts überlagert) =====
     if not equity_df.empty and 'equity' in equity_df.columns:
         fig.add_trace(
