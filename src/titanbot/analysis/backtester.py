@@ -302,12 +302,12 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 eff_leverage = target_notional / current_capital
                 eff_leverage = max(min_leverage, min(eff_leverage, max_leverage))
                 eff_leverage = max(1, math.floor(eff_leverage))  # Bitget: ganzzahliger Hebel, floor = zugunsten SL
-                final_notional_value = min(current_capital * eff_leverage, absolute_max_notional_value)
-                # Skip nur wenn selbst bei max_leverage Mindest-Notional nicht erreichbar
+                # Risk-basiertes Notional (nicht equity×leverage!) → kleine Margin, mehrere Positionen möglich
+                final_notional_value = min(target_notional, absolute_max_notional_value)
                 if final_notional_value < MIN_NOTIONAL_USDT: continue
 
                 # Backtester: Single-Position — margin check entfällt (Floating-Point-Bug vermieden)
-                margin_used = round(final_notional_value / eff_leverage, 2)
+                margin_used = final_notional_value / eff_leverage
 
                 take_profit = get_zone_based_tp(side, entry_price, sl_distance, risk_reward_ratio, smc_results, i + bar_index_offset)
                 activation_price = entry_price + sl_distance * activation_rr if side == 'buy' else entry_price - sl_distance * activation_rr

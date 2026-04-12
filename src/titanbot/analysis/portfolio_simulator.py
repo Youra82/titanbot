@@ -282,22 +282,19 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                             continue
 
                         target_notional = risk_amount_usd / sl_pct
+                        # Min-Notional erzwingen (Bitget: ~5 USDT, variiert per Symbol)
+                        if target_notional < min_notional:
+                            target_notional = min_notional
                         # Hebel klemmen: min_leverage ≤ eff_leverage ≤ max_leverage
                         eff_leverage = target_notional / equity
                         eff_leverage = max(min_leverage, min(eff_leverage, max_leverage))
                         eff_leverage = max(1, math.floor(eff_leverage))  # Bitget: ganzzahliger Hebel, floor = zugunsten SL
-                        final_notional_value = min(equity * eff_leverage, absolute_max_notional_value)
-
+                        # Risk-basiertes Notional (nicht equity×leverage!) → kleine Margin, mehrere Coins gleichzeitig
+                        final_notional_value = min(target_notional, absolute_max_notional_value)
                         if final_notional_value < min_notional:
-                            # Notional zu klein, Hebel hochsetzen
-                            lev_needed = math.ceil(min_notional / equity)
-                            if lev_needed <= max_leverage:
-                                eff_leverage = lev_needed
-                                final_notional_value = equity * eff_leverage
-                            else:
-                                continue  # Kapital zu gering, selbst bei max_leverage
+                            continue  # Kapital zu gering, selbst bei max_leverage nicht erfüllbar
 
-                        # Echte Margin: notional / eff_leverage (= equity bei vollem Einsatz)
+                        # Echte Margin: notional / eff_leverage — Bruchteil des Kapitals, nicht volles Equity
                         # Nicht runden hier — Rounding-Bug würde margin_used > equity machen
                         margin_used = final_notional_value / eff_leverage
 
