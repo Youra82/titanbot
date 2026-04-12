@@ -4,8 +4,8 @@
         "use_auto_optimizer_results": false,
         "active_strategies": [
             {
-                "symbol": "SOL/USDT:USDT",
-                "timeframe": "4h",
+                "symbol": "XRP/USDT:USDT",
+                "timeframe": "30m",
                 "use_macd_filter": false,
                 "active": true
             },
@@ -16,20 +16,14 @@
                 "active": true
             },
             {
-                "symbol": "BNB/USDT:USDT",
-                "timeframe": "6h",
-                "use_macd_filter": false,
-                "active": true
-            },
-            {
-                "symbol": "XRP/USDT:USDT",
-                "timeframe": "6h",
-                "use_macd_filter": false,
-                "active": true
-            },
-            {
                 "symbol": "ETH/USDT:USDT",
-                "timeframe": "1h",
+                "timeframe": "2h",
+                "use_macd_filter": false,
+                "active": true
+            },
+            {
+                "symbol": "SOL/USDT:USDT",
+                "timeframe": "6h",
                 "use_macd_filter": false,
                 "active": true
             }
