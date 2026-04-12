@@ -315,6 +315,44 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                     'entry_time': timestamp  # NEU: Entry-Zeit speichern
                 }
 
+    # --- Offene Position am Backtest-Ende schließen (letzter bekannter Schlusskurs) ---
+    if position and len(data) > 0:
+        last_candle = data.iloc[-1]
+        last_price = last_candle['close']
+        pnl_pct = (last_price / position['entry_price'] - 1) if position['side'] == 'long' else (1 - last_price / position['entry_price'])
+        pnl_usd = position['notional_value'] * pnl_pct
+        total_fees = position['notional_value'] * fee_pct * 2
+        net_pnl = pnl_usd - total_fees
+        current_capital += net_pnl
+        if current_capital <= 0:
+            current_capital = 0
+        else:
+            if net_pnl > 0:
+                wins_count += 1
+        trades_count += 1
+        trades_list.append({
+            'entry_' + position['side']: {
+                'time': position['entry_time'].isoformat() if hasattr(position.get('entry_time'), 'isoformat') else str(position.get('entry_time')),
+                'price': position['entry_price']
+            },
+            'exit_' + position['side']: {
+                'time': 'Backtest-Ende',
+                'price': last_price
+            },
+            'stop_loss':   position['stop_loss'],
+            'take_profit': position['take_profit'],
+            'entry_time':  position['entry_time'],
+            'exit_time':   'Backtest-Ende',
+        })
+        # Equity-Kurve mit finalem realisierten Wert aktualisieren
+        mtm_equity = max(0.0, current_capital)
+        equity_curve.append({'timestamp': data.index[-1], 'equity': mtm_equity})
+        peak_capital = max(peak_capital, mtm_equity)
+        if peak_capital > 0:
+            drawdown = (peak_capital - mtm_equity) / peak_capital
+            max_drawdown_pct = max(max_drawdown_pct, drawdown)
+        position = None
+
     # --- Endergebnis ---
     win_rate = (wins_count / trades_count * 100) if trades_count > 0 else 0
     final_pnl_pct = ((current_capital - start_capital) / start_capital) * 100 if start_capital > 0 else 0
