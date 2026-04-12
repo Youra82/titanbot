@@ -1,0 +1,28 @@
+{
+    "market": {
+        "symbol": "ARB/USDT:USDT",
+        "timeframe": "4h",
+        "htf": "1d"
+    },
+    "strategy": {
+        "swingsLength": 34,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": true,
+        "adx_period": 14,
+        "adx_threshold": 25
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 0.86,
+        "risk_reward_ratio": 3.03,
+        "min_leverage": 8,
+        "max_leverage": 26,
+        "sl_buffer_atr_mult": 0.287,
+        "trailing_stop_activation_rr": 1.31,
+        "trailing_stop_callback_rate_pct": 1.29
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    }
+}

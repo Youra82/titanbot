@@ -1,11 +1,11 @@
 {
     "market": {
         "symbol": "BTC/USDT:USDT",
-        "timeframe": "6h",
-        "htf": "1d"
+        "timeframe": "1h",
+        "htf": "4h"
     },
     "strategy": {
-        "swingsLength": 37,
+        "swingsLength": 17,
         "ob_mitigation": "Close",
         "use_adx_filter": true,
         "adx_period": 14,
@@ -13,13 +13,13 @@
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 1.79,
-        "risk_reward_ratio": 2.98,
-        "min_leverage": 7,
-        "max_leverage": 13,
-        "sl_buffer_atr_mult": 0.417,
-        "trailing_stop_activation_rr": 2.62,
-        "trailing_stop_callback_rate_pct": 0.91
+        "risk_per_trade_pct": 1.09,
+        "risk_reward_ratio": 3.1,
+        "min_leverage": 4,
+        "max_leverage": 17,
+        "sl_buffer_atr_mult": 0.258,
+        "trailing_stop_activation_rr": 1.19,
+        "trailing_stop_callback_rate_pct": 0.72
     },
     "behavior": {
         "use_longs": true,
