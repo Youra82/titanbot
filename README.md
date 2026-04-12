@@ -377,9 +377,24 @@ bash ./update.sh
 
 ### 🔧 Config-Management
 
-#### Konfigurationsdateien löschen
+#### Vollständiger Reset & Neuoptimierung (empfohlen)
 
-Bei Bedarf können alle generierten Konfigurationen gelöscht werden:
+Wenn sich der Optimizer-Code oder die Trading-Logik grundlegend geändert hat, müssen alle alten Konfigurationen und die Optuna-Datenbank gelöscht werden, bevor eine neue Pipeline gestartet wird:
+
+```bash
+# 1. Alles zurücksetzen (Configs + Optuna-DB + Optimizer-History)
+./run_pipeline.sh cleanup
+
+# 2. Alten Autopilot-Run löschen (verhindert dass der Bot alte Strategien startet)
+rm -f artifacts/results/last_optimizer_run.json
+
+# 3. Neue Optimierung starten
+./run_pipeline.sh
+```
+
+> ⚠️ Die Optuna-Datenbank (`artifacts/db/optuna_studies_smc.db`) **muss** gelöscht werden wenn sich Parameter-Namen im Code geändert haben — sonst schlägt die Optimierung mit einem `KeyError` fehl.
+
+#### Konfigurationsdateien manuell löschen
 
 ```bash
 rm -f src/titanbot/strategy/configs/config_*.json
