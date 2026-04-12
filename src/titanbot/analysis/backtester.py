@@ -69,7 +69,7 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
     except Exception as e: print(f"FEHLER beim Daten-Download: {e}"); import traceback; traceback.print_exc(); return pd.DataFrame()
 
 
-def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=False):
+def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=False, bar_index_offset=0):
     if data.empty or len(data) < 15:
         return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
 
@@ -302,7 +302,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 # Backtester: Single-Position — margin check entfällt (Floating-Point-Bug vermieden)
                 margin_used = round(final_notional_value / eff_leverage, 2)
 
-                take_profit = get_zone_based_tp(side, entry_price, sl_distance, risk_reward_ratio, smc_results, i)
+                take_profit = get_zone_based_tp(side, entry_price, sl_distance, risk_reward_ratio, smc_results, i + bar_index_offset)
                 activation_price = entry_price + sl_distance * activation_rr if side == 'buy' else entry_price - sl_distance * activation_rr
 
                 position = {
