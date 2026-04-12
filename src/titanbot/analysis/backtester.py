@@ -228,7 +228,11 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                     'exit_' + position['side']: {
                         'time': timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp),
                         'price': exit_price
-                    }
+                    },
+                    'stop_loss':   position['stop_loss'],
+                    'take_profit': position['take_profit'],
+                    'entry_time':  position['entry_time'],
+                    'exit_time':   timestamp,
                 }
                 trades_list.append(trade_record)
                 
