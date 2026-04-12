@@ -481,7 +481,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default='1', type=str, help="Analyse-Modus (1=Einzel, 2=Manuell, 3=Auto, 4=Interaktiv)")
     parser.add_argument('--target_max_drawdown', default=30.0, type=float, help="Ziel Max Drawdown % (nur für Modus 3)")
+    parser.add_argument('--start_date', default='2023-01-01', type=str, help="Startdatum JJJJ-MM-TT")
+    parser.add_argument('--end_date', default=None, type=str, help="Enddatum JJJJ-MM-TT (Standard: Heute)")
+    parser.add_argument('--start_capital', default=1000, type=int, help="Startkapital in USDT")
     args = parser.parse_args()
+
+    start_date = args.start_date
+    end_date = args.end_date or date.today().strftime("%Y-%m-%d")
+    start_capital = args.start_capital
 
     if args.mode == '4':
         # Modus 4: Interaktive Charts (SMC)
@@ -489,10 +496,6 @@ if __name__ == "__main__":
         from titanbot.analysis.interactive_status import main as interactive_main
         interactive_main()
     else:
-        print("\n--- Bitte Konfiguration für den Backtest festlegen ---")
-        start_date = input(f"Startdatum (JJJJ-MM-TT) [Standard: 2023-01-01]: ") or "2023-01-01"
-        end_date = input(f"Enddatum (JJJJ-MM-TT) [Standard: Heute]: ") or date.today().strftime("%Y-%m-%d")
-        start_capital = int(input(f"Startkapital in USDT eingeben [Standard: 1000]: ") or 1000)
         print("--------------------------------------------------")
 
         if args.mode == '2':

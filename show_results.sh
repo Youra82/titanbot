@@ -41,14 +41,30 @@ if [ "$MODE" == "3" ]; then
 fi
 # *** ENDE NEU ***
 
+# --- Datum & Kapital (gilt für Modus 1, 2, 3) ---
+TODAY=$(date +%Y-%m-%d)
+if [ "$MODE" != "4" ]; then
+    read -p "Startdatum (JJJJ-MM-TT) [Standard: 2023-01-01]: " START_DATE
+    START_DATE=${START_DATE:-2023-01-01}
+    read -p "Enddatum (JJJJ-MM-TT) [Standard: ${TODAY}]: " END_DATE
+    END_DATE=${END_DATE:-$TODAY}
+    read -p "Startkapital in USDT [Standard: 1000]: " START_CAPITAL
+    START_CAPITAL=${START_CAPITAL:-1000}
+fi
+
 if [ ! -f "$RESULTS_SCRIPT" ]; then
     echo -e "${RED}Fehler: Die Analyse-Datei '$RESULTS_SCRIPT' wurde nicht gefunden.${NC}"
     deactivate
     exit 1
 fi
 
-# *** NEU: Übergebe Max DD an das Python Skript ***
-python3 "$RESULTS_SCRIPT" --mode "$MODE" --target_max_drawdown "$TARGET_MAX_DD"
+# *** NEU: Übergebe alle Parameter an das Python Skript ***
+if [ "$MODE" == "4" ]; then
+    python3 "$RESULTS_SCRIPT" --mode "$MODE"
+else
+    python3 "$RESULTS_SCRIPT" --mode "$MODE" --target_max_drawdown "$TARGET_MAX_DD" \
+        --start_date "$START_DATE" --end_date "$END_DATE" --start_capital "$START_CAPITAL"
+fi
 
 # --- NEU: Automatisches Eintragen in settings.json (nur bei Modus 3) ---
 if [ "$MODE" == "3" ]; then
