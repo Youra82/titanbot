@@ -53,6 +53,12 @@ def _generate_trades_excel(final_sim, capital):
 
     equity = capital
     rows   = []
+    def _strip_tz(dt):
+        """Entfernt Timezone-Info für Excel-Kompatibilität."""
+        if hasattr(dt, 'tzinfo') and dt.tzinfo is not None:
+            return dt.replace(tzinfo=None)
+        return dt
+
     for i, t in enumerate(trade_history):
         pnl    = float(t['pnl'])
         equity += pnl
@@ -68,7 +74,7 @@ def _generate_trades_excel(final_sim, capital):
         callback = t.get('tsl_callback_pct', 0)
         rows.append({
             'Nr':             i + 1,
-            'Datum':          t.get('entry_time', ''),
+            'Datum':          _strip_tz(t.get('entry_time', '')),
             'Strategie':      strat,
             'Richtung':       dir_,
             'Hebel':          t.get('leverage', '—'),
