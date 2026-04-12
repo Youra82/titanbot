@@ -292,12 +292,19 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 if sl_pct <= 1e-6: continue
 
                 target_notional = risk_amount_usd / sl_pct
+                # Min-Notional erzwingen (Bitget: ~5 USDT, variiert per Symbol)
+                # Wenn risk-basiertes Notional zu klein → auf Mindestbetrag anheben;
+                # der Hebel passt sich automatisch an (wird nach oben korrigiert).
+                MIN_NOTIONAL_USDT = 5.0
+                if target_notional < MIN_NOTIONAL_USDT:
+                    target_notional = MIN_NOTIONAL_USDT
                 # Hebel klemmen: min_leverage ≤ eff_leverage ≤ max_leverage
                 eff_leverage = target_notional / current_capital
                 eff_leverage = max(min_leverage, min(eff_leverage, max_leverage))
                 eff_leverage = max(1, math.floor(eff_leverage))  # Bitget: ganzzahliger Hebel, floor = zugunsten SL
                 final_notional_value = min(current_capital * eff_leverage, absolute_max_notional_value)
-                if final_notional_value < 1.0: continue
+                # Skip nur wenn selbst bei max_leverage Mindest-Notional nicht erreichbar
+                if final_notional_value < MIN_NOTIONAL_USDT: continue
 
                 # Backtester: Single-Position — margin check entfällt (Floating-Point-Bug vermieden)
                 margin_used = round(final_notional_value / eff_leverage, 2)
