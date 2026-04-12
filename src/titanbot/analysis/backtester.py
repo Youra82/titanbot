@@ -277,6 +277,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 # Hebel klemmen: min_leverage ≤ eff_leverage ≤ max_leverage
                 eff_leverage = target_notional / current_capital
                 eff_leverage = max(min_leverage, min(eff_leverage, max_leverage))
+                eff_leverage = max(1, math.floor(eff_leverage))  # Bitget: ganzzahliger Hebel, floor = zugunsten SL
                 final_notional_value = min(current_capital * eff_leverage, absolute_max_notional_value)
                 if final_notional_value < 1.0: continue
 

@@ -285,6 +285,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                         # Hebel klemmen: min_leverage ≤ eff_leverage ≤ max_leverage
                         eff_leverage = target_notional / equity
                         eff_leverage = max(min_leverage, min(eff_leverage, max_leverage))
+                        eff_leverage = max(1, math.floor(eff_leverage))  # Bitget: ganzzahliger Hebel, floor = zugunsten SL
                         final_notional_value = min(equity * eff_leverage, absolute_max_notional_value)
 
                         if final_notional_value < min_notional:
