@@ -27,17 +27,25 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 TF_LOOKBACK_DAYS = {'5m': 60, '15m': 60, '30m': 365, '1h': 365,
                     '2h': 730, '4h': 730, '6h': 730, '1d': 1095}
 
+import math
 import threading as _threading
+
 HISTORICAL_DATA = None
-CURRENT_HTF_DATA = None   # Pre-loaded HTF data — einmal laden, nicht pro Trial
-CURRENT_HTF_BIAS = None   # Pre-computed HTF market_bias — einmal berechnen, nicht pro Trial
+TRAIN_DATA      = None   # 70% — Optimierung
+TEST_DATA       = None   # 30% — Out-of-Sample Validierung
+TRAIN_SPLIT_IDX = 0
+CURRENT_HTF_DATA = None
+CURRENT_HTF_BIAS = None
 CURRENT_SYMBOL = None
 CURRENT_TIMEFRAME = None
 CURRENT_HTF = None
-# SMC-Ergebnis-Cache: key=(swingsLength, ob_mitigation, liquidity_lookback, min_fvg_size_pct_r)
-# → process_dataframe() wird nur bei neuen Parameterkombinationen aufgerufen
-_SMC_CACHE: dict = {}
-_SMC_CACHE_LOCK = _threading.Lock()
+
+# Separate SMC-Caches für Train- und Test-Datensatz
+_SMC_TRAIN_CACHE: dict = {}
+_SMC_TRAIN_CACHE_LOCK = _threading.Lock()
+_SMC_TEST_CACHE: dict = {}
+_SMC_TEST_CACHE_LOCK  = _threading.Lock()
+
 CONFIG_SUFFIX = ""
 MAX_DRAWDOWN_CONSTRAINT = 0.30
 MIN_WIN_RATE_CONSTRAINT = 55.0
@@ -48,52 +56,15 @@ OPTIM_MODE = "strict"
 def create_safe_filename(symbol, timeframe):
     return f"{symbol.replace('/', '').replace(':', '')}_{timeframe}"
 
-def objective(trial):
-    smc_params = {
-        'swingsLength': trial.suggest_int('swingsLength', 15, 60),
-        'ob_mitigation': trial.suggest_categorical('ob_mitigation', ['High/Low', 'Close']),
-        'use_adx_filter': trial.suggest_categorical('use_adx_filter', [True, False]),
-        'adx_period': 14,  # Standard-ATR-Periode, kein Mehrwert beim Optimieren
-        'adx_threshold': trial.suggest_int('adx_threshold', 20, 30),
-        # --- SMC Pro: Premium/Discount + Liquidity ---
-        'use_pd_filter': trial.suggest_categorical('use_pd_filter', [True, False]),
-        'use_liquidity_sweep_filter': trial.suggest_categorical('use_liquidity_sweep_filter', [True, False]),
-        'liquidity_lookback': trial.suggest_categorical('liquidity_lookback', [10, 15, 20, 25]),  # 4 Werte statt 16
-        'min_fvg_size_pct': trial.suggest_float('min_fvg_size_pct', 0.05, 0.20),  # Post-Filter in trade_logic
-        # --- SMC Pro: Order Block Qualität ---
-        'min_ob_quality': trial.suggest_float('min_ob_quality', 0.10, 0.50),
-        'max_ob_touches': trial.suggest_int('max_ob_touches', 0, 2),
-        # --- SMC Pro: Entry Confirmation ---
-        'use_rejection_candle': trial.suggest_categorical('use_rejection_candle', [True, False]),
-        'symbol': CURRENT_SYMBOL,
-        'timeframe': CURRENT_TIMEFRAME,
-        'htf': CURRENT_HTF,
-        'htf_data': CURRENT_HTF_DATA,
-        'htf_bias': CURRENT_HTF_BIAS  # Pre-computed — kein process_dataframe() pro Trial
-    }
-    risk_params = {
-        'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
-        'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.5, 2.0),
-        'min_leverage': trial.suggest_int('min_leverage', 2, 8),
-        'max_leverage': trial.suggest_int('max_leverage', 8, 30),
-        'sl_buffer_atr_mult': trial.suggest_float('sl_buffer_atr_mult', 0.05, 0.5),
-        'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 3.5),
-        'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5)
-    }
-
-    # SMC-Engine cachen: process_dataframe() nur bei neuen (swingsLength, ob_mitigation,
-    # liquidity_lookback, min_fvg_size_pct) aufrufen — alle anderen Params sind Post-Filter
-    # Cache-Key: Parameter die SMCEngine-Output beeinflussen
-    # liquidity_lookback auf 4 diskrete Werte quantisiert → 46×2×4=368 Kombos statt 5888
-    # min_fvg_size_pct ist Post-Filter in trade_logic → nicht im Key
+def _get_smc_precomputed(cache, cache_lock, data, smc_params):
+    """SMC-Engine-Ergebnis aus Cache holen oder berechnen."""
     _cache_key = (smc_params['swingsLength'], smc_params['ob_mitigation'], smc_params['liquidity_lookback'])
-    with _SMC_CACHE_LOCK:
-        _precomputed = _SMC_CACHE.get(_cache_key)
-
+    with cache_lock:
+        _precomputed = cache.get(_cache_key)
     if _precomputed is None:
         from titanbot.strategy.smc_engine import SMCEngine as _SMCEng
         _eng = _SMCEng(settings=smc_params)
-        _smc_res = _eng.process_dataframe(HISTORICAL_DATA[['open', 'high', 'low', 'close']].copy())
+        _smc_res = _eng.process_dataframe(data[['open', 'high', 'low', 'close']].copy())
         _precomputed = {
             'smc_results': _smc_res,
             'smc_structures': {
@@ -103,34 +74,92 @@ def objective(trial):
                 'data_times': _eng.times,
             },
         }
-        with _SMC_CACHE_LOCK:
-            _SMC_CACHE.setdefault(_cache_key, _precomputed)  # erster Writer gewinnt
-    smc_params['_precomputed_smc'] = _precomputed
+        with cache_lock:
+            cache.setdefault(_cache_key, _precomputed)
+    return _precomputed
 
-    # Übergebe BEIDE Parameter-Dictionaries an den Backtester
-    result = run_smc_backtest(HISTORICAL_DATA.copy(), smc_params, risk_params, START_CAPITAL, verbose=False)
-    pnl = result.get('total_pnl_pct', -1000)
-    drawdown = result.get('max_drawdown_pct', 1.0) # Backtester gibt Dezimal zurück
-    trades = result.get('trades_count', 0)
-    win_rate = result.get('win_rate', 0)
 
-    # Pruning
-    # Mindest-Trades abhängig vom Datensatz — verhindert Overfitting auf 1-2 Zufallstrades
-    n_candles = len(HISTORICAL_DATA)
-    min_trades = max(3, n_candles // 300)  # z.B. 1983 Kerzen → 6 Trades Minimum
+def objective(trial):
+    smc_params = {
+        'swingsLength': trial.suggest_int('swingsLength', 15, 60),
+        'ob_mitigation': trial.suggest_categorical('ob_mitigation', ['High/Low', 'Close']),
+        'use_adx_filter': trial.suggest_categorical('use_adx_filter', [True, False]),
+        'adx_period': 14,
+        'adx_threshold': trial.suggest_int('adx_threshold', 20, 30),
+        'use_pd_filter': trial.suggest_categorical('use_pd_filter', [True, False]),
+        'use_liquidity_sweep_filter': trial.suggest_categorical('use_liquidity_sweep_filter', [True, False]),
+        'liquidity_lookback': trial.suggest_categorical('liquidity_lookback', [10, 15, 20, 25]),
+        'min_fvg_size_pct': trial.suggest_float('min_fvg_size_pct', 0.05, 0.20),
+        'min_ob_quality': trial.suggest_float('min_ob_quality', 0.10, 0.50),
+        'max_ob_touches': trial.suggest_int('max_ob_touches', 0, 2),
+        'use_rejection_candle': trial.suggest_categorical('use_rejection_candle', [True, False]),
+        'symbol': CURRENT_SYMBOL,
+        'timeframe': CURRENT_TIMEFRAME,
+        'htf': CURRENT_HTF,
+        'htf_data': CURRENT_HTF_DATA,
+        'htf_bias': CURRENT_HTF_BIAS,
+    }
+    risk_params = {
+        'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
+        'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.5, 2.0),
+        'min_leverage': trial.suggest_int('min_leverage', 2, 8),
+        'max_leverage': trial.suggest_int('max_leverage', 8, 30),
+        'sl_buffer_atr_mult': trial.suggest_float('sl_buffer_atr_mult', 0.05, 0.5),
+        'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 3.5),
+        'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5),
+    }
 
-    if OPTIM_MODE == "strict" and (
-        drawdown > MAX_DRAWDOWN_CONSTRAINT or win_rate < MIN_WIN_RATE_CONSTRAINT or
-        pnl < MIN_PNL_CONSTRAINT or trades < min_trades):
+    # ── STUFE 1: TRAIN-Backtest (70% der Daten) — leichtes Pruning ──────────
+    smc_params['_precomputed_smc'] = _get_smc_precomputed(
+        _SMC_TRAIN_CACHE, _SMC_TRAIN_CACHE_LOCK, TRAIN_DATA, smc_params)
+
+    train_result = run_smc_backtest(TRAIN_DATA.copy(), smc_params, risk_params, START_CAPITAL, verbose=False)
+    train_pnl    = train_result.get('total_pnl_pct', -1000)
+    train_dd     = train_result.get('max_drawdown_pct', 1.0)
+    train_trades = train_result.get('trades_count', 0)
+
+    min_train_trades = max(2, len(TRAIN_DATA) // 300)
+    if train_trades < min_train_trades or train_dd > MAX_DRAWDOWN_CONSTRAINT:
         raise optuna.exceptions.TrialPruned()
-    elif OPTIM_MODE == "best_profit" and (
-        drawdown > MAX_DRAWDOWN_CONSTRAINT or trades < min_trades):
+
+    # ── STUFE 2: TEST-Backtest (30% der Daten) — strenges Pruning ───────────
+    smc_params['_precomputed_smc'] = _get_smc_precomputed(
+        _SMC_TEST_CACHE, _SMC_TEST_CACHE_LOCK, TEST_DATA, smc_params)
+
+    test_result  = run_smc_backtest(
+        TEST_DATA.copy(), smc_params, risk_params, START_CAPITAL,
+        verbose=False, bar_index_offset=TRAIN_SPLIT_IDX)
+    test_pnl     = test_result.get('total_pnl_pct', -1000)
+    test_dd      = test_result.get('max_drawdown_pct', 1.0)
+    test_trades  = test_result.get('trades_count', 0)
+    test_wr      = test_result.get('win_rate', 0)
+
+    min_test_trades = max(2, len(TEST_DATA) // 300)
+    if test_trades < min_test_trades or test_dd > MAX_DRAWDOWN_CONSTRAINT or test_pnl <= 0:
+        raise optuna.exceptions.TrialPruned()
+    if OPTIM_MODE == "strict" and (test_wr < MIN_WIN_RATE_CONSTRAINT or test_pnl < MIN_PNL_CONSTRAINT):
         raise optuna.exceptions.TrialPruned()
 
-    return pnl
+    # ── Kombinierter Score (von jaegerbot inspiriert) ────────────────────────
+    # log1p komprimiert extreme Ausreißer; DD im Nenner bestraft Risiko
+    train_score = math.log1p(max(0, train_pnl)) / max(train_dd * 100, 1.0)
+    test_score  = math.log1p(max(0, test_pnl))  / max(test_dd  * 100, 1.0)
+    trade_bonus = math.log1p(test_trades) * 2.0          # mehr Trades = mehr Compounding
+    wr_bonus    = max(0.0, (test_wr - 40.0) / 10.0)      # Bonus ab 40% Win-Rate
+
+    final_score = train_score * 0.30 + test_score * 0.70 + trade_bonus + wr_bonus
+
+    # User-Attribute für Config-Export und Fortschrittsanzeige
+    trial.set_user_attr('test_pnl',    round(test_pnl,    2))
+    trial.set_user_attr('train_pnl',   round(train_pnl,   2))
+    trial.set_user_attr('test_wr',     round(test_wr,     2))
+    trial.set_user_attr('test_trades', test_trades)
+    trial.set_user_attr('test_dd_pct', round(test_dd * 100, 2))
+
+    return final_score
 
 def main():
-    global HISTORICAL_DATA, CURRENT_HTF_DATA, CURRENT_HTF_BIAS, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CURRENT_HTF, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
+    global HISTORICAL_DATA, TRAIN_DATA, TEST_DATA, TRAIN_SPLIT_IDX, CURRENT_HTF_DATA, CURRENT_HTF_BIAS, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CURRENT_HTF, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
     parser.add_argument('--symbols', required=False, type=str, default="")
     parser.add_argument('--timeframes', required=False, type=str, default="")
@@ -208,6 +237,12 @@ def main():
             except Exception as _e:
                 print(f"Warnung: Indikator-Vorberechnung fehlgeschlagen ({_e}), wird pro Trial berechnet.")
 
+            # 70/30 Walk-Forward Split
+            TRAIN_SPLIT_IDX = int(len(HISTORICAL_DATA) * 0.70)
+            TRAIN_DATA = HISTORICAL_DATA.iloc[:TRAIN_SPLIT_IDX].copy()
+            TEST_DATA  = HISTORICAL_DATA.iloc[TRAIN_SPLIT_IDX:].copy()
+            print(f"WFV-Split: Train={len(TRAIN_DATA)} Kerzen (70%), Test={len(TEST_DATA)} Kerzen (30%)")
+
         # HTF-Daten + Bias einmalig berechnen (vor study.optimize)
         # market_bias ist für alle Trials identisch → einmal reicht
         CURRENT_HTF_BIAS = None
@@ -284,16 +319,18 @@ def main():
                 )
                 trials_total = N_TRIALS
                 best = None
+                best_test_pnl_cb = None
                 try:
                     best = study_obj.best_trial
-                    best_val = round(best.value, 2) if best and best.value is not None else None
+                    best_val = round(best.value, 4) if best and best.value is not None else None
                     best_no = best.number if best else None
+                    best_test_pnl_cb = best.user_attrs.get('test_pnl') if best else None
                 except Exception:
                     best_val = None
                     best_no = None
 
                 elapsed = int(time.time() - start_time)
-                line = f"PROGRESS symbol={CURRENT_SYMBOL} timeframe={CURRENT_TIMEFRAME} trials={trials_done}/{trials_total} best_pnl={best_val} best_trial={best_no} elapsed_s={elapsed}"
+                line = f"PROGRESS symbol={CURRENT_SYMBOL} timeframe={CURRENT_TIMEFRAME} trials={trials_done}/{trials_total} best_test_pnl={best_test_pnl_cb} best_trial={best_no} elapsed_s={elapsed}"
                 _write_progress_line(line)
 
                 status = {
@@ -303,6 +340,7 @@ def main():
                     'trials_done': trials_done,
                     'trials_total': trials_total,
                     'best_value': best_val,
+                    'best_test_pnl': best_test_pnl_cb,
                     'best_trial_no': best_no,
                     'started_at': datetime.fromtimestamp(start_time, timezone.utc).isoformat().replace('+00:00', 'Z'),
                     'last_update': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
@@ -321,8 +359,8 @@ def main():
                     filled = int(bar_width * pct)
                     bar = '█' * filled + '░' * (bar_width - filled)
                     sym_short = CURRENT_SYMBOL.split('/')[0]
-                    best_str = f"{best_val:+.2f}%" if best_val is not None else "---"
-                    line = f"  [{bar}] {sym_short}/{CURRENT_TIMEFRAME}  {trials_done:>4}/{trials_total}  ({pct*100:5.1f}%)  Best: {best_str}  {elapsed}s"
+                    best_str = f"{best_test_pnl_cb:+.2f}%" if best_test_pnl_cb is not None else "---"
+                    line = f"  [{bar}] {sym_short}/{CURRENT_TIMEFRAME}  {trials_done:>4}/{trials_total}  ({pct*100:5.1f}%)  Best Test-PnL: {best_str}  {elapsed}s"
                     # \r überschreibt dieselbe Zeile; Leerzeichen am Ende löschen Reste
                     print(f"\r{line:<80}", end='\n' if is_done else '', flush=True)
                     if is_done:
@@ -343,9 +381,11 @@ def main():
                 pass
             continue # Nächsten Task versuchen
 
-        # Cache nach jedem Task leeren (neues Symbol/Timeframe = andere Daten)
-        with _SMC_CACHE_LOCK:
-            _SMC_CACHE.clear()
+        # Beide SMC-Caches nach jedem Task leeren (neues Symbol/Timeframe = andere Daten)
+        with _SMC_TRAIN_CACHE_LOCK:
+            _SMC_TRAIN_CACHE.clear()
+        with _SMC_TEST_CACHE_LOCK:
+            _SMC_TEST_CACHE.clear()
 
         valid_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
         if not valid_trials:
@@ -380,11 +420,29 @@ def main():
         }
         behavior_config = {"use_longs": True, "use_shorts": True}
         
-        # NEU: Speichere HTF in der finalen Config
+        # Extrahiere WFV-Metriken aus best_trial user_attrs
+        best_test_pnl    = best_trial.user_attrs.get('test_pnl',    None)
+        best_train_pnl   = best_trial.user_attrs.get('train_pnl',   None)
+        best_test_wr     = best_trial.user_attrs.get('test_wr',     None)
+        best_test_trades = best_trial.user_attrs.get('test_trades',  None)
+        best_test_dd_pct = best_trial.user_attrs.get('test_dd_pct', None)
+
+        # NEU: Speichere HTF in der finalen Config + WFV-Meta
         config_output = {
-            "market": {"symbol": symbol, "timeframe": timeframe, "htf": CURRENT_HTF}, 
+            "market": {"symbol": symbol, "timeframe": timeframe, "htf": CURRENT_HTF},
             "strategy": strategy_config,
-            "risk": risk_config, "behavior": behavior_config
+            "risk": risk_config,
+            "behavior": behavior_config,
+            "_meta": {
+                "wfv": "70/30",
+                "test_pnl_pct":    best_test_pnl,
+                "train_pnl_pct":   best_train_pnl,
+                "test_wr":         best_test_wr,
+                "test_trades":     best_test_trades,
+                "test_dd_pct":     best_test_dd_pct,
+                "composite_score": round(best_trial.value, 4) if best_trial.value is not None else None,
+                "optimized_at":    datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            }
         }
 
         # --- Smart-save: überschreibe nur, wenn die neue Konfiguration besser ist als die gespeicherte ---
@@ -405,7 +463,8 @@ def main():
         saved = False
         status = 'saved'
         config_missing = not os.path.exists(config_output_path)
-        if existing_best is None or config_missing or (best_trial.value is not None and best_trial.value > existing_best):
+        new_test_pnl = best_test_pnl if best_test_pnl is not None else -9999
+        if existing_best is None or config_missing or new_test_pnl > existing_best:
             # besser — schreibe die Config und aktualisiere die Historie
             try:
                 with open(config_output_path, 'w', encoding='utf-8') as f:
@@ -418,12 +477,17 @@ def main():
                     if os.path.exists(history_path):
                         with open(history_path, 'r', encoding='utf-8') as hf:
                             hist = json.load(hf)
-                    hist[key] = {'best_pnl': round(best_trial.value, 2) if best_trial.value is not None else None, 'updated_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'), 'config': os.path.relpath(config_output_path, PROJECT_ROOT)}
+                    hist[key] = {
+                        'best_pnl': new_test_pnl,
+                        'updated_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+                        'config': os.path.relpath(config_output_path, PROJECT_ROOT)
+                    }
                     with open(history_path, 'w', encoding='utf-8') as hf:
                         json.dump(hist, hf, indent=2)
                 except Exception:
                     pass
-                print(f"\n✔ Beste Konfiguration (PnL: {best_trial.value:.2f}%) wurde in '{config_output_path}' gespeichert.")
+                pnl_str = f"{new_test_pnl:.2f}%" if new_test_pnl != -9999 else "n/a"
+                print(f"\n✔ Beste Konfiguration (Test-PnL: {pnl_str}) wurde in '{config_output_path}' gespeichert.")
             except Exception as e:
                 print(f"Fehler beim Speichern der Config: {e}")
                 status = 'save_error'
@@ -431,13 +495,18 @@ def main():
             # schlechteres oder gleiches Ergebnis – NICHT überschreiben
             saved = False
             status = 'unchanged'
-            print(f"\nℹ️ Gefundene Konfiguration (PnL: {best_trial.value:.2f}%) ist schlechter/gleich als vorhandene (PnL: {existing_best}). Überschreibe nicht.")
+            print(f"\nℹ️ Gefundene Konfiguration (Test-PnL: {new_test_pnl:.2f}%) ist schlechter/gleich als vorhandene (Test-PnL: {existing_best}). Überschreibe nicht.")
 
         # Sammle Task-Level Summary für das ganze Run-Report
         run_tasks_summary.append({
             'symbol': symbol,
             'timeframe': timeframe,
-            'pnl': round(best_trial.value, 2) if best_trial.value is not None else None,
+            'test_pnl': best_test_pnl,
+            'train_pnl': best_train_pnl,
+            'test_wr': best_test_wr,
+            'test_trades': best_test_trades,
+            'test_dd_pct': best_test_dd_pct,
+            'composite_score': round(best_trial.value, 4) if best_trial.value is not None else None,
             'saved': saved,
             'status': status,
             'config_path': os.path.relpath(config_output_path, PROJECT_ROOT)
