@@ -1,0 +1,28 @@
+{
+    "market": {
+        "symbol": "LTC/USDT:USDT",
+        "timeframe": "30m",
+        "htf": "2h"
+    },
+    "strategy": {
+        "swingsLength": 17,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 29
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 0.51,
+        "risk_reward_ratio": 3.53,
+        "min_leverage": 5,
+        "max_leverage": 18,
+        "sl_buffer_atr_mult": 0.075,
+        "trailing_stop_activation_rr": 1.0,
+        "trailing_stop_callback_rate_pct": 2.28
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    }
+}

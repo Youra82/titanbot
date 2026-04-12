@@ -1,0 +1,28 @@
+{
+    "market": {
+        "symbol": "SOL/USDT:USDT",
+        "timeframe": "30m",
+        "htf": "2h"
+    },
+    "strategy": {
+        "swingsLength": 22,
+        "ob_mitigation": "Close",
+        "use_adx_filter": true,
+        "adx_period": 14,
+        "adx_threshold": 21
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 1.07,
+        "risk_reward_ratio": 2.81,
+        "min_leverage": 2,
+        "max_leverage": 26,
+        "sl_buffer_atr_mult": 0.153,
+        "trailing_stop_activation_rr": 2.76,
+        "trailing_stop_callback_rate_pct": 0.55
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    }
+}
