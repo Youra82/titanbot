@@ -312,6 +312,7 @@ def main():
         _last_bar_time = [0.0]  # Throttle für ASCII-Fortschrittsbalken
         _bar_final_printed = [False]  # verhindert Doppeldruck der letzten Zeile (parallele Jobs)
         _trials_at_start = [0]  # Anzahl der Trials im DB vor diesem Run
+        _max_test_pnl = [None]  # Monoton steigendes Maximum des Test-PnL (für Anzeige)
 
         def _trial_callback(study_obj, trial_obj):
             # Called after each trial (including pruned/complete)
@@ -328,6 +329,12 @@ def main():
                     best_val = round(best.value, 4) if best and best.value is not None else None
                     best_no = best.number if best else None
                     best_test_pnl_cb = best.user_attrs.get('test_pnl') if best else None
+                    # Aktuellen Trial ebenfalls prüfen (kann höheren test_pnl haben als best_trial)
+                    cur_pnl = trial_obj.user_attrs.get('test_pnl') if trial_obj else None
+                    for pnl in (best_test_pnl_cb, cur_pnl):
+                        if pnl is not None:
+                            if _max_test_pnl[0] is None or pnl > _max_test_pnl[0]:
+                                _max_test_pnl[0] = pnl
                 except Exception:
                     best_val = None
                     best_no = None
@@ -362,7 +369,7 @@ def main():
                     filled = int(bar_width * pct)
                     bar = '█' * filled + '░' * (bar_width - filled)
                     sym_short = CURRENT_SYMBOL.split('/')[0]
-                    best_str = f"{best_test_pnl_cb:+.2f}%" if best_test_pnl_cb is not None else "---"
+                    best_str = f"{_max_test_pnl[0]:+.2f}%" if _max_test_pnl[0] is not None else "---"
                     line = f"  [{bar}] {sym_short}/{CURRENT_TIMEFRAME}  {trials_done:>4}/{trials_total}  ({pct*100:5.1f}%)  Best Test-PnL: {best_str}  {elapsed}s"
                     # \r überschreibt dieselbe Zeile; Leerzeichen am Ende löschen Reste
                     print(f"\r{line:<80}", end='\n' if is_done else '', flush=True)
