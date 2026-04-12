@@ -323,19 +323,25 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                             'tsl_callback_pct': callback_rate * 100,
                         }
 
-        # --- 3c. Equity Curve und Drawdown aktualisieren (Unverändert) ---
+        # --- 3c. Equity Curve und Drawdown aktualisieren ---
         current_total_equity = equity + unrealized_pnl
-        equity_curve.append({'timestamp': ts, 'equity': current_total_equity})
+
+        # Liquidation: mark-to-market Kapital ≤ 0 → alle Positionen zwangsgeschlossen
+        if current_total_equity <= 0 and not liquidation_date:
+            liquidation_date = ts
+            current_total_equity = 0.0
+            open_positions.clear()
+            equity = 0.0
+
+        equity_curve.append({'timestamp': ts, 'equity': max(0.0, current_total_equity)})
 
         peak_equity = max(peak_equity, current_total_equity)
-        drawdown = (peak_equity - current_total_equity) / peak_equity if peak_equity > 0 else 0
+        drawdown = (peak_equity - max(0.0, current_total_equity)) / peak_equity if peak_equity > 0 else 0
         if drawdown > max_drawdown_pct:
             max_drawdown_pct = drawdown
             max_drawdown_date = ts
 
         min_equity_ever = min(min_equity_ever, current_total_equity)
-        if current_total_equity <= 0 and not liquidation_date:
-            liquidation_date = ts
 
     # --- 4. Ergebnisse vorbereiten (Unverändert) ---
     print("4/4: Bereite Analyse-Ergebnisse vor...")

@@ -186,6 +186,16 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
             unrealized_pnl = position['notional_value'] * (current_candle['close'] / position['entry_price'] - 1) * pnl_mult
 
         mtm_equity = current_capital + unrealized_pnl
+
+        # Liquidation: wenn mark-to-market Kapital ≤ 0 → Position wird zwangsgeschlossen
+        if position and mtm_equity <= 0:
+            trades_count += 1  # als verlorenen Trade zählen
+            current_capital = 0
+            equity_curve.append({'timestamp': timestamp, 'equity': 0.0})
+            max_drawdown_pct = 1.0  # 100% DD
+            position = None
+            break
+
         equity_curve.append({'timestamp': timestamp, 'equity': mtm_equity})
 
         # Drawdown jede Kerze (mark-to-market), nicht nur bei Trade-Schluß
