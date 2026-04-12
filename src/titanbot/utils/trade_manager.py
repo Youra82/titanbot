@@ -370,18 +370,41 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # Berechne Contracts (Menge der Basiswährung)
         amount = calculated_notional_value / entry_price
 
-        # Prüfe Mindestordergröße in Contracts UND in USDT-Wert
+        # Prüfe Mindestordergröße in Contracts UND in USDT-Wert (pro Symbol vom Exchange)
         min_amount = exchange.markets[symbol].get('limits', {}).get('amount', {}).get('min', 0.0)
-        min_cost = exchange.markets[symbol].get('limits', {}).get('cost', {}).get('min', 5.0)  # Standard: 5 USDT
+        min_cost = exchange.markets[symbol].get('limits', {}).get('cost', {}).get('min', 5.0)
         order_value_usdt = amount * entry_price
-        
+
         if amount < min_amount:
             logger.error(f"Ordergröße {amount:.6f} Contracts < Mindestbetrag {min_amount} Contracts.")
             return
-        
+
+        # Min-Notional-Check: Amount anheben wenn risk-basiertes Sizing zu klein
         if order_value_usdt < min_cost:
-            logger.error(f"Order-Wert {order_value_usdt:.2f} USDT < Mindest-Orderwert {min_cost} USDT.")
-            return
+            logger.warning(
+                f"Notional {order_value_usdt:.2f} USDT < Mindest-Notional {min_cost:.2f} USDT "
+                f"({symbol}) — hebe Amount auf Minimum an."
+            )
+            amount = min_cost / entry_price
+            order_value_usdt = min_cost
+            # Margin-Check: Reicht Kapital bei aktuellem Hebel?
+            margin_needed = order_value_usdt / leverage
+            if margin_needed > balance:
+                # Hebel hochsetzen damit Margin ins Kapital passt
+                max_lev = risk_params.get('max_leverage', leverage)
+                lev_needed = math.ceil(order_value_usdt / balance)
+                if lev_needed <= max_lev:
+                    leverage = lev_needed
+                    logger.warning(f"Hebel auf {leverage}x erhöht um Mindest-Notional zu erfüllen.")
+                    if not exchange.set_leverage(symbol, leverage):
+                        logger.error("Hebel konnte nicht angepasst werden. Trade wird übersprungen.")
+                        return
+                else:
+                    logger.error(
+                        f"Mindest-Notional {min_cost:.2f} USDT nicht erreichbar: "
+                        f"Kapital {balance:.2f} USDT zu gering (benötigt {lev_needed}x, max {max_lev}x)."
+                    )
+                    return
 
         # --------------------------------------------------- #
         # 4. Market-Order eröffnen
