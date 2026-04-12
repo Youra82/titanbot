@@ -289,10 +289,16 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                         final_notional_value = min(equity * eff_leverage, absolute_max_notional_value)
 
                         if final_notional_value < min_notional:
-                            continue
+                            # Notional zu klein, Hebel hochsetzen
+                            lev_needed = math.ceil(min_notional / equity)
+                            if lev_needed <= max_leverage:
+                                eff_leverage = lev_needed
+                                final_notional_value = equity * eff_leverage
+                            else:
+                                continue  # Kapital zu gering, selbst bei max_leverage
 
-                        # margin = notional / max_leverage → klein genug für mehrere simultane Positionen
-                        margin_used = round(final_notional_value / max_leverage, 2)
+                        # Echte Margin: notional / eff_leverage (= equity bei vollem Einsatz)
+                        margin_used = round(final_notional_value / eff_leverage, 2)
 
                         current_total_margin = sum(p['margin_used'] for p in open_positions.values())
                         if current_total_margin + margin_used > equity:
