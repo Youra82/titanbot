@@ -298,10 +298,11 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                                 continue  # Kapital zu gering, selbst bei max_leverage
 
                         # Echte Margin: notional / eff_leverage (= equity bei vollem Einsatz)
-                        margin_used = round(final_notional_value / eff_leverage, 2)
+                        # Nicht runden hier — Rounding-Bug würde margin_used > equity machen
+                        margin_used = final_notional_value / eff_leverage
 
                         current_total_margin = sum(p['margin_used'] for p in open_positions.values())
-                        if current_total_margin + margin_used > equity:
+                        if current_total_margin + margin_used > equity * 1.0001:  # 0.01% Toleranz
                             continue
 
                         bar_idx = strat['data'].index.get_loc(ts)
