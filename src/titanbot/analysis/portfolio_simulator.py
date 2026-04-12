@@ -343,9 +343,36 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
 
         min_equity_ever = min(min_equity_ever, current_total_equity)
 
-    # --- 4. Ergebnisse vorbereiten (Unverändert) ---
+    # --- 4. Offene Positionen am Backtest-Ende schließen (zum letzten bekannten Kurs) ---
+    for key, pos in list(open_positions.items()):
+        last_price = pos.get('last_known_price', pos['entry_price'])
+        pnl_pct = (last_price / pos['entry_price'] - 1) if pos['side'] == 'long' else (1 - last_price / pos['entry_price'])
+        pnl_usd = pos['notional_value'] * pnl_pct
+        total_fees = pos['notional_value'] * fee_pct * 2
+        net_pnl = pnl_usd - total_fees
+        equity += net_pnl
+        strat_data = valid_strategies.get(key, {})
+        trade_history.append({
+            'strategy_key': key,
+            'symbol':        strat_data.get('symbol', ''),
+            'timeframe':     pos.get('timeframe', ''),
+            'direction':     pos['side'],
+            'entry':         pos['entry_price'],
+            'exit':          last_price,
+            'entry_time':    pos.get('entry_ts', ''),
+            'exit_time':     'Backtest-Ende',
+            'margin_used':   pos.get('margin_used', 0),
+            'leverage':      pos.get('leverage', 0),
+            'sl_pct':        pos.get('sl_pct', 0),
+            'tsl_activation_rr':  pos.get('tsl_activation_rr', 0),
+            'tsl_callback_pct':   pos.get('tsl_callback_pct', 0),
+            'pnl':           round(net_pnl, 4),
+        })
+    open_positions.clear()
+
+    # --- 5. Ergebnisse vorbereiten ---
     print("4/4: Bereite Analyse-Ergebnisse vor...")
-    final_equity = equity_curve[-1]['equity'] if equity_curve else start_capital
+    final_equity = max(0.0, equity)
     total_pnl_pct = (final_equity / start_capital - 1) * 100 if start_capital > 0 else 0
     wins = sum(1 for t in trade_history if t['pnl'] > 0)
     win_rate = (wins / len(trade_history) * 100) if trade_history else 0
