@@ -178,9 +178,21 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     # --- Backtest Loop ---
     for i, (timestamp, current_candle) in enumerate(data.iterrows()):
         if current_capital <= 0: break
-        
-        # NEU: Equity-Punkt für jeden Timestamp speichern
-        equity_curve.append({'timestamp': timestamp, 'equity': current_capital})
+
+        # Mark-to-Market: unrealisierter P&L der offenen Position
+        unrealized_pnl = 0.0
+        if position:
+            pnl_mult = 1 if position['side'] == 'long' else -1
+            unrealized_pnl = position['notional_value'] * (current_candle['close'] / position['entry_price'] - 1) * pnl_mult
+
+        mtm_equity = current_capital + unrealized_pnl
+        equity_curve.append({'timestamp': timestamp, 'equity': mtm_equity})
+
+        # Drawdown jede Kerze (mark-to-market), nicht nur bei Trade-Schluß
+        peak_capital = max(peak_capital, mtm_equity)
+        if peak_capital > 0:
+            drawdown = (peak_capital - mtm_equity) / peak_capital
+            max_drawdown_pct = max(max_drawdown_pct, drawdown)
 
         # --- NEU: Dynamische MTF-Bias-Aktualisierung (falls nötig) ---
         # Diese Simulation ist vereinfacht und geht davon aus, 
@@ -237,10 +249,6 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 trades_list.append(trade_record)
                 
                 position = None
-                peak_capital = max(peak_capital, current_capital)
-                if peak_capital > 0:
-                    drawdown = (peak_capital - current_capital) / peak_capital
-                    max_drawdown_pct = max(max_drawdown_pct, drawdown)
 
         # --- Einstiegs-Logik ---
         if not position and current_capital > 0:
