@@ -133,7 +133,7 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
             continue
 
         actual_dd = result.get('max_drawdown_pct', 100.0) / 100.0
-        if actual_dd <= target_max_dd_decimal:
+        if actual_dd <= target_max_dd_decimal and result['end_capital'] > start_capital:
             valid_candidates.append({
                 'filename': filename,
                 'end_capital': result['end_capital'],
