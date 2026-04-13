@@ -12,6 +12,7 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.portfolio_simulator import run_portfolio_simulation
 
 EXHAUSTIVE_THRESHOLD = 20  # Bis zu dieser Kandidatenzahl: exhaustive, sonst multi-start greedy
+MAX_GREEDY_STARTS = 10    # Multi-Start-Greedy: nur die Top-N Einzelstrategien als Startpunkt
 
 
 def _build_sim_data(files, strategies_data):
@@ -170,9 +171,10 @@ def run_portfolio_optimizer(start_capital, strategies_data, start_date, end_date
 
     else:
         # --- 2b. Multi-Start-Greedy ---
-        print(f"2/2: Multi-Start-Greedy — {n} Startpunkte werden probiert...")
-        for i, start_file in enumerate(candidate_files):
-            print(f"  Startpunkt {i+1}/{n}: {start_file}")
+        starts = candidate_files[:MAX_GREEDY_STARTS]
+        print(f"2/2: Multi-Start-Greedy — Top {len(starts)} von {n} Kandidaten als Startpunkt (sortiert nach Einzel-PnL)...")
+        for i, start_file in enumerate(starts):
+            print(f"  Startpunkt {i+1}/{len(starts)}: {start_file}")
             files, result = _greedy_from(
                 start_file, candidate_files, strategies_data,
                 start_capital, start_date, end_date, target_max_dd_decimal
