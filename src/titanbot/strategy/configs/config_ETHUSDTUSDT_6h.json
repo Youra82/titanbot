@@ -1,0 +1,38 @@
+{
+    "market": {
+        "symbol": "ETH/USDT:USDT",
+        "timeframe": "6h",
+        "htf": "1d"
+    },
+    "strategy": {
+        "swingsLength": 16,
+        "ob_mitigation": "Close",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 27
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 0.74,
+        "risk_reward_ratio": 1.64,
+        "min_leverage": 6,
+        "max_leverage": 20,
+        "sl_buffer_atr_mult": 0.058,
+        "trailing_stop_activation_rr": 1.0,
+        "trailing_stop_callback_rate_pct": 0.5
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 35.3,
+        "train_pnl_pct": 39.17,
+        "test_wr": 61.9,
+        "test_trades": 63,
+        "test_dd_pct": 6.46,
+        "composite_score": 19.324,
+        "optimized_at": "2026-04-12T19:33:21.136926Z"
+    }
+}

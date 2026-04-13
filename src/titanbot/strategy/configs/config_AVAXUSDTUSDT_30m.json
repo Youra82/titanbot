@@ -1,0 +1,38 @@
+{
+    "market": {
+        "symbol": "AVAX/USDT:USDT",
+        "timeframe": "30m",
+        "htf": "2h"
+    },
+    "strategy": {
+        "swingsLength": 16,
+        "ob_mitigation": "Close",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 28
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 1.12,
+        "risk_reward_ratio": 3.92,
+        "min_leverage": 5,
+        "max_leverage": 10,
+        "sl_buffer_atr_mult": 0.394,
+        "trailing_stop_activation_rr": 1.05,
+        "trailing_stop_callback_rate_pct": 0.55
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 3.5,
+        "train_pnl_pct": -0.69,
+        "test_wr": 55.77,
+        "test_trades": 104,
+        "test_dd_pct": 17.41,
+        "composite_score": 20.2532,
+        "optimized_at": "2026-04-13T04:14:28.934449Z"
+    }
+}

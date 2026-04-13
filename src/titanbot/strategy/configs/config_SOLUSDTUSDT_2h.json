@@ -1,0 +1,38 @@
+{
+    "market": {
+        "symbol": "SOL/USDT:USDT",
+        "timeframe": "2h",
+        "htf": "1d"
+    },
+    "strategy": {
+        "swingsLength": 16,
+        "ob_mitigation": "Close",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 26
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 1.27,
+        "risk_reward_ratio": 3.6,
+        "min_leverage": 6,
+        "max_leverage": 10,
+        "sl_buffer_atr_mult": 0.06,
+        "trailing_stop_activation_rr": 1.16,
+        "trailing_stop_callback_rate_pct": 0.6
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 58.18,
+        "train_pnl_pct": 34.23,
+        "test_wr": 55.19,
+        "test_trades": 154,
+        "test_dd_pct": 17.92,
+        "composite_score": 21.8909,
+        "optimized_at": "2026-04-12T21:55:08.522175Z"
+    }
+}

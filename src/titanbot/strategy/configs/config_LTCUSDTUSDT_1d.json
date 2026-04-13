@@ -1,0 +1,38 @@
+{
+    "market": {
+        "symbol": "LTC/USDT:USDT",
+        "timeframe": "1d",
+        "htf": "1d"
+    },
+    "strategy": {
+        "swingsLength": 55,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 25
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 1.11,
+        "risk_reward_ratio": 3.26,
+        "min_leverage": 7,
+        "max_leverage": 11,
+        "sl_buffer_atr_mult": 0.076,
+        "trailing_stop_activation_rr": 1.0,
+        "trailing_stop_callback_rate_pct": 1.56
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 24.69,
+        "train_pnl_pct": 69.44,
+        "test_wr": 66.67,
+        "test_trades": 36,
+        "test_dd_pct": 18.33,
+        "composite_score": 17.3383,
+        "optimized_at": "2026-04-13T08:03:25.620958Z"
+    }
+}
