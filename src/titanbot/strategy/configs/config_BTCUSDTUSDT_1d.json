@@ -1,0 +1,38 @@
+{
+    "market": {
+        "symbol": "BTC/USDT:USDT",
+        "timeframe": "1d",
+        "htf": "1d"
+    },
+    "strategy": {
+        "swingsLength": 16,
+        "ob_mitigation": "Close",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 28
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 0.5,
+        "risk_reward_ratio": 2.22,
+        "min_leverage": 8,
+        "max_leverage": 8,
+        "sl_buffer_atr_mult": 0.05,
+        "trailing_stop_activation_rr": 1.0,
+        "trailing_stop_callback_rate_pct": 0.64
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 25.34,
+        "train_pnl_pct": 50.54,
+        "test_wr": 57.97,
+        "test_trades": 69,
+        "test_dd_pct": 7.64,
+        "composite_score": 19.2188,
+        "optimized_at": "2026-04-12T17:43:22.159195Z"
+    }
+}

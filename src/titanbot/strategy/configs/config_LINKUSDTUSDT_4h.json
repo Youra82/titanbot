@@ -1,0 +1,38 @@
+{
+    "market": {
+        "symbol": "LINK/USDT:USDT",
+        "timeframe": "4h",
+        "htf": "1d"
+    },
+    "strategy": {
+        "swingsLength": 24,
+        "ob_mitigation": "Close",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 28
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 0.55,
+        "risk_reward_ratio": 3.15,
+        "min_leverage": 5,
+        "max_leverage": 29,
+        "sl_buffer_atr_mult": 0.086,
+        "trailing_stop_activation_rr": 1.09,
+        "trailing_stop_callback_rate_pct": 0.5
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 47.34,
+        "train_pnl_pct": 124.63,
+        "test_wr": 64.86,
+        "test_trades": 74,
+        "test_dd_pct": 5.78,
+        "composite_score": 20.4913,
+        "optimized_at": "2026-04-13T01:37:17.951919Z"
+    }
+}

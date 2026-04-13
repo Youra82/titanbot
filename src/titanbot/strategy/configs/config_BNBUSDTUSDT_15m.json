@@ -1,0 +1,38 @@
+{
+    "market": {
+        "symbol": "BNB/USDT:USDT",
+        "timeframe": "15m",
+        "htf": "1h"
+    },
+    "strategy": {
+        "swingsLength": 51,
+        "ob_mitigation": "Close",
+        "use_adx_filter": true,
+        "adx_period": 14,
+        "adx_threshold": 25
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 1.1,
+        "risk_reward_ratio": 1.96,
+        "min_leverage": 3,
+        "max_leverage": 20,
+        "sl_buffer_atr_mult": 0.203,
+        "trailing_stop_activation_rr": 2.43,
+        "trailing_stop_callback_rate_pct": 2.07
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 2.09,
+        "train_pnl_pct": -15.93,
+        "test_wr": 100.0,
+        "test_trades": 4,
+        "test_dd_pct": 0.22,
+        "composite_score": 13.2276,
+        "optimized_at": "2026-04-13T00:57:39.000452Z"
+    }
+}

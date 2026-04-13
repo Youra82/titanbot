@@ -4,25 +4,55 @@
         "use_auto_optimizer_results": false,
         "active_strategies": [
             {
-                "symbol": "XRP/USDT:USDT",
-                "timeframe": "30m",
-                "use_macd_filter": false,
-                "active": true
-            },
-            {
-                "symbol": "ARB/USDT:USDT",
-                "timeframe": "1d",
-                "use_macd_filter": false,
-                "active": true
-            },
-            {
                 "symbol": "ETH/USDT:USDT",
+                "timeframe": "6h",
+                "use_macd_filter": false,
+                "active": true
+            },
+            {
+                "symbol": "LINK/USDT:USDT",
                 "timeframe": "2h",
                 "use_macd_filter": false,
                 "active": true
             },
             {
+                "symbol": "LTC/USDT:USDT",
+                "timeframe": "4h",
+                "use_macd_filter": false,
+                "active": true
+            },
+            {
                 "symbol": "SOL/USDT:USDT",
+                "timeframe": "6h",
+                "use_macd_filter": false,
+                "active": true
+            },
+            {
+                "symbol": "BNB/USDT:USDT",
+                "timeframe": "1d",
+                "use_macd_filter": false,
+                "active": true
+            },
+            {
+                "symbol": "ARB/USDT:USDT",
+                "timeframe": "4h",
+                "use_macd_filter": false,
+                "active": true
+            },
+            {
+                "symbol": "AVAX/USDT:USDT",
+                "timeframe": "1d",
+                "use_macd_filter": false,
+                "active": true
+            },
+            {
+                "symbol": "BTC/USDT:USDT",
+                "timeframe": "1d",
+                "use_macd_filter": false,
+                "active": true
+            },
+            {
+                "symbol": "XRP/USDT:USDT",
                 "timeframe": "6h",
                 "use_macd_filter": false,
                 "active": true
