@@ -14,7 +14,6 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.utils.exchange import Exchange
 from titanbot.utils.telegram import send_message
 from titanbot.utils.trade_manager import full_trade_cycle
-from titanbot.utils.timeframe_utils import determine_htf # NEU: Import für HTF Bestimmung
 
 def setup_logging(symbol, timeframe):
     safe_filename = f"{symbol.replace('/', '').replace(':', '')}_{timeframe}"
@@ -69,11 +68,7 @@ def load_config(symbol, timeframe, use_macd_filter):
 
     with open(config_path, 'r') as f:
         config = json.load(f)
-        
-    # NEU: Füge den automatisch bestimmten HTF zur Config hinzu
-    # Dadurch weiß trade_manager, welchen HTF er holen muss
-    config['market']['htf'] = determine_htf(config['market']['timeframe']) 
-    
+
     return config
 
 
@@ -83,9 +78,8 @@ def run_for_account(account, telegram_config, params, model, scaler, logger):
         account_name = account.get('name', 'Standard-Account')
         symbol = params['market']['symbol']
         timeframe = params['market']['timeframe']
-        htf = params['market']['htf'] # HTF aus Parametern lesen
-        
-        logger.info(f"--- Starte TitanBot für {symbol} ({timeframe}) mit MTF-Bias von {htf} ---")
+
+        logger.info(f"--- Starte TitanBot für {symbol} ({timeframe}) ---")
         
         exchange = Exchange(account)
 

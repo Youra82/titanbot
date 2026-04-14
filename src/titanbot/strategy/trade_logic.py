@@ -145,8 +145,6 @@ def get_titan_signal(
     max_ob_touches = strategy_params.get('max_ob_touches', 1)
     use_swing_ob = strategy_params.get('use_swing_ob', True)
 
-    use_mtf_filter = market_bias is not None and market_bias != Bias.NEUTRAL
-
     # --- Per-candle SMC state (from enriched df) ---
     pd_zone = current_candle.get('smc_pd_zone', 'equilibrium')
     pd_pct = current_candle.get('smc_pd_pct', 0.5)
@@ -321,13 +319,6 @@ def get_titan_signal(
         return None, None, None
 
     # ==================== FINAL FILTERS ====================
-
-    # MTF alignment
-    if use_mtf_filter:
-        if market_bias == Bias.BULLISH and signal_side == "sell":
-            return None, None, None
-        if market_bias == Bias.BEARISH and signal_side == "buy":
-            return None, None, None
 
     # ADX directional filter
     if use_adx_filter:
