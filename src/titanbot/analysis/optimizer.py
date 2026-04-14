@@ -19,7 +19,6 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.analysis.backtester import load_data, run_smc_backtest
 from titanbot.analysis.evaluator import evaluate_dataset
-from titanbot.utils.timeframe_utils import determine_htf # NEU: Import für HTF Bestimmung
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
@@ -34,11 +33,8 @@ HISTORICAL_DATA = None
 TRAIN_DATA      = None   # 70% — Optimierung
 TEST_DATA       = None   # 30% — Out-of-Sample Validierung
 TRAIN_SPLIT_IDX = 0
-CURRENT_HTF_DATA = None
-CURRENT_HTF_BIAS = None
 CURRENT_SYMBOL = None
 CURRENT_TIMEFRAME = None
-CURRENT_HTF = None
 
 # Separate SMC-Caches für Train- und Test-Datensatz
 _SMC_TRAIN_CACHE: dict = {}
@@ -95,9 +91,6 @@ def objective(trial):
         'use_rejection_candle': trial.suggest_categorical('use_rejection_candle', [True, False]),
         'symbol': CURRENT_SYMBOL,
         'timeframe': CURRENT_TIMEFRAME,
-        'htf': CURRENT_HTF,
-        'htf_data': CURRENT_HTF_DATA,
-        'htf_bias': CURRENT_HTF_BIAS,
     }
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
@@ -162,7 +155,7 @@ def objective(trial):
     return final_score
 
 def main():
-    global HISTORICAL_DATA, TRAIN_DATA, TEST_DATA, TRAIN_SPLIT_IDX, CURRENT_HTF_DATA, CURRENT_HTF_BIAS, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CURRENT_HTF, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
+    global HISTORICAL_DATA, TRAIN_DATA, TEST_DATA, TRAIN_SPLIT_IDX, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
     parser.add_argument('--symbols', required=False, type=str, default="")
     parser.add_argument('--timeframes', required=False, type=str, default="")
@@ -204,12 +197,10 @@ def main():
     for task in TASKS:
         symbol, timeframe = task['symbol'], task['timeframe']
 
-        # NEU: Globale Variablen setzen
         CURRENT_SYMBOL = symbol
         CURRENT_TIMEFRAME = timeframe
-        CURRENT_HTF = determine_htf(timeframe)
 
-        print(f"\n===== Optimiere: {symbol} ({timeframe}) | MTF-Bias von {CURRENT_HTF} =====")
+        print(f"\n===== Optimiere: {symbol} ({timeframe}) =====")
         # Per-Paar Lookback: wenn --start_date auto, berechne Startdatum je Timeframe
         if args.start_date.lower() == 'auto':
             pair_lookback = TF_LOOKBACK_DAYS.get(timeframe, 365)
@@ -246,21 +237,6 @@ def main():
             TEST_DATA  = HISTORICAL_DATA.iloc[TRAIN_SPLIT_IDX:].copy()
             print(f"WFV-Split: Train={len(TRAIN_DATA)} Kerzen (70%), Test={len(TEST_DATA)} Kerzen (30%)")
 
-        # HTF-Daten + Bias einmalig berechnen (vor study.optimize)
-        # market_bias ist für alle Trials identisch → einmal reicht
-        CURRENT_HTF_BIAS = None
-        if CURRENT_HTF and CURRENT_HTF != timeframe:
-            print(f"Lade HTF-Daten ({CURRENT_HTF}) und berechne Bias einmalig...")
-            CURRENT_HTF_DATA = load_data(symbol, CURRENT_HTF, pair_start_date, args.end_date)
-            if not CURRENT_HTF_DATA.empty:
-                from titanbot.strategy.smc_engine import SMCEngine
-                from titanbot.strategy.smc_engine import Bias
-                _htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'})
-                _htf_engine.process_dataframe(CURRENT_HTF_DATA[['open', 'high', 'low', 'close']].copy())
-                CURRENT_HTF_BIAS = _htf_engine.swingTrend
-                print(f"HTF-Swing-Bias ({CURRENT_HTF}): {CURRENT_HTF_BIAS.name}")
-        else:
-            CURRENT_HTF_DATA = None
         if HISTORICAL_DATA.empty:
             print("Keine Daten geladen. Überspringe.")
             run_tasks_summary.append({'symbol': symbol, 'timeframe': timeframe, 'status': 'no_data'})
@@ -437,9 +413,8 @@ def main():
         best_test_trades = best_trial.user_attrs.get('test_trades',  None)
         best_test_dd_pct = best_trial.user_attrs.get('test_dd_pct', None)
 
-        # NEU: Speichere HTF in der finalen Config + WFV-Meta
         config_output = {
-            "market": {"symbol": symbol, "timeframe": timeframe, "htf": CURRENT_HTF},
+            "market": {"symbol": symbol, "timeframe": timeframe},
             "strategy": strategy_config,
             "risk": risk_config,
             "behavior": behavior_config,
