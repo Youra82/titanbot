@@ -14,7 +14,6 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.utils.exchange import Exchange
 from titanbot.strategy.smc_engine import SMCEngine, Bias
 from titanbot.strategy.trade_logic import get_titan_signal, get_zone_based_tp
-from titanbot.utils.timeframe_utils import determine_htf # NEU: Import determine_htf
 
 secrets_cache = None
 
@@ -73,31 +72,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     if data.empty or len(data) < 15:
         return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
 
-    symbol = smc_params.get('symbol', '') # Holen Sie Symbol und Timeframe für MTF-Check
-    timeframe = smc_params.get('timeframe', '')
-    htf = smc_params.get('htf') # MTF-Timeframe aus Parametern
-
-    # --- MTF-Bias vorbereiten ---
-    # htf_bias kann direkt übergeben werden (pre-computed, einmal pro Optimierung)
-    # → spart SMCEngine.process_dataframe() auf HTF-Daten bei jedem Trial
-    precomputed_bias = smc_params.get('htf_bias')
-    if precomputed_bias is not None:
-        market_bias = precomputed_bias
-    else:
-        market_bias = Bias.NEUTRAL
-        if htf and htf != timeframe:
-            htf_data = smc_params.get('htf_data')
-            if htf_data is None:
-                if verbose: print(f"MTF-Check: Lade Daten für HTF ({htf})...")
-                htf_data = load_data(symbol, htf, data.index.min().strftime('%Y-%m-%d'), data.index.max().strftime('%Y-%m-%d'))
-            if htf_data.empty:
-                if verbose: print("MTF-Check: Konnte HTF-Daten nicht laden. Verwende Bias.NEUTRAL.")
-            else:
-                htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'})
-                htf_engine.process_dataframe(htf_data[['open', 'high', 'low', 'close']].copy())
-                market_bias = htf_engine.swingTrend
-                if verbose: print(f"MTF-Check: HTF-Swing-Bias ({htf}): {market_bias.name}")
-    # --- ENDE MTF ---
+    market_bias = Bias.NEUTRAL
 
     # --- Indikator-Berechnungen ---
     # Wenn ATR/ADX/volume_ma schon vorberechnet in den Daten (vom Optimizer),
@@ -204,13 +179,6 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
             drawdown = (peak_capital - mtm_equity) / peak_capital
             max_drawdown_pct = max(max_drawdown_pct, drawdown)
 
-        # --- NEU: Dynamische MTF-Bias-Aktualisierung (falls nötig) ---
-        # Diese Simulation ist vereinfacht und geht davon aus, 
-        # dass die Struktur auf dem HTF stabil bleibt, 
-        # da der SMC-Check nur einmal pro HTF-Kerze laufen würde.
-        # Im Live-Bot wird der Bias vor JEDEM Lauf neu geprüft, 
-        # hier verwenden wir den initial berechneten Bias.
-
         # --- Positions-Management (Unverändert) ---
         if position:
             exit_price = None
@@ -262,8 +230,6 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
 
         # --- Einstiegs-Logik ---
         if not position and current_capital > 0:
-            # GEÄNDERT: market_bias an die Signalfunktion übergeben, signal_context empfangen
-            # Hole auch die vorherige Kerze für Confirmation-Logik (falls nötig)
             prev_candle = data.iloc[i-1] if i > 0 else None
             side, _, signal_context = get_titan_signal(smc_results, current_candle, params=params_for_logic, market_bias=market_bias, prev_candle=prev_candle) 
 

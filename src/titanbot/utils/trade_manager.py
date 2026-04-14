@@ -17,7 +17,6 @@ from titanbot.strategy.smc_engine import SMCEngine, Bias # NEU: Import SMC Engin
 from titanbot.strategy.trade_logic import get_titan_signal
 from titanbot.utils.exchange import Exchange
 from titanbot.utils.telegram import send_message
-from titanbot.utils.timeframe_utils import determine_htf # NEU: Import determine_htf
 
 # --------------------------------------------------------------------------- #
 # Pfade
@@ -57,55 +56,6 @@ def set_trade_lock(symbol_timeframe, lock_duration_minutes=60):
     trade_lock[symbol_timeframe] = lock_time.strftime("%Y-%m-%d %H:%M:%S")
     save_trade_lock(trade_lock)
 
-# --- NEU: FUNTION ZUR BESTIMMUNG DES MTF-BIAS (mit Caching) ---
-_mtf_bias_cache = {}  # Cache für MTF-Bias (symbol_timeframe -> (Bias, timestamp))
-_mtf_cache_ttl_minutes = 5  # Cache 5 Minuten lang
-
-def get_market_bias(exchange, symbol, htf, logger):
-    """
-    Bestimmt den Markt-Bias basierend auf der Swing-Struktur des HTF.
-    FIXIERT: Nutze Cache um redundante Berechnungen zu vermeiden und Konsistenz zu erhöhen.
-    """
-    from datetime import datetime, timedelta
-    
-    try:
-        cache_key = f"{symbol}_{htf}"
-        now = datetime.now()
-        
-        # FIXIERT: Prüfe Cache
-        if cache_key in _mtf_bias_cache:
-            cached_bias, cached_time = _mtf_bias_cache[cache_key]
-            if (now - cached_time).total_seconds() < _mtf_cache_ttl_minutes * 60:
-                logger.debug(f"MTF-Check: Cache-Hit für {symbol} ({htf}), Bias: {cached_bias.name}")
-                return cached_bias
-        
-        # Hole genügend Daten für SMC (swingsLength bis 100) auf HTF
-        # Nutze verfügbare Daten ohne Nachladen (Bitget liefert ~90 Kerzen)
-        htf_data = exchange.fetch_recent_ohlcv(symbol, htf, limit=300)
-        # 90 Kerzen reichen für Swing-Analyse aus
-        if htf_data.empty or len(htf_data) < 90: 
-            logger.warning(f"MTF-Check: Nicht genügend Daten ({len(htf_data)}) auf {htf} verfügbar.")
-            return Bias.NEUTRAL # Neutraler Bias bei unzureichenden Daten
-        
-        # Nutze eine Standard-swingsLength von 50 für den HTF-Bias (Standard-Einstellungen)
-        htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'}) 
-        htf_results = htf_engine.process_dataframe(htf_data[['open', 'high', 'low', 'close']].copy())
-        
-        # Der Bias wird durch die letzte festgestellte Swing-Struktur bestimmt
-        swing_bias = htf_engine.swingTrend
-        logger.info(f"MTF-Check: Höherer Zeitrahmen ({htf}) Swing-Bias: {swing_bias.name}")
-        
-        # FIXIERT: Cachen
-        _mtf_bias_cache[cache_key] = (swing_bias, now)
-        
-        return swing_bias
-        
-    except Exception as e:
-        logger.error(f"Fehler bei der MTF-Bias-Bestimmung: {e}")
-        return Bias.NEUTRAL
-# --- ENDE NEU ---
-
-
 # --------------------------------------------------------------------------- #
 # Housekeeper – säubert verwaiste Orders/Positionen (Unverändert)
 # --------------------------------------------------------------------------- #
@@ -139,7 +89,6 @@ def housekeeper_routine(exchange, symbol, logger):
 def check_and_open_new_position(exchange, model, scaler, params, telegram_config, logger):
     symbol = params['market']['symbol']
     timeframe = params['market']['timeframe']
-    htf = params['market']['htf'] # HTF aus Parametern lesen
     symbol_timeframe = f"{symbol.replace('/', '-')}_{timeframe}"
 
     if is_trade_locked(symbol_timeframe):
@@ -158,10 +107,6 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # 1. Daten holen + SMC/Indikatoren berechnen
         # --------------------------------------------------- #
         logger.info(f"Prüfe Signal für {symbol} ({timeframe})...")
-        
-        # --- NEU: MTF-Bias bestimmen ---
-        market_bias = get_market_bias(exchange, symbol, htf, logger)
-        # --- ENDE NEU ---
 
         # Hole genügend Daten für SMC (swingsLength bis 100) und ADX (bis zu 20)
         # Nutze verfügbare Daten ohne Nachladen (Bitget liefert ~90 Kerzen)
@@ -208,14 +153,13 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         current_candle = recent_data.iloc[-1]
 
         # Korrigierter Aufruf: SMC-Ergebnisse und Indikator-angereicherte Kerze übergeben
-        # GEÄNDERT: market_bias als neuen Parameter übergeben, signal_context empfangen
         # Hole auch die vorherige Kerze für Confirmation-Logik (falls nötig)
         prev_candle = recent_data.iloc[-2] if len(recent_data) >= 2 else None
 
         # Einige Tests mocken get_titan_signal() nur mit 2 Rückgabewerten.
         # Akzeptiere daher sowohl 2- als auch 3-teilige Rückgaben und ergänze Kontext mit None.
         signal_result = get_titan_signal(
-            smc_results_full, current_candle, params, market_bias, prev_candle
+            smc_results_full, current_candle, params, None, prev_candle
         )
 
         # Normalfall: (side, price, context); Fallback: (side, price)
@@ -464,7 +408,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             sl_r = float(exchange.exchange.price_to_precision(symbol, sl_price))
             tp_r = float(exchange.exchange.price_to_precision(symbol, tp_price))
             msg = (
-                f"NEUER TRADE: {symbol} ({timeframe}) [MTF: {market_bias.name}]\n"
+                f"NEUER TRADE: {symbol} ({timeframe})\n"
                 f"- Richtung: {pos_side.upper()}\n"
                 f"- Entry: ${entry_price:.6f}\n"
                 f"- SL: ${sl_r:.6f}\n"
