@@ -36,7 +36,7 @@ CACHE_DIR = os.path.join(ROOT, 'data', 'cache')
 LAST_RUN_FILE = os.path.join(CACHE_DIR, '.last_optimization_run')
 # File created while the scheduler/optimizer is running
 IN_PROGRESS_FILE = os.path.join(CACHE_DIR, '.optimization_in_progress')
-PIPELINE_SCRIPT = os.path.join(ROOT, 'run_pipeline_automated.sh')
+PORTFOLIO_SCRIPT = os.path.join(ROOT, 'run_portfolio_optimizer.py')
 
 # Dedicated, single-line trigger/log file for clear start/skip/finish entries
 TRIGGER_LOG = os.path.join(ROOT, 'logs', 'auto_optimizer_trigger.log')
@@ -335,230 +335,22 @@ def _send_telegram_message(text: str) -> bool:
 
 
 def run_pipeline() -> int:
-    # Execute the existing run_pipeline_automated.sh using bash.
-    # Use list form for subprocess to avoid shell quoting issues on Windows (PowerShell).
-    if not os.path.exists(PIPELINE_SCRIPT):
-        print(f'ERROR: pipeline script not found: {PIPELINE_SCRIPT}')
-        return 2
-
-    # Prefer passing args as a list to subprocess to prevent the outer shell from
-    # mangling quotes (problem observed when running under PowerShell on Windows).
-    # On Windows, try to map the Windows path to a bash-accessible path (WSL or MSYS).
-    bash_cmd = None
-
-    # Helper: test whether 'bash -lc "cd '<path>' && pwd"' succeeds
-    def _bash_cd_ok(path_candidate: str) -> bool:
-        try:
-            rc = subprocess.run(['bash', '-lc', f"cd '{path_candidate}' && pwd"], shell=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-            return rc.returncode == 0
-        except Exception:
-            return False
-
-    if os.name == 'nt':
-        from pathlib import Path
-        p = Path(ROOT)
-        drive = p.drive.rstrip(':').lower() if p.drive else ''
-        rest = p.as_posix().split(':', 1)[-1] if ':' in p.as_posix() else p.as_posix()
-        candidates = []
-        if drive:
-            candidates.append(f"/mnt/{drive}{rest}")   # WSL style
-            candidates.append(f"/{drive}{rest}")       # MSYS/Git-Bash style
-        candidates.append(ROOT)  # last resort: original Windows path
-
-        for c in candidates:
-            if _bash_cd_ok(c):
-                bash_cmd = ['bash', '-lc', f"cd '{c}' && ./run_pipeline_automated.sh"]
-                print(f'INFO: using bash cd candidate: {c}')
-                break
-
-    else:
-        # POSIX environment — ROOT should be fine as-is
-        bash_cmd = ['bash', '-lc', f"cd '{ROOT}' && ./run_pipeline_automated.sh"]
-
-    if bash_cmd is None:
-        print('WARN: could not determine a bash-accessible path for ROOT — will attempt direct shell execution')
-        try:
-            result = subprocess.run(f"cd {ROOT} && ./run_pipeline_automated.sh", shell=True)
-            return result.returncode
-        except Exception as e:
-            print(f'ERROR: direct pipeline fallback failed: {e}')
-            return 3
-
-    print(f'Running pipeline (list form): {bash_cmd}')
-    _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXEC method=bash cmd={bash_cmd}")
-
-    # ensure optimizer_output.log exists and capture full pipeline output there
-    opt_log = os.path.join(ROOT, 'logs', 'optimizer_output.log')
-    os.makedirs(os.path.dirname(opt_log), exist_ok=True)
-
-    try:
-        # Run the bash pipeline and stream stdout/stderr line-by-line into the optimizer log
-        proc = subprocess.Popen(bash_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=ROOT, universal_newlines=True, bufsize=1)
-        rc = None
-        with open(opt_log, 'a', encoding='utf-8') as _out:
-            for ln in proc.stdout:
-                try:
-                    _out.write(ln)
-                    _out.flush()
-                except Exception:
-                    pass
-                try:
-                    print(ln.rstrip())
-                except Exception:
-                    pass
-            proc.wait()
-            rc = proc.returncode
-
-        print(f'Pipeline exited with return code: {rc}')
-        _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={rc}")
-
-        # Wenn der Bash-Aufruf fehlschlägt, versuchen wir eine Python-Direct-Invocation
-        if rc != 0:
-            _write_trigger_log('AUTO-OPTIMIZER PIPELINE_WARNING Bash exit != 0 — attempting Python fallback')
-            print('WARN: Bash pipeline failed — attempting direct Python fallback (invoke optimizer.py)')
-
-            try:
-                settings = load_settings()
-                opt = settings.get('optimization_settings', {})
-
-                # Resolve symbols
-                syms = opt.get('symbols_to_optimize', 'auto')
-                if isinstance(syms, list):
-                    symbols_arg = ' '.join(syms)
-                elif str(syms).lower() == 'auto':
-                    # scan data/cache for available symbols
-                    import glob, re
-                    files = glob.glob(os.path.join(ROOT, 'data', 'cache', '*-USDT-USDT_*.csv'))
-                    found = set()
-                    for f in files:
-                        m = re.search(r'([A-Z0-9]+)-USDT-USDT_', os.path.basename(f))
-                        if m:
-                            found.add(m.group(1))
-                    if not found:
-                        found = {'BTC','ETH','SOL','XRP','AAVE'}
-                    symbols_arg = ' '.join(sorted(found))
-                else:
-                    symbols_arg = str(syms)
-
-                # Resolve timeframes
-                tfs = opt.get('timeframes_to_optimize', 'auto')
-                if isinstance(tfs, list):
-                    timeframes_arg = ' '.join(tfs)
-                elif str(tfs).lower() == 'auto':
-                    timeframes_arg = '5m 2h 4h 6h'
-                else:
-                    timeframes_arg = str(tfs)
-
-                # Daten: end_date=gestern, start_date=auto (optimizer.py berechnet je Paar/Timeframe)
-                yesterday = datetime.now() - timedelta(days=1)
-                end_date = yesterday.strftime('%Y-%m-%d')
-                start_date = 'auto'
-
-                # Other args
-                jobs = int(opt.get('cpu_cores', -1))
-                trials = int(opt.get('num_trials', 10))
-                max_dd = float(opt.get('constraints', {}).get('max_drawdown_pct', 30))
-                min_wr = float(opt.get('constraints', {}).get('min_win_rate_pct', 50))
-                start_capital = float(opt.get('start_capital', 1000))
-                min_pnl = float(opt.get('constraints', {}).get('min_pnl_pct', 0))
-                mode = 'strict'
-
-                optimizer_py = os.path.join(ROOT, 'src', 'titanbot', 'analysis', 'optimizer.py')
-                if not os.path.exists(optimizer_py):
-                    print(f'ERROR: optimizer.py not found at {optimizer_py} — cannot fallback')
-                    return rc
-
-                # Prefer the project's venv Python if available
-                venv_py_unix = os.path.join(ROOT, '.venv', 'bin', 'python3')
-                venv_py_win = os.path.join(ROOT, '.venv', 'Scripts', 'python.exe')
-                python_exec = None
-                if os.path.exists(venv_py_unix):
-                    python_exec = venv_py_unix
-                elif os.path.exists(venv_py_win):
-                    python_exec = venv_py_win
-                else:
-                    python_exec = sys.executable or 'python'
-
-                cmd = [python_exec, '-u', optimizer_py,
-                       '--symbols', symbols_arg,
-                       '--timeframes', timeframes_arg,
-                       '--start_date', start_date,
-                       '--end_date', end_date,
-                       '--jobs', str(jobs),
-                       '--max_drawdown', str(max_dd),
-                       '--start_capital', str(start_capital),
-                       '--min_win_rate', str(min_wr),
-                       '--trials', str(trials),
-                       '--min_pnl', str(min_pnl),
-                       '--mode', mode]
-
-                print('Running direct optimizer fallback with interpreter (unbuffered):', python_exec)
-                _write_trigger_log(f"AUTO-OPTIMIZER FALLBACK method=python interpreter={python_exec} mode=unbuffered")
-                print('Running direct optimizer fallback:', ' '.join(map(str, cmd[:6])), '...')
-
-                # If we're on Windows but the chosen interpreter is the unix venv python,
-                # run it via 'bash -lc' using a /mnt/c/… path so WSL executes the venv python.
-                if os.name == 'nt' and python_exec.endswith(os.path.join('.venv', 'bin', 'python3')):
-                    try:
-                        from pathlib import Path
-                        pe = Path(python_exec)
-                        op = Path(optimizer_py)
-                        drive = pe.drive.rstrip(':').lower() if pe.drive else ''
-                        rest_py = pe.as_posix().split(':', 1)[-1] if ':' in pe.as_posix() else pe.as_posix()
-                        rest_op = op.as_posix().split(':', 1)[-1] if ':' in op.as_posix() else op.as_posix()
-                        bash_venv = f"/mnt/{drive}{rest_py}"
-                        bash_optimizer = f"/mnt/{drive}{rest_op}"
-                        bash_cmd = ['bash', '-lc', f"'{bash_venv}' '{bash_optimizer}' --symbols \"{symbols_arg}\" --timeframes \"{timeframes_arg}\" --start_date {start_date} --end_date {end_date} --jobs {jobs} --max_drawdown {max_dd} --start_capital {start_capital} --min_win_rate {min_wr} --trials {trials} --min_pnl {min_pnl} --mode {mode}"]
-                        print('INFO: executing venv python via WSL bash:', bash_cmd[2])
-                        with open(opt_log, 'a', encoding='utf-8') as _out:
-                            proc = subprocess.Popen(bash_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-                            for ln in proc.stdout:
-                                try: _out.write(ln); _out.flush()
-                                except Exception: pass
-                                try: print(ln.rstrip())
-                                except Exception: pass
-                            proc.wait()
-                            return proc.returncode
-                    except Exception as e:
-                        print('WARN: WSL venv invocation failed:', e)
-
-                with open(opt_log, 'a', encoding='utf-8') as _out:
-                    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-                    for ln in proc.stdout:
-                        try: _out.write(ln); _out.flush()
-                        except Exception: pass
-                        try: print(ln.rstrip())
-                        except Exception: pass
-                    proc.wait()
-                    return proc.returncode
-
-            except Exception as e:
-                print('ERROR: Python fallback failed:', e)
-                return 4
-
-        return rc
-
-    except FileNotFoundError:
-        # 'bash' not available on PATH — try fallback to calling script directly
-        _write_trigger_log('AUTO-OPTIMIZER PIPELINE_FALLBACK method=direct_shell')
-        print('WARN: bash not found on PATH — attempting direct shell execution fallback')
-        cmd = f"cd {ROOT} && ./run_pipeline_automated.sh"
-        with open(opt_log, 'a', encoding='utf-8') as _out:
-            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-            for ln in proc.stdout:
-                try: _out.write(ln); _out.flush()
-                except Exception: pass
-                try: print(ln.rstrip())
-                except Exception: pass
-            proc.wait()
-            _write_trigger_log(f"AUTO-OPTIMIZER PIPELINE_EXIT rc={proc.returncode}")
-            return proc.returncode
-    except Exception as e:
-        print(f'ERROR: Exception while running pipeline: {e}')
-        return 3
-    except Exception as e:
-        print(f'ERROR: Exception while running pipeline: {e}')
-        return 3
+    settings   = load_settings()
+    opt        = settings.get('optimization_settings', {})
+    capital    = str(opt.get('start_capital', 100))
+    max_dd     = str(opt.get('constraints', {}).get('max_drawdown_pct', 30))
+    start_date = opt.get('start_date', 'auto')
+    end_date   = opt.get('end_date',   'auto')
+    cmd = [sys.executable, PORTFOLIO_SCRIPT,
+           '--capital', capital, '--max-dd', max_dd, '--auto-write']
+    if start_date not in ('auto', '', None):
+        cmd += ['--start-date', start_date]
+    if end_date not in ('auto', '', None):
+        cmd += ['--end-date', end_date]
+    _write_trigger_log(f"AUTO-OPTIMIZER PORTFOLIO_OPTIMIZER_START capital={capital} max_dd={max_dd}")
+    result = subprocess.run(cmd, cwd=ROOT)
+    _write_trigger_log(f"AUTO-OPTIMIZER PORTFOLIO_OPTIMIZER_EXIT rc={result.returncode}")
+    return result.returncode
 
 
 def parse_args() -> argparse.Namespace:
@@ -603,19 +395,10 @@ def main() -> int:
             except Exception:
                 pass
             if notify:
-                # Build enriched start message with pairs and trials info
-                try:
-                    live_strats = settings.get('live_trading_settings', {}).get('active_strategies', [])
-                    start_pairs = [f"{s['symbol'].split('/')[0]}/{s['timeframe']}" for s in live_strats if s.get('active', True)]
-                except Exception:
-                    start_pairs = []
-                _trials_n = settings.get('optimization_settings', {}).get('num_trials', '?')
-                _pairs_str = ', '.join(start_pairs) if start_pairs else 'auto'
                 start_msg = (
-                    f"🚀 Auto-Optimizer GESTARTET\n"
-                    f"Paare: {_pairs_str}\n"
-                    f"Trials: {_trials_n}\n"
-                    f"Start: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                    f"🔍 titanbot Portfolio-Optimizer GESTARTET\n"
+                    f"Start: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"Führt frische Backtests aller Configs durch und wählt bestes Portfolio."
                 )
                 sent = _send_telegram_message(start_msg)
                 if not sent:
@@ -645,62 +428,31 @@ def main() -> int:
 
             elapsed = (datetime.now() - start_ts).total_seconds()
 
-            # Read optimizer run summary for a richer completion message
-            summary_path = os.path.join(ROOT, 'artifacts', 'results', 'last_optimizer_run.json')
-            run_summary = None
-            try:
-                if os.path.exists(summary_path):
-                    with open(summary_path, 'r', encoding='utf-8') as sf:
-                        run_summary = json.load(sf)
-            except Exception:
-                run_summary = None
-
             if rc == 0:
                 write_last_run(datetime.now())
                 _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=success elapsed_s={elapsed:.1f}")
-                print('Pipeline finished successfully; updated last-run timestamp.')
+                print('Portfolio optimizer finished successfully; updated last-run timestamp.')
 
                 if notify:
-                    dur_s = int(run_summary.get('duration_s', elapsed)) if run_summary else int(elapsed)
-                    dur_str = _format_duration(dur_s)
-                    if run_summary:
-                        tasks = run_summary.get('tasks', [])
-                        saved = [t for t in tasks if t.get('status') == 'new_best']
-                        unchanged = [t for t in tasks if t.get('status') == 'unchanged']
-                        failed = [t for t in tasks if t.get('status') not in ('new_best', 'unchanged')]
-                        msg_lines = [f"✅ Auto-Optimizer abgeschlossen (Dauer: {dur_str})"]
-                        if saved:
-                            msg_lines.append(f"\n✔ Gespeichert ({len(saved)}/{len(tasks)}):")
-                            for t in saved:
-                                sym = t.get('symbol', '').split('/')[0]
-                                tf = t.get('timeframe', '')
-                                pnl = t.get('pnl')
-                                cfg = os.path.basename(t.get('config_path', ''))
-                                pnl_str = f"+{pnl:.2f}%" if pnl is not None else "?"
-                                msg_lines.append(f"• {sym}/{tf}: {pnl_str} → {cfg}")
-                        if unchanged:
-                            msg_lines.append(f"\n⚠️ Nicht überschrieben ({len(unchanged)}/{len(tasks)}):")
-                            for t in unchanged:
-                                sym = t.get('symbol', '').split('/')[0]
-                                tf = t.get('timeframe', '')
-                                pnl = t.get('pnl')
-                                pnl_str = f"{pnl:.2f}%" if pnl is not None else "?"
-                                msg_lines.append(f"• {sym}/{tf}: {pnl_str} (nicht besser als vorhandene)")
-                        if failed:
-                            msg_lines.append(f"\n❌ Fehlgeschlagen ({len(failed)}/{len(tasks)}):")
-                            for t in failed:
-                                sym = t.get('symbol', '').split('/')[0]
-                                tf = t.get('timeframe', '')
-                                msg_lines.append(f"• {sym}/{tf}: {t.get('status', 'unbekannt')}")
-                        comp_msg = '\n'.join(msg_lines)
-                    else:
-                        comp_msg = f"✅ Auto-Optimizer abgeschlossen (Dauer: {dur_str})"
-                    _send_telegram_message(comp_msg)
+                    dur_str = _format_duration(int(elapsed))
+                    try:
+                        updated = load_settings()
+                        active = [s for s in updated.get('live_trading_settings', {})
+                                  .get('active_strategies', []) if s.get('active')]
+                        msg_lines = [f"✅ titanbot Portfolio-Optimizer abgeschlossen (Dauer: {dur_str})"]
+                        if active:
+                            msg_lines.append(f"\n✔ Aktives Portfolio ({len(active)} Strategie(n)):")
+                            for s in active:
+                                sym_short = s['symbol'].split('/')[0]
+                                msg_lines.append(f"• {sym_short}/{s['timeframe']}")
+                        _send_telegram_message('\n'.join(msg_lines))
+                    except Exception:
+                        _send_telegram_message(f"✅ titanbot Portfolio-Optimizer abgeschlossen (Dauer: {dur_str})")
             else:
                 _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=error code={rc} elapsed_s={elapsed:.1f}")
-                print(f'Pipeline exited with return code {rc}')
+                print(f'Portfolio optimizer exited with return code {rc}')
                 if notify:
-                    _send_telegram_message(f'❌ Automatische Optimierung ist mit Fehlercode {rc} beendet.')
+                    _send_telegram_message(f'❌ titanbot Portfolio-Optimizer FEHLER (rc={rc})')
 
             # clear start-notify sentinel
             try:
