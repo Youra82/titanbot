@@ -1,25 +1,24 @@
 {
     "market": {
         "symbol": "LTC/USDT:USDT",
-        "timeframe": "6h",
-        "htf": "1d"
+        "timeframe": "6h"
     },
     "strategy": {
-        "swingsLength": 18,
-        "ob_mitigation": "Close",
+        "swingsLength": 25,
+        "ob_mitigation": "High/Low",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 25
+        "adx_threshold": 20
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 0.53,
-        "risk_reward_ratio": 2.69,
-        "min_leverage": 7,
-        "max_leverage": 23,
-        "sl_buffer_atr_mult": 0.05,
+        "risk_per_trade_pct": 1.07,
+        "risk_reward_ratio": 2.7,
+        "min_leverage": 2,
+        "max_leverage": 25,
+        "sl_buffer_atr_mult": 0.128,
         "trailing_stop_activation_rr": 1.0,
-        "trailing_stop_callback_rate_pct": 0.5
+        "trailing_stop_callback_rate_pct": 0.51
     },
     "behavior": {
         "use_longs": true,
@@ -27,12 +26,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 68.14,
-        "train_pnl_pct": 15.65,
-        "test_wr": 59.09,
-        "test_trades": 110,
-        "test_dd_pct": 6.09,
-        "composite_score": 21.2916,
-        "optimized_at": "2026-04-13T08:15:44.750271Z"
+        "test_pnl_pct": 79.7,
+        "train_pnl_pct": 11.55,
+        "test_wr": 57.55,
+        "test_trades": 106,
+        "test_dd_pct": 6.49,
+        "composite_score": 20.9472,
+        "optimized_at": "2026-05-05T09:43:25.722502Z"
     }
 }

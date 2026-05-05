@@ -1,25 +1,24 @@
 {
     "market": {
         "symbol": "AVAX/USDT:USDT",
-        "timeframe": "1d",
-        "htf": "1d"
+        "timeframe": "1d"
     },
     "strategy": {
-        "swingsLength": 18,
+        "swingsLength": 16,
         "ob_mitigation": "High/Low",
-        "use_adx_filter": true,
+        "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 21
+        "adx_threshold": 20
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 1.4,
-        "risk_reward_ratio": 1.5,
+        "risk_per_trade_pct": 1.71,
+        "risk_reward_ratio": 1.64,
         "min_leverage": 8,
-        "max_leverage": 28,
-        "sl_buffer_atr_mult": 0.051,
+        "max_leverage": 20,
+        "sl_buffer_atr_mult": 0.106,
         "trailing_stop_activation_rr": 1.0,
-        "trailing_stop_callback_rate_pct": 0.68
+        "trailing_stop_callback_rate_pct": 0.73
     },
     "behavior": {
         "use_longs": true,
@@ -27,12 +26,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 139.02,
-        "train_pnl_pct": 202.75,
-        "test_wr": 79.17,
-        "test_trades": 24,
-        "test_dd_pct": 3.81,
-        "composite_score": 17.947,
-        "optimized_at": "2026-04-13T02:57:40.564502Z"
+        "test_pnl_pct": 116.96,
+        "train_pnl_pct": 601.78,
+        "test_wr": 64.1,
+        "test_trades": 39,
+        "test_dd_pct": 24.32,
+        "composite_score": 17.4636,
+        "optimized_at": "2026-05-05T08:24:28.133274Z"
     }
 }

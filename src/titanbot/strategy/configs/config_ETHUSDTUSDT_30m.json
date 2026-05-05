@@ -1,25 +1,24 @@
 {
     "market": {
         "symbol": "ETH/USDT:USDT",
-        "timeframe": "30m",
-        "htf": "2h"
+        "timeframe": "30m"
     },
     "strategy": {
-        "swingsLength": 36,
-        "ob_mitigation": "Close",
+        "swingsLength": 16,
+        "ob_mitigation": "High/Low",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 22
+        "adx_threshold": 26
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 0.64,
-        "risk_reward_ratio": 2.88,
+        "risk_per_trade_pct": 0.63,
+        "risk_reward_ratio": 1.51,
         "min_leverage": 8,
-        "max_leverage": 11,
-        "sl_buffer_atr_mult": 0.225,
-        "trailing_stop_activation_rr": 1.05,
-        "trailing_stop_callback_rate_pct": 0.61
+        "max_leverage": 27,
+        "sl_buffer_atr_mult": 0.051,
+        "trailing_stop_activation_rr": 1.18,
+        "trailing_stop_callback_rate_pct": 0.5
     },
     "behavior": {
         "use_longs": true,
@@ -27,12 +26,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": -17.17,
-        "train_pnl_pct": 30.1,
-        "test_wr": 41.22,
-        "test_trades": 148,
-        "test_dd_pct": 22.34,
-        "composite_score": 20.332,
-        "optimized_at": "2026-04-12T20:30:49.375721Z"
+        "test_pnl_pct": -28.31,
+        "train_pnl_pct": 19.88,
+        "test_wr": 35.71,
+        "test_trades": 154,
+        "test_dd_pct": 29.33,
+        "composite_score": 20.2359,
+        "optimized_at": "2026-05-05T07:04:18.106132Z"
     }
 }

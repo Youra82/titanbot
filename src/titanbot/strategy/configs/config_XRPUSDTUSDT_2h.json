@@ -1,25 +1,24 @@
 {
     "market": {
         "symbol": "XRP/USDT:USDT",
-        "timeframe": "2h",
-        "htf": "1d"
+        "timeframe": "2h"
     },
     "strategy": {
-        "swingsLength": 26,
-        "ob_mitigation": "High/Low",
+        "swingsLength": 54,
+        "ob_mitigation": "Close",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 27
+        "adx_threshold": 20
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 0.59,
-        "risk_reward_ratio": 3.5,
+        "risk_per_trade_pct": 0.69,
+        "risk_reward_ratio": 3.62,
         "min_leverage": 5,
-        "max_leverage": 18,
-        "sl_buffer_atr_mult": 0.072,
-        "trailing_stop_activation_rr": 1.0,
-        "trailing_stop_callback_rate_pct": 0.5
+        "max_leverage": 12,
+        "sl_buffer_atr_mult": 0.309,
+        "trailing_stop_activation_rr": 2.09,
+        "trailing_stop_callback_rate_pct": 1.56
     },
     "behavior": {
         "use_longs": true,
@@ -27,12 +26,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 33.9,
-        "train_pnl_pct": 25.88,
-        "test_wr": 55.45,
-        "test_trades": 110,
-        "test_dd_pct": 5.74,
-        "composite_score": 20.8653,
-        "optimized_at": "2026-04-13T07:07:52.283962Z"
+        "test_pnl_pct": -6.58,
+        "train_pnl_pct": 6.38,
+        "test_wr": 27.27,
+        "test_trades": 44,
+        "test_dd_pct": 11.35,
+        "composite_score": 15.2471,
+        "optimized_at": "2026-05-05T09:25:53.383899Z"
     }
 }

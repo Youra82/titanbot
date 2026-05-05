@@ -1,0 +1,37 @@
+{
+    "market": {
+        "symbol": "DOGE/USDT:USDT",
+        "timeframe": "30m"
+    },
+    "strategy": {
+        "swingsLength": 50,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 27
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 0.66,
+        "risk_reward_ratio": 1.61,
+        "min_leverage": 6,
+        "max_leverage": 10,
+        "sl_buffer_atr_mult": 0.081,
+        "trailing_stop_activation_rr": 2.46,
+        "trailing_stop_callback_rate_pct": 1.19
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": -14.79,
+        "train_pnl_pct": 19.72,
+        "test_wr": 34.56,
+        "test_trades": 136,
+        "test_dd_pct": 22.7,
+        "composite_score": 19.7136,
+        "optimized_at": "2026-05-05T10:50:31.520084Z"
+    }
+}

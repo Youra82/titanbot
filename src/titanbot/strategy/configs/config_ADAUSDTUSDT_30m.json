@@ -1,0 +1,37 @@
+{
+    "market": {
+        "symbol": "ADA/USDT:USDT",
+        "timeframe": "30m"
+    },
+    "strategy": {
+        "swingsLength": 16,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 23
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 1.16,
+        "risk_reward_ratio": 3.62,
+        "min_leverage": 3,
+        "max_leverage": 17,
+        "sl_buffer_atr_mult": 0.327,
+        "trailing_stop_activation_rr": 2.15,
+        "trailing_stop_callback_rate_pct": 0.62
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": -15.6,
+        "train_pnl_pct": 60.14,
+        "test_wr": 50.81,
+        "test_trades": 124,
+        "test_dd_pct": 21.64,
+        "composite_score": 20.4429,
+        "optimized_at": "2026-05-05T10:26:26.302277Z"
+    }
+}
