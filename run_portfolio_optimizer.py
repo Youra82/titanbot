@@ -10,6 +10,8 @@ Aufruf:
   python3 run_portfolio_optimizer.py              # interaktiv
   python3 run_portfolio_optimizer.py --auto-write # automatisch (Scheduler)
 """
+import contextlib
+import io
 import os
 import sys
 import json
@@ -71,6 +73,30 @@ def _build_strategies_data(config_files: list, start_date: str, end_date: str) -
         except Exception as e:
             print(f"  {Y}Fehler bei {fname}: {e}{NC}")
     return strategies_data
+
+
+def _simulate_current_portfolio(settings: dict, strategies_data: dict,
+                                 start_capital: float,
+                                 start_date: str, end_date: str) -> dict | None:
+    """Simuliert das aktuell aktive Portfolio auf dem gleichen Zeitraum."""
+    from titanbot.analysis.portfolio_simulator import run_portfolio_simulation
+    current = [
+        s for s in settings.get('live_trading_settings', {}).get('active_strategies', [])
+        if s.get('active')
+    ]
+    if not current:
+        return None
+    sim_data = {}
+    for s in current:
+        sym, tf = s.get('symbol', ''), s.get('timeframe', '')
+        for fname, sd in strategies_data.items():
+            if sd['symbol'] == sym and sd['timeframe'] == tf:
+                sim_data[f"{sym}_{tf}"] = sd
+                break
+    if not sim_data:
+        return None
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        return run_portfolio_simulation(start_capital, sim_data, start_date, end_date)
 
 
 def _write_to_settings(portfolio_files: list, strategies_data: dict) -> None:
@@ -166,9 +192,24 @@ def main() -> int:
         for f in portfolio_files
     }
 
+    cur_result  = _simulate_current_portfolio(settings, strategies_data, capital, start_date, end_date)
+    cur_cap     = cur_result.get('end_capital', 0) if cur_result else 0
+    new_cap     = final.get('end_capital', 0)
+    if cur_result:
+        print(f"  Aktuelles Portfolio: {cur_cap:.2f} USDT  "
+              f"| PnL: {cur_result.get('total_pnl_pct', 0):+.1f}%  "
+              f"| MaxDD: {cur_result.get('max_drawdown_pct', 0):.2f}%")
+        print(f"  Neues Portfolio:     {new_cap:.2f} USDT  "
+              f"| PnL: {final.get('total_pnl_pct', 0):+.1f}%  "
+              f"| MaxDD: {final.get('max_drawdown_pct', 0):.2f}%\n")
+
     if args.auto_write:
-        _write_to_settings(portfolio_files, strategies_data)
-        print(f"{G}✓ settings.json aktualisiert — {len(portfolio_files)} Strategie(n).{NC}\n")
+        if cur_result and new_cap <= cur_cap:
+            print(f"{Y}  Neues Portfolio ({new_cap:.2f} USDT) nicht besser als aktuelles "
+                  f"({cur_cap:.2f} USDT) — keine Aenderung.{NC}\n")
+        else:
+            _write_to_settings(portfolio_files, strategies_data)
+            print(f"{G}✓ settings.json aktualisiert — {len(portfolio_files)} Strategie(n).{NC}\n")
     else:
         if current_set == new_set:
             print(f"{Y}  Portfolio unveraendert — keine Aenderung noetig.{NC}\n")
