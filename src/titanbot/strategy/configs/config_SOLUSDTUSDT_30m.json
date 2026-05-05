@@ -1,25 +1,24 @@
 {
     "market": {
         "symbol": "SOL/USDT:USDT",
-        "timeframe": "30m",
-        "htf": "2h"
+        "timeframe": "30m"
     },
     "strategy": {
-        "swingsLength": 23,
+        "swingsLength": 38,
         "ob_mitigation": "Close",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 26
+        "adx_threshold": 25
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 1.11,
-        "risk_reward_ratio": 2.3,
-        "min_leverage": 2,
-        "max_leverage": 28,
-        "sl_buffer_atr_mult": 0.088,
+        "risk_per_trade_pct": 0.89,
+        "risk_reward_ratio": 2.54,
+        "min_leverage": 3,
+        "max_leverage": 12,
+        "sl_buffer_atr_mult": 0.274,
         "trailing_stop_activation_rr": 1.0,
-        "trailing_stop_callback_rate_pct": 0.5
+        "trailing_stop_callback_rate_pct": 0.71
     },
     "behavior": {
         "use_longs": true,
@@ -27,12 +26,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": -7.65,
-        "train_pnl_pct": 7.05,
-        "test_wr": 43.06,
-        "test_trades": 72,
-        "test_dd_pct": 24.84,
-        "composite_score": 17.4921,
-        "optimized_at": "2026-04-12T22:38:52.607780Z"
+        "test_pnl_pct": -4.71,
+        "train_pnl_pct": 4.98,
+        "test_wr": 57.89,
+        "test_trades": 57,
+        "test_dd_pct": 12.97,
+        "composite_score": 18.0541,
+        "optimized_at": "2026-05-05T07:29:30.126764Z"
     }
 }

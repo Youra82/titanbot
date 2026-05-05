@@ -1,25 +1,24 @@
 {
     "market": {
         "symbol": "BNB/USDT:USDT",
-        "timeframe": "6h",
-        "htf": "1d"
+        "timeframe": "6h"
     },
     "strategy": {
-        "swingsLength": 40,
+        "swingsLength": 46,
         "ob_mitigation": "High/Low",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 22
+        "adx_threshold": 24
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 0.54,
-        "risk_reward_ratio": 1.94,
-        "min_leverage": 7,
-        "max_leverage": 21,
-        "sl_buffer_atr_mult": 0.06,
+        "risk_per_trade_pct": 1.2,
+        "risk_reward_ratio": 3.6,
+        "min_leverage": 2,
+        "max_leverage": 20,
+        "sl_buffer_atr_mult": 0.198,
         "trailing_stop_activation_rr": 1.0,
-        "trailing_stop_callback_rate_pct": 0.56
+        "trailing_stop_callback_rate_pct": 0.59
     },
     "behavior": {
         "use_longs": true,
@@ -27,12 +26,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 39.8,
-        "train_pnl_pct": 12.03,
-        "test_wr": 58.54,
-        "test_trades": 123,
-        "test_dd_pct": 8.79,
-        "composite_score": 21.5773,
-        "optimized_at": "2026-04-12T23:38:59.465821Z"
+        "test_pnl_pct": 51.26,
+        "train_pnl_pct": 53.93,
+        "test_wr": 56.73,
+        "test_trades": 104,
+        "test_dd_pct": 10.93,
+        "composite_score": 20.6279,
+        "optimized_at": "2026-05-05T07:37:41.973596Z"
     }
 }

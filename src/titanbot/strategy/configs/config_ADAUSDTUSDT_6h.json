@@ -1,11 +1,11 @@
 {
     "market": {
-        "symbol": "ETH/USDT:USDT",
+        "symbol": "ADA/USDT:USDT",
         "timeframe": "6h"
     },
     "strategy": {
-        "swingsLength": 30,
-        "ob_mitigation": "Close",
+        "swingsLength": 38,
+        "ob_mitigation": "High/Low",
         "use_adx_filter": false,
         "adx_period": 14,
         "adx_threshold": 21
@@ -13,12 +13,12 @@
     "risk": {
         "margin_mode": "isolated",
         "risk_per_trade_pct": 0.66,
-        "risk_reward_ratio": 2.88,
+        "risk_reward_ratio": 3.98,
         "min_leverage": 8,
         "max_leverage": 8,
-        "sl_buffer_atr_mult": 0.129,
+        "sl_buffer_atr_mult": 0.169,
         "trailing_stop_activation_rr": 1.0,
-        "trailing_stop_callback_rate_pct": 0.55
+        "trailing_stop_callback_rate_pct": 1.06
     },
     "behavior": {
         "use_longs": true,
@@ -26,12 +26,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 26.65,
-        "train_pnl_pct": 291.75,
-        "test_wr": 52.81,
-        "test_trades": 89,
-        "test_dd_pct": 12.72,
-        "composite_score": 19.6019,
-        "optimized_at": "2026-05-05T06:46:37.274861Z"
+        "test_pnl_pct": 20.13,
+        "train_pnl_pct": -10.7,
+        "test_wr": 54.76,
+        "test_trades": 42,
+        "test_dd_pct": 7.76,
+        "composite_score": 16.7962,
+        "optimized_at": "2026-05-05T10:08:33.258146Z"
     }
 }

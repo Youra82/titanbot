@@ -1,25 +1,24 @@
 {
     "market": {
         "symbol": "BTC/USDT:USDT",
-        "timeframe": "2h",
-        "htf": "1d"
+        "timeframe": "2h"
     },
     "strategy": {
-        "swingsLength": 15,
+        "swingsLength": 17,
         "ob_mitigation": "Close",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 29
+        "adx_threshold": 20
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 0.5,
-        "risk_reward_ratio": 3.62,
-        "min_leverage": 4,
-        "max_leverage": 26,
-        "sl_buffer_atr_mult": 0.058,
-        "trailing_stop_activation_rr": 1.13,
-        "trailing_stop_callback_rate_pct": 0.52
+        "risk_per_trade_pct": 0.78,
+        "risk_reward_ratio": 2.85,
+        "min_leverage": 2,
+        "max_leverage": 29,
+        "sl_buffer_atr_mult": 0.112,
+        "trailing_stop_activation_rr": 1.0,
+        "trailing_stop_callback_rate_pct": 0.59
     },
     "behavior": {
         "use_longs": true,
@@ -27,12 +26,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 5.85,
-        "train_pnl_pct": -12.66,
-        "test_wr": 54.84,
-        "test_trades": 31,
-        "test_dd_pct": 2.41,
-        "composite_score": 15.9054,
-        "optimized_at": "2026-04-12T18:23:15.067170Z"
+        "test_pnl_pct": -12.25,
+        "train_pnl_pct": -9.13,
+        "test_wr": 43.93,
+        "test_trades": 107,
+        "test_dd_pct": 21.02,
+        "composite_score": 19.121,
+        "optimized_at": "2026-05-05T06:29:50.399084Z"
     }
 }
