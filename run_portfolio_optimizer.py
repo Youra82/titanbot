@@ -278,6 +278,78 @@ def generate_equity_html(final, capital, start_date, end_date, labels):
     return outfile
 
 
+def _do_replot(settings: dict, capital: float, start_date: str, end_date: str) -> int:
+    print(f"\n{'─'*72}")
+    print(f"{B}  titanbot — Replot (aktives Portfolio){NC}")
+    print(f"  Kapital: {capital:.0f} USDT | Zeitraum: {start_date} → {end_date}")
+    print(f"{'─'*72}\n")
+
+    active = [s for s in settings.get('live_trading_settings', {}).get('active_strategies', [])
+              if s.get('active')]
+    if not active:
+        print(f"{R}  Keine aktiven Strategien in settings.json.{NC}")
+        return 1
+
+    active_pairs = {(s['symbol'], s['timeframe']) for s in active}
+    matching = []
+    for path in _scan_configs():
+        try:
+            with open(path) as f:
+                cfg = json.load(f)
+            m = cfg.get('market', {})
+            if (m.get('symbol'), m.get('timeframe')) in active_pairs:
+                matching.append(path)
+        except Exception:
+            pass
+
+    if not matching:
+        print(f"{R}  Keine Config-Dateien fuer aktive Strategien gefunden.{NC}")
+        return 1
+
+    print(f"  {len(matching)} Config(s) gefunden.\n")
+    strategies_data = _build_strategies_data(matching, start_date, end_date)
+    if not strategies_data:
+        print(f"{R}  Keine Daten geladen.{NC}")
+        return 1
+
+    from titanbot.analysis.portfolio_simulator import run_portfolio_simulation
+    sim_data = {f"{sd['symbol']}_{sd['timeframe']}": sd for sd in strategies_data.values()}
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        final = run_portfolio_simulation(capital, sim_data, start_date, end_date)
+    if not final:
+        print(f"{R}  Portfolio-Simulation fehlgeschlagen.{NC}")
+        return 1
+
+    selected_files = list(strategies_data.keys())
+    labels = [f"{sd.get('symbol', '?')}/{sd.get('timeframe', '?')}"
+              for sd in strategies_data.values()]
+    pnl = final.get('total_pnl_pct', 0)
+    dd  = final.get('max_drawdown_pct', 0)
+    n   = final.get('trade_count', 0)
+    wr  = final.get('win_rate', 0)
+    eq  = final.get('end_capital', 0)
+
+    print(f"\n{'='*72}")
+    print(f"{B}  Replot — {len(selected_files)} Strategie(n){NC}\n")
+    for fname, sd in strategies_data.items():
+        print(f"  {G}✓{NC} {sd.get('symbol', fname):<26} / {sd.get('timeframe', ''):<6}")
+    print(f"\n  Endkapital: {eq:.2f} USDT  | PnL: {pnl:+.1f}%  | MaxDD: {dd:.2f}%")
+    print(f"{'='*72}\n")
+
+    summary = (f"{BOT_NAME} Replot\n"
+               f"{len(selected_files)} Strategien | {n} Trades | WR: {wr:.1f}%\n"
+               f"PnL: {pnl:+.1f}% | MaxDD: {dd:.1f}% | Equity: {eq:.2f} USDT\n"
+               f"Zeitraum: {start_date} -> {end_date}")
+    _send_telegram(summary)
+    xlsx = generate_trades_excel(final, strategies_data, capital, start_date, end_date)
+    if xlsx:
+        _send_telegram_doc(xlsx, caption=f'{BOT_NAME} Trades | {n} Trades | WR: {wr:.1f}% | Equity: {eq:.2f} USDT')
+    html = generate_equity_html(final, capital, start_date, end_date, labels)
+    if html:
+        _send_telegram_doc(html, caption=f'{BOT_NAME} Portfolio-Equity | PnL: {pnl:+.1f}% | MaxDD: {dd:.1f}%')
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description='titanbot Portfolio-Optimizer')
     parser.add_argument('--capital',    type=float, default=None)
@@ -285,6 +357,8 @@ def main() -> int:
     parser.add_argument('--start-date', type=str,   default=None)
     parser.add_argument('--end-date',   type=str,   default=None)
     parser.add_argument('--auto-write', action='store_true')
+    parser.add_argument('--replot',     action='store_true',
+                        help='Replot fuer aktives Portfolio (keine Re-Optimierung)')
     args = parser.parse_args()
 
     with open(SETTINGS_PATH) as f:
@@ -297,6 +371,9 @@ def main() -> int:
         date.today() - timedelta(days=DEFAULT_LOOKBACK_DAYS)
     ).strftime('%Y-%m-%d')
     max_positions = int(settings.get('live_trading_settings', {}).get('max_open_positions', 5))
+
+    if args.replot:
+        return _do_replot(settings, capital, start_date, end_date)
 
     print(f"\n{'─'*72}")
     print(f"{B}  titanbot — Automatische Portfolio-Optimierung{NC}")
