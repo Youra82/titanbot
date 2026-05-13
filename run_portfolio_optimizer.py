@@ -46,6 +46,8 @@ def _scan_configs() -> list:
 
 def _build_strategies_data(config_files: list, start_date: str, end_date: str) -> dict:
     from titanbot.analysis.backtester import load_data
+    from titanbot.strategy.smc_engine import SMCEngine, Bias
+    from titanbot.utils.timeframe_utils import determine_htf
     strategies_data = {}
     for path in tqdm(config_files, desc='Lade Configs & Daten'):
         fname = os.path.basename(path)
@@ -61,18 +63,32 @@ def _build_strategies_data(config_files: list, start_date: str, end_date: str) -
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 data = load_data(symbol, timeframe, start_date, end_date)
             if data is None or data.empty or len(data) < 50:
-                print(f"  {Y}Uebersprungen (keine Daten): {fname}{NC}")
+                print(f'  {Y}Uebersprungen (keine Daten): {fname}{NC}')
                 continue
+
+            # Precompute MTF bias ONCE so the greedy optimizer (3520 runs)
+            # never needs to call load_data for HTF data again.
+            market_bias = Bias.NEUTRAL
+            resolved_htf = htf or determine_htf(timeframe)
+            if resolved_htf and resolved_htf != timeframe:
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    htf_data = load_data(symbol, resolved_htf, start_date, end_date)
+                if htf_data is not None and not htf_data.empty and len(htf_data) >= 150:
+                    htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'})
+                    htf_engine.process_dataframe(htf_data[['open', 'high', 'low', 'close']].copy())
+                    market_bias = htf_engine.swingTrend
+
             strategies_data[fname] = {
-                'symbol':     symbol,
-                'timeframe':  timeframe,
-                'data':       data,
-                'smc_params': config.get('strategy', {}),
+                'symbol':      symbol,
+                'timeframe':   timeframe,
+                'data':        data,
+                'smc_params':  config.get('strategy', {}),
                 'risk_params': config.get('risk', {}),
-                'htf':        htf,
+                'htf':         resolved_htf,
+                'market_bias': market_bias,
             }
         except Exception as e:
-            print(f"  {Y}Fehler bei {fname}: {e}{NC}")
+            print(f'  {Y}Fehler bei {fname}: {e}{NC}')
     return strategies_data
 
 
