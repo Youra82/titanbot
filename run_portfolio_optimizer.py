@@ -58,7 +58,8 @@ def _build_strategies_data(config_files: list, start_date: str, end_date: str) -
             htf       = market.get('htf')
             if not symbol or not timeframe:
                 continue
-            data = load_data(symbol, timeframe, start_date, end_date)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                data = load_data(symbol, timeframe, start_date, end_date)
             if data is None or data.empty or len(data) < 50:
                 print(f"  {Y}Uebersprungen (keine Daten): {fname}{NC}")
                 continue
