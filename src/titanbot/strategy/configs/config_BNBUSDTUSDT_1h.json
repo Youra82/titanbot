@@ -1,0 +1,51 @@
+{
+    "market": {
+        "symbol": "BNB/USDT:USDT",
+        "timeframe": "1h"
+    },
+    "strategy": {
+        "swingsLength": 54,
+        "ob_mitigation": "Close",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 30,
+        "use_pd_filter": true,
+        "use_liquidity_sweep_filter": false,
+        "liquidity_lookback": 15,
+        "min_fvg_size_pct": 0.0834,
+        "min_ob_quality": 0.256,
+        "max_ob_touches": 1,
+        "use_rejection_candle": true,
+        "use_mtf_filter": false,
+        "volume_ma_period": 20
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 0.86,
+        "risk_reward_ratio": 1.69,
+        "min_leverage": 3,
+        "max_leverage": 29,
+        "atr_multiplier_sl": 0.905,
+        "min_sl_pct": 0.5,
+        "structure_sl_buffer_pct": 0.2,
+        "trailing_stop_activation_rr": 1.95,
+        "trailing_stop_callback_rate_pct": 2.26
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 40.25,
+        "train_pnl_pct": -15.72,
+        "test_wr": 34.78,
+        "test_trades": 23,
+        "test_dd_pct": 6.68,
+        "composite_score": 13.1017,
+        "recovered_at": "2026-05-13T21:06:16.692582Z",
+        "source_study": "smc_BNBUSDTUSDT_1h_best_profit",
+        "best_trial_no": 206,
+        "total_trials": 210
+    }
+}
