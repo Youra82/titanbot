@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 
 # Importiere die Funktionen direkt über die Paketstruktur
 from titanbot.utils.exchange import Exchange
-from titanbot.utils.trade_manager import check_and_open_new_position, housekeeper_routine, is_trade_locked, set_trade_lock
+from titanbot.utils.trade_manager import check_and_open_new_position, housekeeper_routine
 from titanbot.utils.timeframe_utils import determine_htf
 from titanbot.strategy.smc_engine import Bias
 # Nur importieren, um sicherzustellen, dass die Abhängigkeit geladen wird
