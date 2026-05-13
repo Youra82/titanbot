@@ -54,23 +54,21 @@ fi
 for symbol in $SYMBOLS; do
     for timeframe in $TIMEFRAMES; do
 
-        # *** HIER WIRD DAS STARTDATUM BERECHNET (FALLS 'a') ***
+        # Startdatum: END_DATE minus Rückblick je Timeframe
         if [ "$START_DATE_INPUT" == "a" ]; then
-             lookback_days=365 # Standard-Fallback
-             case "$timeframe" in 
-                 5m|15m) lookback_days=60 ;; 
-                 30m|1h) lookback_days=365 ;; 
-                 2h|4h) lookback_days=730 ;; 
-                 6h) lookback_days=730 ;;
-                 1d) lookback_days=1095 ;; 
+             case "$timeframe" in
+                 5m|15m)  lookback_days=60   ;;
+                 30m|1h)  lookback_days=365  ;;
+                 2h|4h)   lookback_days=730  ;;
+                 6h)      lookback_days=1095 ;;
+                 1d)      lookback_days=1095 ;;
+                 *)       lookback_days=365  ;;
              esac
-             # Berechne das Startdatum basierend auf dem Lookback
-             FINAL_START_DATE=$(date -d "$lookback_days days ago" +%F)
-             echo -e "${YELLOW}INFO: Automatisches Startdatum für $timeframe (${lookback_days} Tage Rückblick) gesetzt auf: $FINAL_START_DATE${NC}"
+             FINAL_START_DATE=$(date -d "$END_DATE - $lookback_days days" +%F)
+             echo -e "${YELLOW}INFO: Automatisches Startdatum für $timeframe (${lookback_days} Tage vor $END_DATE): $FINAL_START_DATE${NC}"
         else
              FINAL_START_DATE=$START_DATE_INPUT
         fi
-        # *** ENDE DATUMSBRECHNUNG ***
 
         echo -e "\n${BLUE}=======================================================${NC}";
         echo -e "${BLUE}  Bearbeite Pipeline für: $symbol ($timeframe)${NC}";
