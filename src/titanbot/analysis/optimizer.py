@@ -70,6 +70,8 @@ def _get_smc_precomputed(cache, cache_lock, data, smc_params):
                 'data_times': _eng.times,
             },
         }
+        # smc_results already contains all_swing_obs/all_internal_obs/all_fvgs
+        # (added by SMCEngine.process_dataframe) — no extra storage needed
         with cache_lock:
             cache.setdefault(_cache_key, _precomputed)
     return _precomputed
@@ -97,7 +99,7 @@ def objective(trial):
         'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.5, 2.0),
         'min_leverage': trial.suggest_int('min_leverage', 2, 8),
         'max_leverage': trial.suggest_int('max_leverage', 8, 30),
-        'sl_buffer_atr_mult': trial.suggest_float('sl_buffer_atr_mult', 0.05, 0.5),
+        'atr_multiplier_sl': trial.suggest_float('atr_multiplier_sl', 0.5, 3.0),
         'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 3.5),
         'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5),
     }
@@ -391,18 +393,28 @@ def main():
             'ob_mitigation': best_params['ob_mitigation'],
             'use_adx_filter': best_params['use_adx_filter'],
             'adx_period': best_params.get('adx_period', 14),
-            'adx_threshold': best_params.get('adx_threshold', 25)
+            'adx_threshold': best_params.get('adx_threshold', 25),
+            'use_pd_filter': best_params.get('use_pd_filter', True),
+            'use_liquidity_sweep_filter': best_params.get('use_liquidity_sweep_filter', True),
+            'liquidity_lookback': best_params.get('liquidity_lookback', 20),
+            'min_fvg_size_pct': round(best_params.get('min_fvg_size_pct', 0.05), 4),
+            'min_ob_quality': round(best_params.get('min_ob_quality', 0.2), 3),
+            'max_ob_touches': best_params.get('max_ob_touches', 1),
+            'use_rejection_candle': best_params.get('use_rejection_candle', True),
+            'volume_ma_period': 20,
         }
-        
+
         risk_config = {
             'margin_mode': "isolated",
             'risk_per_trade_pct': round(best_params['risk_per_trade_pct'], 2),
             'risk_reward_ratio': round(best_params['risk_reward_ratio'], 2),
             'min_leverage': best_params['min_leverage'],
             'max_leverage': best_params['max_leverage'],
-            'sl_buffer_atr_mult': round(best_params['sl_buffer_atr_mult'], 3),
+            'atr_multiplier_sl': round(best_params['atr_multiplier_sl'], 3),
+            'min_sl_pct': 0.5,
+            'structure_sl_buffer_pct': 0.2,
             'trailing_stop_activation_rr': round(best_params['trailing_stop_activation_rr'], 2),
-            'trailing_stop_callback_rate_pct': round(best_params['trailing_stop_callback_rate_pct'], 2)
+            'trailing_stop_callback_rate_pct': round(best_params['trailing_stop_callback_rate_pct'], 2),
         }
         behavior_config = {"use_longs": True, "use_shorts": True}
         
