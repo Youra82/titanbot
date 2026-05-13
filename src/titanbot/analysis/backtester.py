@@ -237,23 +237,26 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
             prev_candle = data.iloc[i-1] if i > 0 else None
 
             # Per-Bar gefilterte SMC-Strukturen (kein Look-Ahead-Bias):
-            # Nur OBs/FVGs die zum Zeitpunkt von Bar i bereits gebildet wurden
-            # und noch nicht mitigiert waren, sind sichtbar — exakt wie im Live-Bot.
+            # Nur OBs/FVGs die zum Zeitpunkt von Bar i bereits gebildet wurden,
+            # noch nicht mitigiert waren und innerhalb des Live-Bot-Fensters
+            # (letzte 300 Kerzen) liegen — identisch zu fetch_recent_ohlcv(limit=300).
+            _smc_window = smc_params.get('smc_lookback', 300)
+            _window_start = i - _smc_window
             _all_int_obs   = smc_results.get('all_internal_obs', [])
             _all_swing_obs = smc_results.get('all_swing_obs', [])
             _all_fvgs      = smc_results.get('all_fvgs', [])
             bar_smc = {
                 'unmitigated_internal_obs': [
                     ob for ob in _all_int_obs
-                    if ob.bar_index <= i and (ob.mitigated_bar == -1 or ob.mitigated_bar > i)
+                    if _window_start <= ob.bar_index <= i and (ob.mitigated_bar == -1 or ob.mitigated_bar > i)
                 ],
                 'unmitigated_swing_obs': [
                     ob for ob in _all_swing_obs
-                    if ob.bar_index <= i and (ob.mitigated_bar == -1 or ob.mitigated_bar > i)
+                    if _window_start <= ob.bar_index <= i and (ob.mitigated_bar == -1 or ob.mitigated_bar > i)
                 ],
                 'unmitigated_fvgs': [
                     fvg for fvg in _all_fvgs
-                    if fvg.start_bar_index <= i and (fvg.mitigated_bar == -1 or fvg.mitigated_bar > i)
+                    if _window_start <= fvg.start_bar_index <= i and (fvg.mitigated_bar == -1 or fvg.mitigated_bar > i)
                 ],
                 'liquidity_levels': smc_results.get('liquidity_levels', []),
                 'enriched_df': smc_results.get('enriched_df'),
