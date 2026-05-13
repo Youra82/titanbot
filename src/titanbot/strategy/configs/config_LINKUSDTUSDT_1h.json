@@ -1,0 +1,51 @@
+{
+    "market": {
+        "symbol": "LINK/USDT:USDT",
+        "timeframe": "1h"
+    },
+    "strategy": {
+        "swingsLength": 28,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 29,
+        "use_pd_filter": true,
+        "use_liquidity_sweep_filter": false,
+        "liquidity_lookback": 10,
+        "min_fvg_size_pct": 0.1891,
+        "min_ob_quality": 0.408,
+        "max_ob_touches": 1,
+        "use_rejection_candle": true,
+        "use_mtf_filter": false,
+        "volume_ma_period": 20
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 0.57,
+        "risk_reward_ratio": 1.55,
+        "min_leverage": 5,
+        "max_leverage": 14,
+        "atr_multiplier_sl": 0.966,
+        "min_sl_pct": 0.5,
+        "structure_sl_buffer_pct": 0.2,
+        "trailing_stop_activation_rr": 1.11,
+        "trailing_stop_callback_rate_pct": 1.24
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 5.79,
+        "train_pnl_pct": 3.2,
+        "test_wr": 53.33,
+        "test_trades": 15,
+        "test_dd_pct": 9.76,
+        "composite_score": 12.6029,
+        "recovered_at": "2026-05-13T21:06:20.296878Z",
+        "source_study": "smc_LINKUSDTUSDT_1h_best_profit",
+        "best_trial_no": 175,
+        "total_trials": 235
+    }
+}
