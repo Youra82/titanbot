@@ -204,13 +204,15 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                 pnl_pct = (exit_price / pos['entry_price'] - 1) if pos['side'] == 'long' else (1 - exit_price / pos['entry_price'])
                 pnl_usd = pos['notional_value'] * pnl_pct
                 total_fees = pos['notional_value'] * fee_pct * 2
-                equity += (pnl_usd - total_fees)
+                net_pnl = pnl_usd - total_fees
+                equity += net_pnl
                 trade_history.append({
                     'strategy_key': key,
                     'symbol':        strat_data['symbol'],
                     'timeframe':     pos.get('timeframe', ''),
                     'direction':     pos['side'],
                     'entry_time':    str(pos.get('entry_ts', ''))[:16].replace('T', ' '),
+                    'exit_time':     ts,
                     'ts':            pos.get('entry_ts', ts),
                     'entry':         round(pos['entry_price'], 6),
                     'exit':          round(exit_price, 6),
@@ -219,7 +221,8 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                     'sl_pct':        pos.get('sl_pct', 0),
                     'tsl_activation_rr':  pos.get('tsl_activation_rr', 0),
                     'tsl_callback_pct':   pos.get('tsl_callback_pct', 0),
-                    'pnl':           round(pnl_usd - total_fees, 4),
+                    'pnl':           round(net_pnl, 4),
+                    'capital_after': round(equity, 4),
                 })
                 positions_to_close.append(key)
             else:
@@ -365,12 +368,14 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
             'exit':          last_price,
             'entry_time':    pos.get('entry_ts', ''),
             'exit_time':     'Backtest-Ende',
+            'ts':            pos.get('entry_ts', ''),
             'margin_used':   pos.get('margin_used', 0),
             'leverage':      pos.get('leverage', 0),
             'sl_pct':        pos.get('sl_pct', 0),
             'tsl_activation_rr':  pos.get('tsl_activation_rr', 0),
             'tsl_callback_pct':   pos.get('tsl_callback_pct', 0),
             'pnl':           round(net_pnl, 4),
+            'capital_after': round(equity, 4),
         })
     open_positions.clear()
 
