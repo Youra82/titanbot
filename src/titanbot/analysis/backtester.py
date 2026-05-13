@@ -1,4 +1,5 @@
 # /root/titanbot/src/titanbot/analysis/backtester.py (Mit DYNAMISCHER Margin/Risiko vom CURRENT Capital und MTF-Bias)
+import bisect
 import os
 import pandas as pd
 import numpy as np
@@ -16,6 +17,21 @@ from titanbot.strategy.smc_engine import SMCEngine, Bias
 from titanbot.strategy.trade_logic import get_titan_signal
 
 secrets_cache = None
+
+_TF_SECONDS = {300: '5m', 900: '15m', 1800: '30m', 3600: '1h',
+               7200: '2h', 14400: '4h', 21600: '6h', 86400: '1d'}
+
+def _infer_timeframe(idx):
+    if len(idx) < 2:
+        return None
+    delta = int((idx[1] - idx[0]).total_seconds())
+    return _TF_SECONDS.get(delta)
+
+_HTF_MAP = {
+    '5m': '1h', '15m': '1h', '30m': '4h', '1h': '4h',
+    '2h': '1d', '4h': '1d', '6h': '1d', '1d': None
+}
+_PD_RESAMPLE = {'1h': '1h', '4h': '4h', '1d': '1D'}
 
 # --- load_data Funktion bleibt unverändert ---
 def load_data(symbol, timeframe, start_date_str, end_date_str):
@@ -71,8 +87,6 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
 def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=False, bar_index_offset=0):
     if data.empty or len(data) < 15:
         return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
-
-    market_bias = Bias.NEUTRAL
 
     # --- Indikator-Berechnungen ---
     # Wenn ATR/ADX/volume_ma schon vorberechnet in den Daten (vom Optimizer),
@@ -138,6 +152,33 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         for col in enriched_df.columns:
             if col.startswith('smc_'):
                 data[col] = enriched_df[col].values
+
+    # --- HTF Bias Vorberechnung (kein Look-Ahead: bisect auf HTF-Open-Zeiten) ---
+    use_mtf_filter = smc_params.get('use_mtf_filter', False)
+    htf_bias_times  = []  # list[pd.Timestamp]
+    htf_bias_values = []  # list[Bias]
+    if use_mtf_filter:
+        _tf = smc_params.get('_timeframe') or _infer_timeframe(data.index)
+        _htf_rule_key = _HTF_MAP.get(_tf)
+        _pd_rule = _PD_RESAMPLE.get(_htf_rule_key) if _htf_rule_key else None
+        if _pd_rule:
+            try:
+                htf_data = data[['open', 'high', 'low', 'close']].resample(_pd_rule).agg(
+                    {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last'}
+                ).dropna()
+                if len(htf_data) >= 20:
+                    _htf_engine = SMCEngine(settings={'swingsLength': 10, 'closeTrails': False})
+                    _htf_results = _htf_engine.process_dataframe(htf_data.copy())
+                    _htf_states = _htf_results.get('bar_states', [])
+                    for _ts, _st in zip(htf_data.index, _htf_states):
+                        _bs = _st.get('swing_bias', '')
+                        _bias = (Bias.BULLISH if _bs == 'bullish'
+                                 else Bias.BEARISH if _bs == 'bearish'
+                                 else Bias.NEUTRAL)
+                        htf_bias_times.append(_ts)
+                        htf_bias_values.append(_bias)
+            except Exception as _e:
+                print(f"WARNUNG: HTF Bias Vorberechnung fehlgeschlagen: {_e}")
 
     current_capital = start_capital
     peak_capital = start_capital
@@ -235,6 +276,13 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         # --- Einstiegs-Logik (max. 1 Trade pro Kerze) ---
         if not position and not closed_this_bar and current_capital > 0:
             prev_candle = data.iloc[i-1] if i > 0 else None
+
+            # Per-Bar HTF Bias: letzter abgeschlossener HTF-Balken (bisect - 2)
+            market_bias = Bias.NEUTRAL
+            if use_mtf_filter and htf_bias_times:
+                _pos = bisect.bisect_right(htf_bias_times, timestamp) - 2
+                if _pos >= 0:
+                    market_bias = htf_bias_values[_pos]
 
             # Per-Bar gefilterte SMC-Strukturen (kein Look-Ahead-Bias):
             # Nur OBs/FVGs die zum Zeitpunkt von Bar i bereits gebildet wurden,
