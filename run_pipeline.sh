@@ -32,11 +32,10 @@ read -p "Zeitfenster eingeben (z.B. 1h 4h): " TIMEFRAMES
 
 # *** HIER IST DIE WIEDER EINGEFÜGTE TABELLE UND DATUMSLOGIK ***
 echo -e "\n${BLUE}--- Empfehlung: Optimaler Rückblick-Zeitraum ---${NC}"
+read -p "Enddatum (JJJJ-MM-TT) [Standard: Heute]: " END_DATE; END_DATE=${END_DATE:-$(date +%F)}
+
 printf "+-------------+--------------------------------+\n"; printf "| Zeitfenster | Empfohlener Rückblick (Tage)   |\n"; printf "+-------------+--------------------------------+\n"; printf "| 5m, 15m     | 15 - 90 Tage                   |\n"; printf "| 30m, 1h     | 180 - 365 Tage                 |\n"; printf "| 2h, 4h      | 550 - 730 Tage                 |\n"; printf "| 6h, 1d      | 1095 - 1825 Tage               |\n"; printf "+-------------+--------------------------------+\n"
 read -p "Startdatum (JJJJ-MM-TT) oder 'a' für Automatik [Standard: a]: " START_DATE_INPUT; START_DATE_INPUT=${START_DATE_INPUT:-a}
-# *** ENDE DER EINFÜGUNG ***
-
-read -p "Enddatum (JJJJ-MM-TT) [Standard: Heute]: " END_DATE; END_DATE=${END_DATE:-$(date +%F)}
 _DEFAULT_CAPITAL=$(python3 -c "import json; d=json.load(open('settings.json')); print(int(d['optimization_settings']['start_capital']))" 2>/dev/null || echo "15")
 read -p "Startkapital in USDT [Standard: ${_DEFAULT_CAPITAL} (aus settings.json)]: " START_CAPITAL; START_CAPITAL=${START_CAPITAL:-$_DEFAULT_CAPITAL}
 read -p "CPU-Kerne [Standard: -1 für alle]: " N_CORES; N_CORES=${N_CORES:--1}
