@@ -36,6 +36,8 @@ class OrderBlock:
     touch_count: int = 0          # Times price entered zone without mitigating
     bos_move_pct: float = 0.0    # BOS strength: distance moved after BOS / entry price
     quality: float = 0.5          # Composite quality score 0.0-1.0
+    bar_index: int = 0            # Formation bar index (for look-ahead-free backtesting)
+    mitigated_bar: int = -1       # Bar index when mitigated (-1 = still active)
 
 @dataclass
 class FVG:
@@ -45,6 +47,8 @@ class FVG:
     startTime: int
     size_pct: float = 0.0        # Size as % of price (filters noise)
     mitigated: bool = False
+    start_bar_index: int = 0      # Formation bar index (for look-ahead-free backtesting)
+    mitigated_bar: int = -1       # Bar index when mitigated (-1 = still active)
 
 @dataclass
 class LiquidityLevel:
@@ -212,6 +216,7 @@ class SMCEngine:
                 bias=bias,
                 bos_move_pct=bos_move / entry_price,
                 quality=quality,
+                bar_index=ob_index,
             )
             ob_list = self.internalOrderBlocks if internal else self.swingOrderBlocks
             ob_list.append(new_ob)
@@ -279,8 +284,10 @@ class SMCEngine:
                 continue
             if ob.bias == Bias.BEARISH and bearish_source > ob.barHigh:
                 ob.mitigated = True
+                ob.mitigated_bar = index
             elif ob.bias == Bias.BULLISH and bullish_source < ob.barLow:
                 ob.mitigated = True
+                ob.mitigated_bar = index
             else:
                 # Price entered zone without mitigation → increment touch count
                 if ob.bias == Bias.BULLISH and c_low <= ob.barHigh and c_close >= ob.barLow:
@@ -310,7 +317,8 @@ class SMCEngine:
             if size_pct >= self.min_fvg_size_pct:
                 self.fairValueGaps.append(FVG(
                     top=c_low, bottom=c2_high,
-                    bias=Bias.BULLISH, startTime=c_time, size_pct=size_pct
+                    bias=Bias.BULLISH, startTime=c_time, size_pct=size_pct,
+                    start_bar_index=index,
                 ))
                 self.event_log.append({
                     "time": c_time, "index": index,
@@ -323,7 +331,8 @@ class SMCEngine:
             if size_pct >= self.min_fvg_size_pct:
                 self.fairValueGaps.append(FVG(
                     top=c2_low, bottom=c_high,
-                    bias=Bias.BEARISH, startTime=c_time, size_pct=size_pct
+                    bias=Bias.BEARISH, startTime=c_time, size_pct=size_pct,
+                    start_bar_index=index,
                 ))
                 self.event_log.append({
                     "time": c_time, "index": index,
@@ -339,8 +348,10 @@ class SMCEngine:
                 continue
             if fvg.bias == Bias.BULLISH and c_low < fvg.bottom:
                 fvg.mitigated = True
+                fvg.mitigated_bar = index
             elif fvg.bias == Bias.BEARISH and c_high > fvg.top:
                 fvg.mitigated = True
+                fvg.mitigated_bar = index
 
     # ==================== LIQUIDITY ====================
 
@@ -516,4 +527,8 @@ class SMCEngine:
             "liquidity_levels": self.liquidityLevels,
             "bar_states": self.bar_states,
             "enriched_df": enriched_df,
+            # Full lists with bar_index/mitigated_bar for look-ahead-free backtesting
+            "all_swing_obs": self.swingOrderBlocks,
+            "all_internal_obs": self.internalOrderBlocks,
+            "all_fvgs": self.fairValueGaps,
         }

@@ -13,7 +13,7 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.utils.exchange import Exchange
 from titanbot.strategy.smc_engine import SMCEngine, Bias
-from titanbot.strategy.trade_logic import get_titan_signal, get_zone_based_tp
+from titanbot.strategy.trade_logic import get_titan_signal
 
 secrets_cache = None
 
@@ -102,14 +102,17 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         print(f"FEHLER bei Indikator-Berechnung: {e}")
         return {"total_pnl_pct": -999, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
     
-    # --- Parameter und SMC-Engine Setup (Unverändert) ---
+    # --- Parameter und SMC-Engine Setup ---
     risk_reward_ratio = risk_params.get('risk_reward_ratio', 1.5)
     risk_per_trade_pct = risk_params.get('risk_per_trade_pct', 1.0) / 100
     activation_rr = risk_params.get('trailing_stop_activation_rr', 2.0)
     callback_rate = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100
     max_leverage = risk_params.get('max_leverage', 20)
     min_leverage = risk_params.get('min_leverage', 3)
-    sl_buffer_atr_mult = risk_params.get('sl_buffer_atr_mult', 0.2)
+    # SL-Parameter wie Live-Bot
+    atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0)
+    min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0
+    structure_sl_buffer_pct = risk_params.get('structure_sl_buffer_pct', 0.2) / 100.0
     fee_pct = 0.05 / 100
 
     absolute_max_notional_value = 1000000
@@ -119,7 +122,6 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     if precomputed is not None:
         smc_results   = precomputed['smc_results']
         smc_structures = precomputed['smc_structures']
-        engine = None
     else:
         engine = SMCEngine(settings=smc_params)
         smc_results = engine.process_dataframe(data[['open', 'high', 'low', 'close']].copy())
@@ -231,26 +233,65 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         # --- Einstiegs-Logik ---
         if not position and current_capital > 0:
             prev_candle = data.iloc[i-1] if i > 0 else None
-            side, _, signal_context = get_titan_signal(smc_results, current_candle, params=params_for_logic, market_bias=market_bias, prev_candle=prev_candle) 
+
+            # Per-Bar gefilterte SMC-Strukturen (kein Look-Ahead-Bias):
+            # Nur OBs/FVGs die zum Zeitpunkt von Bar i bereits gebildet wurden
+            # und noch nicht mitigiert waren, sind sichtbar — exakt wie im Live-Bot.
+            _all_int_obs   = smc_results.get('all_internal_obs', [])
+            _all_swing_obs = smc_results.get('all_swing_obs', [])
+            _all_fvgs      = smc_results.get('all_fvgs', [])
+            bar_smc = {
+                'unmitigated_internal_obs': [
+                    ob for ob in _all_int_obs
+                    if ob.bar_index <= i and (ob.mitigated_bar == -1 or ob.mitigated_bar > i)
+                ],
+                'unmitigated_swing_obs': [
+                    ob for ob in _all_swing_obs
+                    if ob.bar_index <= i and (ob.mitigated_bar == -1 or ob.mitigated_bar > i)
+                ],
+                'unmitigated_fvgs': [
+                    fvg for fvg in _all_fvgs
+                    if fvg.start_bar_index <= i and (fvg.mitigated_bar == -1 or fvg.mitigated_bar > i)
+                ],
+                'liquidity_levels': smc_results.get('liquidity_levels', []),
+                'enriched_df': smc_results.get('enriched_df'),
+            }
+
+            side, _, signal_context = get_titan_signal(bar_smc, current_candle, params=params_for_logic, market_bias=market_bias, prev_candle=prev_candle)
 
             if side:
                 entry_price = current_candle['close']
                 current_atr = current_candle.get('atr')
                 if pd.isna(current_atr) or current_atr <= 0: continue
 
-                # --- SMC-Zonenbasierter SL (hinter die Zone) ---
-                buffer = current_atr * sl_buffer_atr_mult
-                zone_low = signal_context.get('level_low', entry_price)
-                zone_high = signal_context.get('level_high', entry_price)
-                if side == 'buy':
-                    stop_loss = zone_low - buffer
-                else:
-                    stop_loss = zone_high + buffer
+                # --- SL: Struktur-basiert (wie Live-Bot), dann ATR-Fallback ---
+                sl_distance = None
+                if signal_context:
+                    level_low  = signal_context.get('level_low')
+                    level_high = signal_context.get('level_high')
+                    if side == 'buy' and level_low:
+                        sl_price = level_low - entry_price * structure_sl_buffer_pct
+                        if sl_price < entry_price:
+                            sl_distance = entry_price - sl_price
+                    elif side == 'sell' and level_high:
+                        sl_price = level_high + entry_price * structure_sl_buffer_pct
+                        if sl_price > entry_price:
+                            sl_distance = sl_price - entry_price
 
-                sl_distance = abs(entry_price - stop_loss)
+                if not sl_distance or sl_distance <= 0:
+                    sl_distance = max(current_atr * atr_multiplier_sl, entry_price * min_sl_pct)
+
                 # Sicherheits-Minimum: mind. 0.1% Abstand
                 sl_distance = max(sl_distance, entry_price * 0.001)
                 if sl_distance <= 0: continue
+
+                # --- TP: Einfaches R:R (wie Live-Bot) ---
+                if side == 'buy':
+                    stop_loss   = entry_price - sl_distance
+                    take_profit = entry_price + sl_distance * risk_reward_ratio
+                else:
+                    stop_loss   = entry_price + sl_distance
+                    take_profit = entry_price - sl_distance * risk_reward_ratio
 
                 # --- Variabler Hebel: Risk-basiertes Position Sizing ---
                 risk_amount_usd = current_capital * risk_per_trade_pct
@@ -258,24 +299,16 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 if sl_pct <= 1e-6: continue
 
                 target_notional = risk_amount_usd / sl_pct
-                # Min-Notional erzwingen (Bitget: ~5 USDT, variiert per Symbol)
-                # Wenn risk-basiertes Notional zu klein → auf Mindestbetrag anheben;
-                # der Hebel passt sich automatisch an (wird nach oben korrigiert).
                 MIN_NOTIONAL_USDT = 5.0
                 if target_notional < MIN_NOTIONAL_USDT:
                     target_notional = MIN_NOTIONAL_USDT
-                # Hebel klemmen: min_leverage ≤ eff_leverage ≤ max_leverage
                 eff_leverage = target_notional / current_capital
                 eff_leverage = max(min_leverage, min(eff_leverage, max_leverage))
-                eff_leverage = max(1, math.floor(eff_leverage))  # Bitget: ganzzahliger Hebel, floor = zugunsten SL
-                # Risk-basiertes Notional (nicht equity×leverage!) → kleine Margin, mehrere Positionen möglich
+                eff_leverage = max(1, math.floor(eff_leverage))
                 final_notional_value = min(target_notional, absolute_max_notional_value)
                 if final_notional_value < MIN_NOTIONAL_USDT: continue
 
-                # Backtester: Single-Position — margin check entfällt (Floating-Point-Bug vermieden)
                 margin_used = final_notional_value / eff_leverage
-
-                take_profit = get_zone_based_tp(side, entry_price, sl_distance, risk_reward_ratio, smc_results, i + bar_index_offset)
                 activation_price = entry_price + sl_distance * activation_rr if side == 'buy' else entry_price - sl_distance * activation_rr
 
                 position = {
@@ -285,7 +318,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                     'notional_value': final_notional_value,
                     'trailing_active': False, 'activation_price': activation_price,
                     'peak_price': entry_price,
-                    'entry_time': timestamp  # NEU: Entry-Zeit speichern
+                    'entry_time': timestamp
                 }
 
     # --- Offene Position am Backtest-Ende schließen (letzter bekannter Schlusskurs) ---
