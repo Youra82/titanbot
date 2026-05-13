@@ -240,43 +240,185 @@ def generate_trades_excel(final, strategies_data, capital, start_date, end_date)
 
 
 def generate_equity_html(final, capital, start_date, end_date, labels):
-    """Erstellt interaktiven Portfolio-Equity-Chart."""
+    """Erstellt interaktiven Portfolio-Equity-Chart (mbot-Style)."""
     try:
         import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
     except ImportError:
-        print(f'  {Y}plotly nicht installiert — Chart uebersprungen.{NC}')
+        print(f'  {Y}plotly nicht installiert - Chart uebersprungen.{NC}')
         return None
 
-    eq_df = final.get('equity_curve')
+    eq_df         = final.get('equity_curve')
+    trade_history = final.get('trade_history', [])
     if eq_df is None or (hasattr(eq_df, 'empty') and eq_df.empty):
         return None
 
-    times = [str(t) for t in eq_df['timestamp']]
-    vals  = [float(v) for v in eq_df['equity']]
-    pnl   = final.get('total_pnl_pct', 0)
-    dd    = final.get('max_drawdown_pct', 0)
-    wr    = final.get('win_rate', 0)
-    n     = final.get('trade_count', 0)
-    eq    = final.get('end_capital', vals[-1] if vals else capital)
-    sign  = '+' if pnl >= 0 else ''
-    title = (f"{BOT_NAME} Portfolio — {', '.join(labels)} | "
+    # Equity-Kurve tz-normalisiert
+    eq_idx = eq_df.index
+    if hasattr(eq_idx, 'tz') and eq_idx.tz is not None:
+        eq_idx = eq_idx.tz_convert('UTC').tz_localize(None)
+    eq_times = [str(t)[:16] for t in eq_idx]
+    eq_vals  = [float(v) for v in eq_df['equity']]
+
+    pnl  = final.get('total_pnl_pct', 0)
+    dd   = final.get('max_drawdown_pct', 0)
+    wr   = final.get('win_rate', 0)
+    n    = final.get('trade_count', 0)
+    eq   = final.get('end_capital', eq_vals[-1] if eq_vals else capital)
+    sign = '+' if pnl >= 0 else ''
+    title = (f"{BOT_NAME} Portfolio - {', '.join(labels)} | "
              f"PnL: {sign}{pnl:.1f}% | Equity: {eq:.2f} USDT | "
              f"MaxDD: {dd:.1f}% | WR: {wr:.1f}% | {n} Trades")
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=times, y=vals, mode='lines', name='Portfolio Equity',
-                             line=dict(color='#2563eb', width=2)))
-    fig.add_hline(y=capital, line=dict(color='rgba(100,100,100,0.4)', width=1, dash='dash'),
-                  annotation_text=f'Start {capital:.0f} USDT', annotation_position='top left')
-    fig.update_layout(title=dict(text=title, font=dict(size=12), x=0.5),
-                      height=600, template='plotly_white', hovermode='x unified',
-                      xaxis=dict(rangeslider=dict(visible=True), fixedrange=False),
-                      yaxis=dict(title='Equity (USDT)', fixedrange=False))
+    def _ts_str(ts_raw):
+        if ts_raw is None or str(ts_raw) == 'Backtest-Ende':
+            return None
+        return str(ts_raw)[:16].replace('T', ' ')
+
+    # Trade-Marker
+    entry_x, entry_y = [], []
+    tp_x, tp_y       = [], []
+    sl_x, sl_y       = [], []
+
+    for t in trade_history:
+        pnl_t     = float(t.get('pnl', 0))
+        cap_after = float(t.get('capital_after', capital + pnl_t))
+        cap_before = cap_after - pnl_t
+        entry_ts  = _ts_str(t.get('entry_time') or t.get('ts'))
+        exit_ts   = _ts_str(t.get('exit_time'))
+        if entry_ts:
+            entry_x.append(entry_ts)
+            entry_y.append(cap_before)
+        marker_ts = exit_ts or entry_ts
+        if not marker_ts:
+            continue
+        if pnl_t > 0:
+            tp_x.append(marker_ts); tp_y.append(cap_after)
+        else:
+            sl_x.append(marker_ts); sl_y.append(cap_after)
+
+    # Per-Strategie Equity-Kurven
+    COLORS = ['#f59e0b', '#10b981', '#8b5cf6', '#f97316',
+              '#ec4899', '#14b8a6', '#a3e635', '#fb923c']
+    strat_trades = {}
+    for t in trade_history:
+        key = (t.get('strategy_key')
+               or t.get('symbol', '').split('/')[0] + '/' + t.get('timeframe', ''))
+        strat_trades.setdefault(key, []).append(t)
+
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        specs=[[{'secondary_y': False}], [{'secondary_y': False}]],
+        vertical_spacing=0.03,
+        row_heights=[0.85, 0.15],
+    )
+
+    fig.add_hline(
+        y=capital,
+        line=dict(color='rgba(150,150,150,0.4)', width=1, dash='dash'),
+        annotation_text=f'Start {capital:.0f} USDT',
+        annotation_position='top left',
+        row=1, col=1,
+    )
+
+    for idx, (strat_key, trades) in enumerate(sorted(strat_trades.items())):
+        eq_s = capital
+        xs   = [start_date + 'T00:00:00']
+        ys   = [capital]
+        for t in trades:
+            eq_s += float(t.get('pnl', 0))
+            x_t = (_ts_str(t.get('exit_time'))
+                   or _ts_str(t.get('entry_time') or t.get('ts')))
+            if x_t:
+                xs.append(x_t)
+                ys.append(round(eq_s, 4))
+        color = COLORS[idx % len(COLORS)]
+        sym   = strat_key.split('/')[0] if '/' in strat_key else strat_key[:6]
+        tf    = strat_key.split('_')[-1] if '_' in strat_key else ''
+        label = f"{sym}/{tf}" if tf else sym
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, mode='lines', name=label,
+            line=dict(color=color, width=1.3, dash='dot'),
+            opacity=0.65,
+            hovertemplate=f"{label}: %{{y:.2f}} USDT<extra></extra>",
+        ), row=1, col=1)
+
+    fig.add_trace(go.Scatter(
+        x=eq_times, y=eq_vals,
+        mode='lines', name='Portfolio Equity',
+        line=dict(color='#3b82f6', width=2.5),
+        hovertemplate='Portfolio: %{y:.2f} USDT<extra></extra>',
+    ), row=1, col=1)
+
+    if entry_x:
+        fig.add_trace(go.Scatter(
+            x=entry_x, y=entry_y, mode='markers',
+            marker=dict(symbol='triangle-up', size=10, color='#22c55e',
+                        line=dict(width=1, color='#ffffff')),
+            name='Entry',
+            hovertemplate='Entry: %{x}<br>Kapital: %{y:.2f}<extra></extra>',
+        ), row=1, col=1)
+
+    if tp_x:
+        fig.add_trace(go.Scatter(
+            x=tp_x, y=tp_y, mode='markers',
+            marker=dict(color='#22d3ee', symbol='circle', size=9,
+                        line=dict(width=1, color='#0e7490')),
+            name='TP',
+            hovertemplate='TP: %{x}<br>Kapital: %{y:.2f}<extra></extra>',
+        ), row=1, col=1)
+
+    if sl_x:
+        fig.add_trace(go.Scatter(
+            x=sl_x, y=sl_y, mode='markers',
+            marker=dict(color='#ef4444', symbol='x', size=9,
+                        line=dict(width=2, color='#7f1d1d')),
+            name='SL',
+            hovertemplate='SL: %{x}<br>Kapital: %{y:.2f}<extra></extra>',
+        ), row=1, col=1)
+
+    if entry_x:
+        fig.add_trace(go.Scatter(
+            x=entry_x, y=[1]*len(entry_x), mode='markers',
+            marker=dict(symbol='triangle-up', size=8, color='#22c55e'),
+            showlegend=False,
+            hovertemplate='Entry: %{x}<extra></extra>',
+        ), row=2, col=1)
+    if tp_x:
+        fig.add_trace(go.Scatter(
+            x=tp_x, y=[1]*len(tp_x), mode='markers',
+            marker=dict(symbol='circle', size=7, color='#22d3ee'),
+            showlegend=False,
+            hovertemplate='TP: %{x}<extra></extra>',
+        ), row=2, col=1)
+    if sl_x:
+        fig.add_trace(go.Scatter(
+            x=sl_x, y=[1]*len(sl_x), mode='markers',
+            marker=dict(symbol='x', size=8, color='#ef4444',
+                        line=dict(width=2)),
+            showlegend=False,
+            hovertemplate='SL: %{x}<extra></extra>',
+        ), row=2, col=1)
+
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=12), x=0.5, xanchor='center'),
+        height=720,
+        hovermode='x unified',
+        template='plotly_dark',
+        dragmode='zoom',
+        xaxis=dict(fixedrange=False),
+        xaxis2=dict(fixedrange=False),
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
+        margin=dict(l=60, r=60, t=80, b=40),
+        yaxis=dict(title='Equity (USDT)', fixedrange=False),
+    )
+    fig.update_yaxes(visible=False, row=2, col=1)
+
     outfile = f'/tmp/{BOT_NAME}_portfolio_equity.html'
     fig.write_html(outfile)
-    print(f'  {G}✓ Chart erstellt: {outfile}{NC}')
+    print(f'  {G}+ Chart erstellt: {outfile}{NC}')
     return outfile
-
 
 def _do_replot(settings: dict, capital: float, start_date: str, end_date: str) -> int:
     print(f"\n{'─'*72}")
