@@ -24,37 +24,33 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
     print("\n--- Starte Portfolio-Simulation (SMC)... ---")
 
     # --- 0. MTF-Bias für jede Strategie bestimmen ---
-    # Da der Simulator nur die Daten lädt, müssen wir den HTF-Bias hier bestimmen
+    # Wenn market_bias bereits im strat-Dict vorberechnet wurde (z.B. vom Optimizer),
+    # wird load_data übersprungen — verhindert 3520x API-Calls im Greedy-Loop.
     mtf_bias_by_strategy = {}
-    print("0/4: Bestimme MTF-Bias für jede Strategie...")
-    
-    for key, strat in tqdm(strategies_data.items(), desc="MTF Bias Check"):
-        symbol = strat['symbol']
-        timeframe = strat['timeframe']
-        
-        # NEU: Hole HTF aus der Konfiguration (wird von show_results übergeben)
-        htf = strat.get('htf')
-        if not htf:
-            # Fallback, falls Konfigurationsdatei veraltet war (sollte nicht passieren)
-            htf = determine_htf(timeframe)
-            strat['htf'] = htf
 
-        market_bias = Bias.NEUTRAL
-        if htf and htf != timeframe:
-            # Lade HTF-Daten für den gesamten Backtest-Zeitraum
-            htf_data = load_data(symbol, htf, start_date, end_date)
-            
-            if htf_data.empty or len(htf_data) < 150:
-                # print(f"MTF-Check: Nicht genügend HTF-Daten für {key}.")
-                pass # Bleibt bei Bias.NEUTRAL
-            else:
-                # Führe SMC-Analyse auf HTF-Daten durch (Standard SMC settings)
-                htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'}) 
-                htf_engine.process_dataframe(htf_data[['open', 'high', 'low', 'close']].copy())
-                market_bias = htf_engine.swingTrend
-        
-        mtf_bias_by_strategy[key] = market_bias
-        
+    needs_compute = [k for k, s in strategies_data.items() if 'market_bias' not in s]
+    if needs_compute:
+        print("0/4: Bestimme MTF-Bias für jede Strategie...")
+        for key in tqdm(needs_compute, desc="MTF Bias Check"):
+            strat = strategies_data[key]
+            symbol = strat['symbol']
+            timeframe = strat['timeframe']
+            htf = strat.get('htf')
+            if not htf:
+                htf = determine_htf(timeframe)
+                strat['htf'] = htf
+
+            market_bias = Bias.NEUTRAL
+            if htf and htf != timeframe:
+                htf_data = load_data(symbol, htf, start_date, end_date)
+                if not htf_data.empty and len(htf_data) >= 150:
+                    htf_engine = SMCEngine(settings={'swingsLength': 50, 'ob_mitigation': 'Close'})
+                    htf_engine.process_dataframe(htf_data[['open', 'high', 'low', 'close']].copy())
+                    market_bias = htf_engine.swingTrend
+            strat['market_bias'] = market_bias
+
+    for key, strat in strategies_data.items():
+        mtf_bias_by_strategy[key] = strat.get('market_bias', Bias.NEUTRAL)
     # --- ENDE MTF-Bias Bestimmung ---
 
     # --- 1. Kombiniere alle Zeitstempel & berechne Indikatoren ---
