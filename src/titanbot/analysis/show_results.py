@@ -177,48 +177,62 @@ def _generate_trades_excel(final_sim, capital):
 
 
 def _generate_portfolio_chart(final_sim, portfolio_files, capital, start_date, end_date):
-    """Erstellt titanbot_portfolio_equity.html mit interaktivem Plotly-Chart."""
+    """Erstellt titanbot_portfolio_equity.html (mbot-Style: Equity-Kurven + Entry/TP/SL)."""
     try:
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
     except ImportError:
-        print(f"  {YELLOW}plotly nicht installiert — Chart übersprungen. (pip install plotly){NC}")
+        print(f"  {YELLOW}plotly nicht installiert - Chart uebersprungen.{NC}")
         return
 
     eq_df         = final_sim.get('equity_curve')
     trade_history = final_sim.get('trade_history', [])
     if eq_df is None or (hasattr(eq_df, 'empty') and eq_df.empty):
-        print(f"  {YELLOW}Keine Equity-Daten — Chart übersprungen.{NC}")
+        print(f"  {YELLOW}Keine Equity-Daten - Chart uebersprungen.{NC}")
         return
 
-    # Equity-Index normalisieren (tz-naive für einheitlichen Vergleich)
     eq_idx = eq_df.index
     if hasattr(eq_idx, 'tz') and eq_idx.tz is not None:
-        eq_idx_norm = eq_idx.tz_convert('UTC').tz_localize(None)
-    else:
-        eq_idx_norm = eq_idx
-    eq_idx_norm = pd.DatetimeIndex(eq_idx_norm)
-
-    eq_times = [str(t)[:16] for t in eq_idx_norm]
+        eq_idx = eq_idx.tz_convert('UTC').tz_localize(None)
+    eq_times = [str(t)[:16] for t in eq_idx]
     eq_vals  = eq_df['equity'].tolist()
 
-    win_x, win_y   = [], []
-    loss_x, loss_y = [], []
+    def _ts_str(ts_raw):
+        if ts_raw is None or str(ts_raw) == 'Backtest-Ende':
+            return None
+        return str(ts_raw)[:16].replace('T', ' ')
+
+    entry_x, entry_y = [], []
+    tp_x, tp_y       = [], []
+    sl_x, sl_y       = [], []
+
     for t in trade_history:
-        ts_raw = t.get('ts') or t.get('entry_time', '')
-        ts_str = str(ts_raw)[:16]
-        try:
-            ts_dt = pd.Timestamp(ts_raw)
-            if ts_dt.tzinfo is not None:
-                ts_dt = ts_dt.tz_convert('UTC').tz_localize(None)
-            pos = eq_idx_norm.searchsorted(ts_dt, side='right') - 1
-            eq_at = float(eq_df['equity'].iloc[max(0, pos)])
-        except Exception:
-            eq_at = capital
-        if float(t.get('pnl', 0)) > 0:
-            win_x.append(ts_str);  win_y.append(eq_at)
+        pnl        = float(t.get('pnl', 0))
+        cap_after  = float(t.get('capital_after', capital + pnl))
+        cap_before = cap_after - pnl
+        entry_ts   = _ts_str(t.get('entry_time') or t.get('ts'))
+        exit_ts    = _ts_str(t.get('exit_time'))
+        if entry_ts:
+            entry_x.append(entry_ts)
+            entry_y.append(cap_before)
+        marker_ts = exit_ts or entry_ts
+        if not marker_ts:
+            continue
+        if pnl > 0:
+            tp_x.append(marker_ts); tp_y.append(cap_after)
         else:
-            loss_x.append(ts_str); loss_y.append(eq_at)
+            sl_x.append(marker_ts); sl_y.append(cap_after)
+
+    STRAT_COLORS = [
+        '#f59e0b', '#10b981', '#8b5cf6', '#f97316',
+        '#ec4899', '#14b8a6', '#a3e635', '#fb923c',
+        '#e879f9', '#38bdf8',
+    ]
+    strat_trades = {}
+    for t in trade_history:
+        key = (t.get('strategy_key')
+               or t.get('symbol', '').split('/')[0] + '/' + t.get('timeframe', ''))
+        strat_trades.setdefault(key, []).append(t)
 
     pairs = []
     for fname in portfolio_files:
@@ -233,85 +247,122 @@ def _generate_portfolio_chart(final_sim, portfolio_files, capital, start_date, e
     pnl_pct  = final_sim.get('total_pnl_pct', 0)
     sign     = '+' if pnl_pct >= 0 else ''
     title = (
-        f"TitanBot Portfolio \u2014 {n_strats} Strategie(n) ({pairs_str}) | "
-        f"Zeitraum: {start_date} \u2192 {end_date} | "
+        f"TitanBot Portfolio - {n_strats} Strategie(n) ({pairs_str}) | "
+        f"Zeitraum: {start_date} bis {end_date} | "
         f"Trades: {final_sim.get('trade_count', 0)} | WR: {final_sim.get('win_rate', 0):.1f}% | "
         f"PnL: {sign}{pnl_pct:.1f}% | "
         f"Endkapital: {final_sim.get('end_capital', capital):.2f} USDT | "
         f"MaxDD: {final_sim.get('max_drawdown_pct', 0):.1f}%"
     )
 
-    fig = make_subplots(specs=[[{"secondary_y": False}]])
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        specs=[[{'secondary_y': False}], [{'secondary_y': False}]],
+        vertical_spacing=0.03,
+        row_heights=[0.85, 0.15],
+    )
 
     fig.add_hline(
         y=capital,
-        line=dict(color='rgba(100,100,100,0.35)', width=1, dash='dash'),
+        line=dict(color='rgba(150,150,150,0.4)', width=1, dash='dash'),
         annotation_text=f'Start {capital:.0f} USDT',
         annotation_position='top left',
+        row=1, col=1,
     )
 
-    STRAT_COLORS = [
-        '#f59e0b', '#10b981', '#8b5cf6', '#f97316',
-        '#ec4899', '#14b8a6', '#a3e635', '#fb923c',
-        '#e879f9', '#38bdf8',
-    ]
-    strat_trades = {}
-    for t in trade_history:
-        key = f"{t.get('symbol', '').split('/')[0]}/{t.get('timeframe', '')}"
-        strat_trades.setdefault(key, []).append(t)
-
     for idx, (strat_key, trades) in enumerate(sorted(strat_trades.items())):
-        trades_sorted = sorted(trades, key=lambda x: str(x.get('ts', '')))
-        eq = capital
-        xs = [str(trades_sorted[0].get('ts') or trades_sorted[0].get('entry_time', ''))[:16]]
-        ys = [capital]
-        for t in trades_sorted:
-            eq += float(t['pnl'])
-            xs.append(str(t.get('ts') or t.get('entry_time', ''))[:16])
-            ys.append(round(eq, 4))
+        eq  = capital
+        xs  = [start_date + 'T00:00:00']
+        ys  = [capital]
+        for t in trades:
+            eq += float(t.get('pnl', 0))
+            x_t = (_ts_str(t.get('exit_time'))
+                   or _ts_str(t.get('entry_time') or t.get('ts')))
+            if x_t:
+                xs.append(x_t)
+                ys.append(round(eq, 4))
         color = STRAT_COLORS[idx % len(STRAT_COLORS)]
+        sym   = strat_key.split('/')[0] if '/' in strat_key else strat_key[:6]
+        tf    = strat_key.split('_')[-1] if '_' in strat_key else ''
+        label = f"{sym}/{tf}" if tf else sym
         fig.add_trace(go.Scatter(
-            x=xs, y=ys,
-            mode='lines',
-            name=strat_key,
-            line=dict(color=color, width=1.2, dash='dot'),
-            opacity=0.6,
-            hovertemplate=f"{strat_key}: %{{y:.2f}} USDT<extra></extra>",
-        ))
+            x=xs, y=ys, mode='lines', name=label,
+            line=dict(color=color, width=1.3, dash='dot'),
+            opacity=0.65,
+            hovertemplate=f"{label}: %{{y:.2f}} USDT<extra></extra>",
+        ), row=1, col=1)
 
     fig.add_trace(go.Scatter(
         x=eq_times, y=eq_vals,
         mode='lines', name='Portfolio Equity',
-        line=dict(color='#2563eb', width=2.5),
+        line=dict(color='#3b82f6', width=2.5),
         hovertemplate='Portfolio: %{y:.2f} USDT<extra></extra>',
-    ))
+    ), row=1, col=1)
 
-    if win_x:
+    if entry_x:
         fig.add_trace(go.Scatter(
-            x=win_x, y=win_y, mode='markers',
-            marker=dict(color='#22d3ee', symbol='circle', size=8,
+            x=entry_x, y=entry_y, mode='markers',
+            marker=dict(symbol='triangle-up', size=10, color='#22c55e',
+                        line=dict(width=1, color='#ffffff')),
+            name='Entry',
+            hovertemplate='Entry: %{x}<br>Kapital: %{y:.2f}<extra></extra>',
+        ), row=1, col=1)
+
+    if tp_x:
+        fig.add_trace(go.Scatter(
+            x=tp_x, y=tp_y, mode='markers',
+            marker=dict(color='#22d3ee', symbol='circle', size=9,
                         line=dict(width=1, color='#0e7490')),
-            name='TP \u2713',
-        ))
-    if loss_x:
+            name='TP',
+            hovertemplate='TP: %{x}<br>Kapital: %{y:.2f}<extra></extra>',
+        ), row=1, col=1)
+
+    if sl_x:
         fig.add_trace(go.Scatter(
-            x=loss_x, y=loss_y, mode='markers',
-            marker=dict(color='#ef4444', symbol='x', size=8,
+            x=sl_x, y=sl_y, mode='markers',
+            marker=dict(color='#ef4444', symbol='x', size=9,
                         line=dict(width=2, color='#7f1d1d')),
-            name='SL \u2717',
-        ))
+            name='SL',
+            hovertemplate='SL: %{x}<br>Kapital: %{y:.2f}<extra></extra>',
+        ), row=1, col=1)
+
+    if entry_x:
+        fig.add_trace(go.Scatter(
+            x=entry_x, y=[1]*len(entry_x), mode='markers',
+            marker=dict(symbol='triangle-up', size=8, color='#22c55e'),
+            showlegend=False,
+            hovertemplate='Entry: %{x}<extra></extra>',
+        ), row=2, col=1)
+    if tp_x:
+        fig.add_trace(go.Scatter(
+            x=tp_x, y=[1]*len(tp_x), mode='markers',
+            marker=dict(symbol='circle', size=7, color='#22d3ee'),
+            showlegend=False,
+            hovertemplate='TP: %{x}<extra></extra>',
+        ), row=2, col=1)
+    if sl_x:
+        fig.add_trace(go.Scatter(
+            x=sl_x, y=[1]*len(sl_x), mode='markers',
+            marker=dict(symbol='x', size=8, color='#ef4444',
+                        line=dict(width=2)),
+            showlegend=False,
+            hovertemplate='SL: %{x}<extra></extra>',
+        ), row=2, col=1)
 
     fig.update_layout(
         title=dict(text=title, font=dict(size=12), x=0.5, xanchor='center'),
-        height=600,
+        height=720,
         hovermode='x unified',
         template='plotly_dark',
         dragmode='zoom',
-        xaxis=dict(rangeslider=dict(visible=True), fixedrange=False),
+        xaxis=dict(fixedrange=False),
+        xaxis2=dict(fixedrange=False),
         legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='center', x=0.5),
         margin=dict(l=60, r=60, t=80, b=40),
         yaxis=dict(title='Equity (USDT)', fixedrange=False),
     )
+    fig.update_yaxes(visible=False, row=2, col=1)
 
     out_dir  = os.path.join(PROJECT_ROOT, 'artifacts', 'charts')
     os.makedirs(out_dir, exist_ok=True)
@@ -323,14 +374,15 @@ def _generate_portfolio_chart(final_sim, portfolio_files, capital, start_date, e
     if bot_token and chat_id:
         caption = (
             f"TitanBot Portfolio-Equity\n"
-            f"{start_date} \u2192 {end_date} | {n_strats} Strategie(n) | "
+            f"{start_date} bis {end_date} | {n_strats} Strategie(n) | "
             f"PnL: {sign}{pnl_pct:.1f}% | Equity: {final_sim.get('end_capital', capital):.2f} USDT | "
             f"MaxDD: {final_sim.get('max_drawdown_pct', 0):.1f}%"
         )
         send_document(bot_token, chat_id, out_file, caption=caption)
         print(f"  {GREEN}Chart via Telegram gesendet.{NC}")
     else:
-        print(f"  {YELLOW}Telegram nicht konfiguriert — Chart nur lokal gespeichert.{NC}")
+        print(f"  {YELLOW}Telegram nicht konfiguriert - Chart nur lokal gespeichert.{NC}")
+
 
 
 # --- Einzel-Analyse ---
