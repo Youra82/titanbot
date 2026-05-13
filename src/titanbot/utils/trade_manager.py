@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import ccxt
 import numpy as np
@@ -24,38 +24,6 @@ from titanbot.utils.telegram import send_message
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 ARTIFACTS_PATH = os.path.join(PROJECT_ROOT, 'artifacts') 
 DB_PATH = os.path.join(ARTIFACTS_PATH, 'db')
-TRADE_LOCK_FILE = os.path.join(DB_PATH, 'trade_lock.json')
-
-
-# --------------------------------------------------------------------------- #
-# Trade-Lock-Hilfsfunktionen (Unverändert)
-# --------------------------------------------------------------------------- #
-def load_or_create_trade_lock():
-    os.makedirs(DB_PATH, exist_ok=True)
-    if os.path.exists(TRADE_LOCK_FILE):
-        with open(TRADE_LOCK_FILE, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_trade_lock(trade_lock):
-    with open(TRADE_LOCK_FILE, 'w') as f:
-        json.dump(trade_lock, f, indent=4)
-
-def is_trade_locked(symbol_timeframe):
-    trade_lock = load_or_create_trade_lock()
-    lock_time_str = trade_lock.get(symbol_timeframe)
-    if lock_time_str:
-        lock_time = datetime.strptime(lock_time_str, "%Y-%m-%d %H:%M:%S")
-        if datetime.now() < lock_time:
-            return True
-    return False
-
-def set_trade_lock(symbol_timeframe, lock_duration_minutes=60):
-    lock_time = datetime.now() + timedelta(minutes=lock_duration_minutes)
-    trade_lock = load_or_create_trade_lock()
-    trade_lock[symbol_timeframe] = lock_time.strftime("%Y-%m-%d %H:%M:%S")
-    save_trade_lock(trade_lock)
-
 # --------------------------------------------------------------------------- #
 # Housekeeper – säubert verwaiste Orders/Positionen (Unverändert)
 # --------------------------------------------------------------------------- #
@@ -90,10 +58,6 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
     symbol = params['market']['symbol']
     timeframe = params['market']['timeframe']
     symbol_timeframe = f"{symbol.replace('/', '-')}_{timeframe}"
-
-    if is_trade_locked(symbol_timeframe):
-        logger.info(f"Trade für {symbol_timeframe} gesperrt – überspringe.")
-        return
 
     try:
         # ⚠️  WICHTIGER HINWEIS FÜR BACKTEST vs. LIVEBOT:
@@ -398,8 +362,6 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             logger.info("Trailing-Stop platziert.")
         else:
             logger.warning("Trailing-Stop fehlgeschlagen – Fallback auf SL.")
-
-        set_trade_lock(symbol_timeframe) # Trade Lock setzen
 
         # --------------------------------------------------- #
         # 7. Telegram-Benachrichtigung
