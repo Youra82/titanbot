@@ -91,8 +91,10 @@ def objective(trial):
         'min_ob_quality': trial.suggest_float('min_ob_quality', 0.10, 0.50),
         'max_ob_touches': trial.suggest_int('max_ob_touches', 0, 2),
         'use_rejection_candle': trial.suggest_categorical('use_rejection_candle', [True, False]),
+        'use_mtf_filter': trial.suggest_categorical('use_mtf_filter', [True, False]),
         'symbol': CURRENT_SYMBOL,
         'timeframe': CURRENT_TIMEFRAME,
+        '_timeframe': CURRENT_TIMEFRAME,
     }
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
@@ -405,6 +407,7 @@ def main():
             'min_ob_quality': round(best_params.get('min_ob_quality', 0.2), 3),
             'max_ob_touches': best_params.get('max_ob_touches', 1),
             'use_rejection_candle': best_params.get('use_rejection_candle', True),
+            'use_mtf_filter': best_params.get('use_mtf_filter', False),
             'volume_ma_period': 20,
         }
 

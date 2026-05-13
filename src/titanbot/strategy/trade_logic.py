@@ -333,4 +333,12 @@ def get_titan_signal(
         except Exception:
             return None, None, None
 
+    # MTF bias filter
+    use_mtf_filter = strategy_params.get('use_mtf_filter', False)
+    if use_mtf_filter and market_bias is not None and market_bias != Bias.NEUTRAL:
+        if signal_side == 'buy' and market_bias == Bias.BEARISH:
+            return None, None, None
+        if signal_side == 'sell' and market_bias == Bias.BULLISH:
+            return None, None, None
+
     return signal_side, signal_price, signal_context

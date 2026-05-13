@@ -120,10 +120,34 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # Hole auch die vorherige Kerze für Confirmation-Logik (falls nötig)
         prev_candle = recent_data.iloc[-2] if len(recent_data) >= 2 else None
 
+        # --- MTF Bias (Higher-Timeframe Richtung) ---
+        _HTF_MAP = {
+            '5m': '1h', '15m': '1h', '30m': '4h', '1h': '4h',
+            '2h': '1d', '4h': '1d', '6h': '1d', '1d': None
+        }
+        market_bias = Bias.NEUTRAL
+        use_mtf_filter = smc_params.get('use_mtf_filter', False)
+        htf_tf = _HTF_MAP.get(timeframe)
+        if use_mtf_filter and htf_tf:
+            try:
+                htf_data = exchange.fetch_recent_ohlcv(symbol, htf_tf, limit=300)
+                if htf_data is not None and len(htf_data) >= 50:
+                    htf_engine = SMCEngine(settings={'swingsLength': 10, 'closeTrails': False})
+                    htf_results = htf_engine.process_dataframe(htf_data[['open', 'high', 'low', 'close']].copy())
+                    htf_states = htf_results.get('bar_states', [])
+                    if htf_states:
+                        _bs = htf_states[-1].get('swing_bias', '')
+                        market_bias = (Bias.BULLISH if _bs == 'bullish'
+                                       else Bias.BEARISH if _bs == 'bearish'
+                                       else Bias.NEUTRAL)
+                        logger.info(f"MTF Bias ({htf_tf}): {market_bias}")
+            except Exception as e:
+                logger.warning(f"MTF Bias konnte nicht berechnet werden: {e}")
+
         # Einige Tests mocken get_titan_signal() nur mit 2 Rückgabewerten.
         # Akzeptiere daher sowohl 2- als auch 3-teilige Rückgaben und ergänze Kontext mit None.
         signal_result = get_titan_signal(
-            smc_results_full, current_candle, params, None, prev_candle
+            smc_results_full, current_candle, params, market_bias, prev_candle
         )
 
         # Normalfall: (side, price, context); Fallback: (side, price)
