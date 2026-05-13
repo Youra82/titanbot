@@ -181,7 +181,8 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
             drawdown = (peak_capital - mtm_equity) / peak_capital
             max_drawdown_pct = max(max_drawdown_pct, drawdown)
 
-        # --- Positions-Management (Unverändert) ---
+        # --- Positions-Management ---
+        closed_this_bar = False
         if position:
             exit_price = None
             if position['side'] == 'long':
@@ -227,11 +228,12 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                     'exit_time':   timestamp,
                 }
                 trades_list.append(trade_record)
-                
-                position = None
 
-        # --- Einstiegs-Logik ---
-        if not position and current_capital > 0:
+                position = None
+                closed_this_bar = True
+
+        # --- Einstiegs-Logik (max. 1 Trade pro Kerze) ---
+        if not position and not closed_this_bar and current_capital > 0:
             prev_candle = data.iloc[i-1] if i > 0 else None
 
             # Per-Bar gefilterte SMC-Strukturen (kein Look-Ahead-Bias):
