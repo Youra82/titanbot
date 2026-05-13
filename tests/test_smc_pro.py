@@ -406,6 +406,7 @@ def test_mtf_filter_blocks_counter_trend():
     params = {'strategy': {
         'use_pd_filter': False, 'use_liquidity_sweep_filter': False,
         'use_entry_confirmation': False, 'min_ob_quality': 0.0, 'max_ob_touches': 10,
+        'use_mtf_filter': True,
     }}
 
     for i in range(len(enriched)):
