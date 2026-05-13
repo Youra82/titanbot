@@ -4,21 +4,32 @@
         "timeframe": "4h"
     },
     "strategy": {
-        "swingsLength": 55,
-        "ob_mitigation": "High/Low",
+        "swingsLength": 20,
+        "ob_mitigation": "Close",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 25
+        "adx_threshold": 22,
+        "use_pd_filter": false,
+        "use_liquidity_sweep_filter": false,
+        "liquidity_lookback": 10,
+        "min_fvg_size_pct": 0.0606,
+        "min_ob_quality": 0.499,
+        "max_ob_touches": 1,
+        "use_rejection_candle": true,
+        "use_mtf_filter": false,
+        "volume_ma_period": 20
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 1.53,
-        "risk_reward_ratio": 2.56,
-        "min_leverage": 5,
-        "max_leverage": 13,
-        "sl_buffer_atr_mult": 0.293,
-        "trailing_stop_activation_rr": 1.04,
-        "trailing_stop_callback_rate_pct": 0.6
+        "risk_per_trade_pct": 1.95,
+        "risk_reward_ratio": 2.92,
+        "min_leverage": 3,
+        "max_leverage": 23,
+        "atr_multiplier_sl": 2.73,
+        "min_sl_pct": 0.5,
+        "structure_sl_buffer_pct": 0.2,
+        "trailing_stop_activation_rr": 1.14,
+        "trailing_stop_callback_rate_pct": 1.24
     },
     "behavior": {
         "use_longs": true,
@@ -26,12 +37,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 65.18,
-        "train_pnl_pct": -18.25,
-        "test_wr": 61.54,
-        "test_trades": 91,
-        "test_dd_pct": 10.71,
-        "composite_score": 20.5149,
-        "optimized_at": "2026-05-05T09:47:47.047819Z"
+        "test_pnl_pct": -24.63,
+        "train_pnl_pct": 17.11,
+        "test_wr": 41.94,
+        "test_trades": 62,
+        "test_dd_pct": 27.71,
+        "composite_score": 16.8127,
+        "optimized_at": "2026-05-13T19:45:09.613758Z"
     }
 }
