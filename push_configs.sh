@@ -27,8 +27,16 @@ for f in "$CONFIGS_DIR"/config_*.json; do
 done
 echo ""
 
-# Aenderungen pruefen
-git add "$CONFIGS_DIR"/config_*.json settings.json push_configs.sh
+# Erst Remote-Stand holen, dann stagen — so gibt es keinen Konflikt
+echo -e "${YELLOW}Hole Remote-Stand...${NC}"
+git pull origin main --rebase
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Pull/Rebase fehlgeschlagen. Bitte manuell loesen.${NC}"
+    exit 1
+fi
+
+# Nach dem Pull stagen (force: auch wenn Dateien vorher im Repo geloescht wurden)
+git add -f "$CONFIGS_DIR"/config_*.json settings.json push_configs.sh
 STAGED=$(git diff --cached --name-only)
 
 if [ -z "$STAGED" ]; then
@@ -39,20 +47,6 @@ fi
 echo "Geaenderte Dateien:"
 echo "$STAGED" | sed 's/^/  /'
 echo ""
-
-# Erst Remote-Stand holen (rebase) bevor wir committen — so gibt es nur einen Push
-echo -e "${YELLOW}Hole Remote-Stand...${NC}"
-git stash
-git pull origin main --rebase
-if [ $? -ne 0 ]; then
-    git stash pop 2>/dev/null
-    echo -e "${RED}Pull/Rebase fehlgeschlagen. Bitte manuell loesen.${NC}"
-    exit 1
-fi
-git stash pop 2>/dev/null
-
-# Erneut stagen (nach stash pop koennen die Dateien dirty sein)
-git add "$CONFIGS_DIR"/config_*.json settings.json push_configs.sh
 
 # Commit
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
