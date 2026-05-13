@@ -15,7 +15,6 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 # Korrekter Import der tatsächlich existierenden Funktionen
 from titanbot.utils.exchange import Exchange
 from titanbot.utils.trade_manager import check_and_open_new_position, housekeeper_routine
-from titanbot.utils.trade_manager import set_trade_lock, is_trade_locked 
 # NEU: Importiere die Hilfsfunktion für den Test
 from titanbot.utils.timeframe_utils import determine_htf 
 # NEU: Importiere den Bias für die Mocking-Logik
@@ -126,9 +125,7 @@ def test_full_titanbot_workflow_on_bitget(test_setup):
     # NEU: Füge den market_bias in den get_titan_signal Mock-Aufruf ein
     # Da get_titan_signal jetzt 4 Argumente erwartet (smc_results, current_candle, params, market_bias)
     # Und market_bias in trade_manager.py ein Bias-Objekt erwartet (z.B. Bias.NEUTRAL)
-    with patch('titanbot.utils.trade_manager.set_trade_lock'), \
-        patch('titanbot.utils.trade_manager.is_trade_locked', return_value=False), \
-        patch('titanbot.utils.trade_manager.get_titan_signal', return_value=('buy', None)):
+    with patch('titanbot.utils.trade_manager.get_titan_signal', return_value=('buy', None)):
         
         # NEU: Um den KeyError in trade_manager.py zu vermeiden, 
         # muss der Aufruf in test_workflow.py so bleiben, wie er ist. 
