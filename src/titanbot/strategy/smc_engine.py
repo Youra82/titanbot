@@ -216,7 +216,7 @@ class SMCEngine:
                 bias=bias,
                 bos_move_pct=bos_move / entry_price,
                 quality=quality,
-                bar_index=ob_index,
+                bar_index=index,  # BOS-Erkennungsbar, nicht OB-Kerzenbar
             )
             ob_list = self.internalOrderBlocks if internal else self.swingOrderBlocks
             ob_list.append(new_ob)
