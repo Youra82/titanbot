@@ -29,11 +29,14 @@ echo ""
 
 # Erst Remote-Stand holen, dann stagen — so gibt es keinen Konflikt
 echo -e "${YELLOW}Hole Remote-Stand...${NC}"
+git stash -u
 git pull origin main --rebase
 if [ $? -ne 0 ]; then
+    git stash pop 2>/dev/null
     echo -e "${RED}Pull/Rebase fehlgeschlagen. Bitte manuell loesen.${NC}"
     exit 1
 fi
+git stash pop 2>/dev/null
 
 # Nach dem Pull stagen (force: auch wenn Dateien vorher im Repo geloescht wurden)
 git add -f "$CONFIGS_DIR"/config_*.json settings.json push_configs.sh
