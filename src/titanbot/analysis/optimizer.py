@@ -237,7 +237,11 @@ def main():
             TRAIN_SPLIT_IDX = int(len(HISTORICAL_DATA) * 0.70)
             TRAIN_DATA = HISTORICAL_DATA.iloc[:TRAIN_SPLIT_IDX].copy()
             TEST_DATA  = HISTORICAL_DATA.iloc[TRAIN_SPLIT_IDX:].copy()
-            print(f"WFV-Split: Train={len(TRAIN_DATA)} Kerzen (70%), Test={len(TEST_DATA)} Kerzen (30%)")
+            train_from = TRAIN_DATA.index[0].strftime('%Y-%m-%d')
+            train_to   = TRAIN_DATA.index[-1].strftime('%Y-%m-%d')
+            test_from  = TEST_DATA.index[0].strftime('%Y-%m-%d')
+            test_to    = TEST_DATA.index[-1].strftime('%Y-%m-%d')
+            print(f"WFV-Split: Train={len(TRAIN_DATA)} Kerzen (70%) [{train_from} → {train_to}], Test={len(TEST_DATA)} Kerzen (30%) [{test_from} → {test_to}]")
 
         if HISTORICAL_DATA.empty:
             print("Keine Daten geladen. Überspringe.")
