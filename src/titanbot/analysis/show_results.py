@@ -191,19 +191,31 @@ def _generate_portfolio_chart(final_sim, portfolio_files, capital, start_date, e
         print(f"  {YELLOW}Keine Equity-Daten — Chart übersprungen.{NC}")
         return
 
-    eq_times = eq_df['timestamp'].astype(str).tolist()
+    # Equity-Index normalisieren (tz-naive für einheitlichen Vergleich)
+    eq_idx = eq_df.index
+    if hasattr(eq_idx, 'tz') and eq_idx.tz is not None:
+        eq_idx_norm = eq_idx.tz_convert('UTC').tz_localize(None)
+    else:
+        eq_idx_norm = eq_idx
+    eq_idx_norm = pd.DatetimeIndex(eq_idx_norm)
+
+    eq_times = [str(t)[:16] for t in eq_idx_norm]
     eq_vals  = eq_df['equity'].tolist()
 
     win_x, win_y   = [], []
     loss_x, loss_y = [], []
     for t in trade_history:
-        ts_str = str(t.get('ts', ''))
+        ts_raw = t.get('ts') or t.get('entry_time', '')
+        ts_str = str(ts_raw)[:16]
         try:
-            row = eq_df[eq_df['timestamp'] <= pd.to_datetime(t['ts'])]
-            eq_at = float(row['equity'].iloc[-1]) if not row.empty else capital
+            ts_dt = pd.Timestamp(ts_raw)
+            if ts_dt.tzinfo is not None:
+                ts_dt = ts_dt.tz_convert('UTC').tz_localize(None)
+            pos = eq_idx_norm.searchsorted(ts_dt, side='right') - 1
+            eq_at = float(eq_df['equity'].iloc[max(0, pos)])
         except Exception:
             eq_at = capital
-        if float(t['pnl']) > 0:
+        if float(t.get('pnl', 0)) > 0:
             win_x.append(ts_str);  win_y.append(eq_at)
         else:
             loss_x.append(ts_str); loss_y.append(eq_at)
@@ -251,11 +263,11 @@ def _generate_portfolio_chart(final_sim, portfolio_files, capital, start_date, e
     for idx, (strat_key, trades) in enumerate(sorted(strat_trades.items())):
         trades_sorted = sorted(trades, key=lambda x: str(x.get('ts', '')))
         eq = capital
-        xs = [str(trades_sorted[0].get('ts', ''))[:16]]
+        xs = [str(trades_sorted[0].get('ts') or trades_sorted[0].get('entry_time', ''))[:16]]
         ys = [capital]
         for t in trades_sorted:
             eq += float(t['pnl'])
-            xs.append(str(t.get('ts', ''))[:16])
+            xs.append(str(t.get('ts') or t.get('entry_time', ''))[:16])
             ys.append(round(eq, 4))
         color = STRAT_COLORS[idx % len(STRAT_COLORS)]
         fig.add_trace(go.Scatter(
