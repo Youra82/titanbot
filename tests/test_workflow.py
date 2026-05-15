@@ -1,5 +1,5 @@
 # tests/test_workflow.py
-# FÜR PEPE/USDT:USDT, ISOLATED MARGIN, TSL FUNKTIONIERT
+# FÜR PEPE/USDT:USDT, ISOLATED MARGIN, FIXED SL+TP
 import pytest
 import os
 import sys
@@ -125,15 +125,16 @@ def test_full_titanbot_workflow_on_bitget(test_setup):
     # NEU: Füge den market_bias in den get_titan_signal Mock-Aufruf ein
     # Da get_titan_signal jetzt 4 Argumente erwartet (smc_results, current_candle, params, market_bias)
     # Und market_bias in trade_manager.py ein Bias-Objekt erwartet (z.B. Bias.NEUTRAL)
+    # Mock: fetch_positions → [] damit Max-Open-Positions-Check nicht blockiert
+    original_fetch_positions = exchange.exchange.fetch_positions
+    exchange.exchange.fetch_positions = lambda *a, **kw: []
+
+    print("\n[Schritt 1/3] Mocke Signal und prüfe Trade-Eröffnung...")
     with patch('titanbot.utils.trade_manager.get_titan_signal', return_value=('buy', None)):
-        
-        # NEU: Um den KeyError in trade_manager.py zu vermeiden, 
-        # muss der Aufruf in test_workflow.py so bleiben, wie er ist. 
-        # Die Anpassung des get_titan_signal Mocks ist ausreichend.
-
-        print("\n[Schritt 1/3] Mocke Signal und prüfe Trade-Eröffnung...")
-
-        check_and_open_new_position(exchange, None, None, params, telegram_config, logger)
+        try:
+            check_and_open_new_position(exchange, None, None, params, telegram_config, logger)
+        finally:
+            exchange.exchange.fetch_positions = original_fetch_positions
 
     print("-> Warte 5s auf Order-Ausführung...")
     time.sleep(5)
@@ -149,18 +150,9 @@ def test_full_titanbot_workflow_on_bitget(test_setup):
     print(f"-> Position korrekt eröffnet ({pos_info.get('marginMode')}, {pos_info.get('leverage')}x).")
 
     trigger_orders = exchange.fetch_open_trigger_orders(symbol)
-    # 1. Prüfe auf SL/TP (Trigger-Orders)
-    assert len(trigger_orders) >= 1, f"SL fehlt! Gefunden: {len(trigger_orders)}"
-
-    # 2. Prüfe auf TSL (Ignoriere CCXT/Bitget-Inkonsistenzen)
-    tsl_orders = [o for o in trigger_orders if 'trailingPercent' in o.get('info', {})]
-
-    if len(tsl_orders) == 0:
-        print("-> TSL-Prüfung: WARNUNG: TSL-Order wurde nicht in der Trigger-Liste gefunden (CCXT/Bitget-Problem), aber die Log-Ausgabe war erfolgreich. Gehe fort.")
-    else:
-        tsl = tsl_orders[0]
-        assert 'trailingPercent' in tsl.get('info', {})
-        print(f"-> TSL erfolgreich platziert: {tsl.get('orderId')} mit {tsl.get('info', {}).get('trailingPercent')}% Rücklauf.")
+    # SL + TP müssen als feste Trigger-Orders vorhanden sein
+    assert len(trigger_orders) >= 2, f"SL+TP fehlen! Gefunden: {len(trigger_orders)}"
+    print(f"-> SL+TP erfolgreich platziert: {len(trigger_orders)} Trigger-Orders gefunden.")
 
     # 3. Schließe die Position (Schritt 3/3)
     print("\n[Schritt 3/3] Schließe die Position...")
