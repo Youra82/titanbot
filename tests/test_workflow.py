@@ -125,9 +125,14 @@ def test_full_titanbot_workflow_on_bitget(test_setup):
     # NEU: Füge den market_bias in den get_titan_signal Mock-Aufruf ein
     # Da get_titan_signal jetzt 4 Argumente erwartet (smc_results, current_candle, params, market_bias)
     # Und market_bias in trade_manager.py ein Bias-Objekt erwartet (z.B. Bias.NEUTRAL)
-    # Mock: fetch_positions → [] damit Max-Open-Positions-Check nicht blockiert
+    # Mock: fetch_positions ohne Argumente → [] (Max-Positions-Check)
+    # fetch_positions MIT Argument → echte Bitget-Antwort (Post-Order-Check)
     original_fetch_positions = exchange.exchange.fetch_positions
-    exchange.exchange.fetch_positions = lambda *a, **kw: []
+    def _mock_fetch_positions(*args, **kwargs):
+        if not args:
+            return []
+        return original_fetch_positions(*args, **kwargs)
+    exchange.exchange.fetch_positions = _mock_fetch_positions
 
     print("\n[Schritt 1/3] Mocke Signal und prüfe Trade-Eröffnung...")
     with patch('titanbot.utils.trade_manager.get_titan_signal', return_value=('buy', None)):
