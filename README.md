@@ -518,6 +518,20 @@ chmod +x push_configs.sh
 
 Staged automatisch alle Configs + `settings.json`, holt Remote-Stand via Rebase und pusht — ohne manuelle git-Befehle.
 
+#### Merge-Konflikt beim Pushen lösen
+
+Falls `push_configs.sh` mit Rebase-Konflikten abbricht (z.B. weil Configs auf dem Remote gelöscht wurden), die lokalen Configs behalten und durchsetzen:
+
+```bash
+git checkout --theirs src/titanbot/strategy/configs/
+git add src/titanbot/strategy/configs/
+git rebase --continue
+git push
+```
+
+- `--theirs` übernimmt beim Rebase die lokale (VPS) Version der Configs
+- Danach läuft der Rebase durch und der Push funktioniert normal
+
 ---
 
 ## 📜 Lizenz
