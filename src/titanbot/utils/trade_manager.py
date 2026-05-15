@@ -366,44 +366,11 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
 
         exchange.place_trigger_market_order(symbol, tsl_side, contracts, sl_rounded, {'reduceOnly': True})
 
-        # --------------------------------------------------- #
-        # 6. Trailing-Stop-Loss
-        # --------------------------------------------------- #
-        act_rr = risk_params.get('trailing_stop_activation_rr', 1.5)
-        callback_pct = risk_params.get('trailing_stop_callback_rate_pct', 0.5) / 100.0
-
-        if pos_side == 'buy':
-            act_price = entry_price + sl_distance * act_rr
-        else:
-            act_price = entry_price - sl_distance * act_rr
-
-        act_price_rounded = float(exchange.exchange.price_to_precision(symbol, act_price))
-
-        tsl = exchange.place_trailing_stop_order(
-            symbol, tsl_side, contracts, act_price, callback_pct, {'reduceOnly': True}
-        )
-        if tsl:
-            logger.info("Trailing-Stop platziert.")
-        else:
-            logger.warning("Trailing-Stop fehlgeschlagen – Fallback auf SL.")
+        # TP als feste Trigger-Market-Order (wie mbot)
+        tp_side = tsl_side  # reduceOnly, gleiche Seite wie SL
+        exchange.place_trigger_market_order(symbol, tp_side, contracts, tp_rounded, {'reduceOnly': True})
 
         # --------------------------------------------------- #
-        # 7. Telegram-Benachrichtigung
-        # --------------------------------------------------- #
-        if telegram_config and telegram_config.get('bot_token') and telegram_config.get('chat_id'):
-            sl_r = float(exchange.exchange.price_to_precision(symbol, sl_price))
-            tp_r = float(exchange.exchange.price_to_precision(symbol, tp_price))
-            msg = (
-                f"NEUER TRADE: {symbol} ({timeframe})\n"
-                f"- Richtung: {pos_side.upper()}\n"
-                f"- Entry: ${entry_price:.6f}\n"
-                f"- SL: ${sl_r:.6f}\n"
-                f"- TP: ${tp_r:.6f} (RR: {rr:.2f})\n"
-                f"- TSL: Aktivierung @ ${act_price_rounded:.6f}, Callback: {callback_pct*100:.2f}%"
-            )
-            send_message(telegram_config['bot_token'], telegram_config['chat_id'], msg)
-
-
         logger.info("Trade-Eröffnung erfolgreich abgeschlossen.")
 
     except ccxt.InsufficientFunds as e:

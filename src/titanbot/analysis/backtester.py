@@ -119,8 +119,6 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     # --- Parameter und SMC-Engine Setup ---
     risk_reward_ratio = risk_params.get('risk_reward_ratio', 1.5)
     risk_per_trade_pct = risk_params.get('risk_per_trade_pct', 1.0) / 100
-    activation_rr = risk_params.get('trailing_stop_activation_rr', 2.0)
-    callback_rate = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100
     max_leverage = risk_params.get('max_leverage', 20)
     min_leverage = risk_params.get('min_leverage', 3)
     # SL-Parameter wie Live-Bot
@@ -227,21 +225,11 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         if position:
             exit_price = None
             if position['side'] == 'long':
-                if not position['trailing_active'] and current_candle['high'] >= position['activation_price']: position['trailing_active'] = True
-                if position['trailing_active']:
-                    position['peak_price'] = max(position['peak_price'], current_candle['high'])
-                    trailing_sl = position['peak_price'] * (1 - callback_rate)
-                    position['stop_loss'] = max(position['stop_loss'], trailing_sl)
                 if current_candle['low'] <= position['stop_loss']: exit_price = position['stop_loss']
-                elif not position['trailing_active'] and current_candle['high'] >= position['take_profit']: exit_price = position['take_profit']
+                elif current_candle['high'] >= position['take_profit']: exit_price = position['take_profit']
             elif position['side'] == 'short':
-                if not position['trailing_active'] and current_candle['low'] <= position['activation_price']: position['trailing_active'] = True
-                if position['trailing_active']:
-                    position['peak_price'] = min(position['peak_price'], current_candle['low'])
-                    trailing_sl = position['peak_price'] * (1 + callback_rate)
-                    position['stop_loss'] = min(position['stop_loss'], trailing_sl)
                 if current_candle['high'] >= position['stop_loss']: exit_price = position['stop_loss']
-                elif not position['trailing_active'] and current_candle['low'] <= position['take_profit']: exit_price = position['take_profit']
+                elif current_candle['low'] <= position['take_profit']: exit_price = position['take_profit']
 
             if exit_price:
                 pnl_pct = (exit_price / position['entry_price'] - 1) if position['side'] == 'long' else (1 - exit_price / position['entry_price'])
@@ -362,15 +350,12 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 if final_notional_value < MIN_NOTIONAL_USDT: continue
 
                 margin_used = final_notional_value / eff_leverage
-                activation_price = entry_price + sl_distance * activation_rr if side == 'buy' else entry_price - sl_distance * activation_rr
 
                 position = {
                     'side': 'long' if side == 'buy' else 'short',
                     'entry_price': entry_price, 'stop_loss': stop_loss,
                     'take_profit': take_profit, 'margin_used': margin_used,
                     'notional_value': final_notional_value,
-                    'trailing_active': False, 'activation_price': activation_price,
-                    'peak_price': entry_price,
                     'entry_time': timestamp
                 }
 
