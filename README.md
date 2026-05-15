@@ -289,7 +289,10 @@ Der Bot verfügt über einen automatischen Optimizer, der wöchentlich die beste
 Um eine sofortige Optimierung zu starten (ignoriert das Zeitintervall):
 
 ```bash
-# Letzten Optimierungszeitpunkt löschen (erzwingt Neustart)
+# Direkt forcen (empfohlen)
+cd ~/titanbot && .venv/bin/python3 auto_optimizer_scheduler.py --force
+
+# Alternativ: Letzten Optimierungszeitpunkt löschen (erzwingt Neustart beim nächsten Master Runner Aufruf)
 rm ~/titanbot/data/cache/.last_optimization_run
 
 # Master Runner starten (prüft ob Optimierung fällig ist)
