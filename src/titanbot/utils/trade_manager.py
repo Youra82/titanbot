@@ -16,7 +16,7 @@ import math
 from titanbot.strategy.smc_engine import SMCEngine, Bias # NEU: Import SMC Engine
 from titanbot.strategy.trade_logic import get_titan_signal
 from titanbot.utils.exchange import Exchange
-from titanbot.utils.telegram import send_message
+from titanbot.utils.telegram import send_message, send_photo
 
 # --------------------------------------------------------------------------- #
 # Pfade
@@ -49,6 +49,183 @@ def housekeeper_routine(exchange, symbol, logger):
     except Exception as e:
         logger.error(f"Housekeeper-Fehler: {e}", exc_info=True)
         return False
+
+
+# --------------------------------------------------------------------------- #
+# SMC-Chart: PNG mit allen Zonen + Trade-Levels generieren und senden
+# --------------------------------------------------------------------------- #
+
+def _generate_smc_chart_png(
+    df: pd.DataFrame,
+    smc_results: dict,
+    symbol: str,
+    timeframe: str,
+    entry_price: float,
+    sl_price: float = None,
+    tp_price: float = None,
+    signal_side: str = None,
+    n_candles: int = 80,
+) -> str:
+    """
+    Zeichnet Kerzendiagramm mit SMC-Zonen (OB, FVG, Liquidität) + Entry/SL/TP als PNG.
+    Gibt Pfad zur temporären Datei zurück — muss nach dem Senden gelöscht werden.
+    """
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as mpatches
+    except ImportError:
+        return None
+
+    if df is None or df.empty:
+        return None
+
+    display_df = df[['open', 'high', 'low', 'close']].iloc[-n_candles:].reset_index(drop=True)
+    n = len(display_df)
+    if n == 0:
+        return None
+
+    fig, ax = plt.subplots(figsize=(14, 7))
+    fig.patch.set_facecolor('#0d1117')
+    ax.set_facecolor('#0d1117')
+
+    opens  = display_df['open'].values
+    highs  = display_df['high'].values
+    lows   = display_df['low'].values
+    closes = display_df['close'].values
+    bar_w  = 0.6
+
+    # 1. Kerzen
+    for i in range(n):
+        o, h, l, c = opens[i], highs[i], lows[i], closes[i]
+        color = '#26a69a' if c >= o else '#ef5350'
+        ax.plot([i, i], [l, h], color=color, linewidth=0.8, zorder=2)
+        body_bot = min(o, c)
+        body_h   = max(abs(c - o), (h - l) * 0.005)
+        ax.add_patch(mpatches.FancyBboxPatch(
+            (i - bar_w / 2, body_bot), bar_w, body_h,
+            boxstyle="square,pad=0", linewidth=0, facecolor=color, zorder=3,
+        ))
+
+    # 2. Y-Limits
+    y_min = float(lows.min())
+    y_max = float(highs.max())
+    for p in filter(None, [entry_price, sl_price, tp_price]):
+        y_min = min(y_min, float(p) * 0.999)
+        y_max = max(y_max, float(p) * 1.001)
+    margin = (y_max - y_min) * 0.12
+    ax.set_xlim(-1, n + 4)
+    ax.set_ylim(y_min - margin, y_max + margin)
+
+    # 3. Order Blocks (horizontale Bänder über gesamte Chart-Breite)
+    all_obs = (smc_results.get('unmitigated_swing_obs', []) +
+               smc_results.get('unmitigated_internal_obs', []))
+    for ob in all_obs:
+        is_bull = ob.bias == Bias.BULLISH
+        fc = '#1a4a3a' if is_bull else '#4a1a1a'
+        ec = '#26a69a' if is_bull else '#ef5350'
+        ob_h, ob_l = ob.barHigh, ob.barLow
+        ax.add_patch(mpatches.FancyBboxPatch(
+            (-0.5, ob_l), n + 4, ob_h - ob_l,
+            boxstyle="square,pad=0", linewidth=0.8,
+            edgecolor=ec, facecolor=fc, alpha=0.40, zorder=1,
+        ))
+        label = 'Bull OB' if is_bull else 'Bear OB'
+        ax.text(n + 3.5, (ob_h + ob_l) / 2, label,
+                color=ec, fontsize=6.5, va='center', ha='right', zorder=5)
+
+    # 4. Fair Value Gaps
+    for fvg in smc_results.get('unmitigated_fvgs', []):
+        is_bull = fvg.bias == Bias.BULLISH
+        fc = '#0a3a2a' if is_bull else '#3a0a0a'
+        ec = '#00cc88' if is_bull else '#cc4444'
+        ax.add_patch(mpatches.FancyBboxPatch(
+            (-0.5, fvg.bottom), n + 4, fvg.top - fvg.bottom,
+            boxstyle="square,pad=0", linewidth=0.6,
+            edgecolor=ec, facecolor=fc, alpha=0.35, zorder=1,
+        ))
+        label = 'FVG↑' if is_bull else 'FVG↓'
+        ax.text(1.0, (fvg.top + fvg.bottom) / 2, label,
+                color=ec, fontsize=6, va='center', ha='left', zorder=5)
+
+    # 5. Liquiditätsniveaus (BSL/SSL) — nur ungesweepte, dedupliziert
+    seen_liq = set()
+    for lvl in smc_results.get('liquidity_levels', []):
+        if lvl.swept:
+            continue
+        key = (lvl.bias, round(lvl.price, 8))
+        if key in seen_liq:
+            continue
+        seen_liq.add(key)
+        is_bsl = lvl.bias == 'bsl'
+        lc = '#4488ff' if is_bsl else '#ffaa44'
+        ax.axhline(lvl.price, color=lc, linewidth=0.7, linestyle='--', alpha=0.65, zorder=2)
+        tag = ('E' if lvl.is_equal else '') + ('BSL' if is_bsl else 'SSL')
+        ax.text(n + 3.5, lvl.price, f' {tag}',
+                color=lc, fontsize=5.5, va='center', ha='right', zorder=5)
+
+    # 6. Trade-Levels (Entry / SL / TP)
+    if entry_price:
+        ax.axhline(entry_price, color='#ffd700', linewidth=1.4, linestyle='--', zorder=6)
+        ax.text(n + 3.5, entry_price, f' Entry\n {entry_price:.6g}',
+                color='#ffd700', fontsize=7.5, va='center', ha='right', zorder=7)
+    if sl_price:
+        ax.axhline(sl_price, color='#ff4444', linewidth=1.2, linestyle='--', zorder=6)
+        ax.text(n + 3.5, sl_price, f' SL\n {sl_price:.6g}',
+                color='#ff4444', fontsize=7.5, va='center', ha='right', zorder=7)
+    if tp_price:
+        ax.axhline(tp_price, color='#00dd88', linewidth=1.2, linestyle=':', zorder=6)
+        ax.text(n + 3.5, tp_price, f' TP\n {tp_price:.6g}',
+                color='#00dd88', fontsize=7.5, va='center', ha='right', zorder=7)
+
+    # 7. Styling
+    side_label = 'LONG' if signal_side == 'buy' else 'SHORT' if signal_side else ''
+    ax.set_title(
+        f"TITANBOT  |  {symbol}  {timeframe}  |  {side_label}  |  letzte {n} Kerzen",
+        color='#e0e0e0', fontsize=11, pad=10,
+    )
+    ax.tick_params(colors='#888888', labelsize=8)
+    for spine in ax.spines.values():
+        spine.set_edgecolor('#2a3a4a')
+    ax.set_xticks([])
+    ax.yaxis.tick_right()
+    ax.grid(axis='y', color='#1e2a3a', linewidth=0.4, zorder=0)
+    plt.tight_layout()
+
+    tmp_dir = os.path.join(PROJECT_ROOT, 'artifacts', 'tmp')
+    os.makedirs(tmp_dir, exist_ok=True)
+    ts       = datetime.now().strftime('%Y%m%d_%H%M%S')
+    sym_safe = symbol.replace('/', '-').replace(':', '-')
+    path     = os.path.join(tmp_dir, f'smc_entry_{sym_safe}_{timeframe}_{ts}.png')
+    fig.savefig(path, dpi=130, bbox_inches='tight', facecolor=fig.get_facecolor())
+    plt.close(fig)
+    return path
+
+
+def _send_smc_chart(df, smc_results, symbol, timeframe, entry_price, sl_price,
+                    tp_price, signal_side, telegram_config, logger):
+    """Generiert SMC-Chart-PNG und sendet es via Telegram. Löscht Temp-Datei danach."""
+    if not telegram_config or not telegram_config.get('bot_token') or not telegram_config.get('chat_id'):
+        return
+    try:
+        path = _generate_smc_chart_png(
+            df, smc_results, symbol, timeframe,
+            entry_price, sl_price, tp_price, signal_side,
+        )
+        if path and os.path.exists(path):
+            side_label = 'LONG' if signal_side == 'buy' else 'SHORT'
+            ep = f'{entry_price:.6g}' if entry_price else '?'
+            sl = f'{sl_price:.6g}'    if sl_price    else '?'
+            tp = f'{tp_price:.6g}'    if tp_price    else '?'
+            caption = (
+                f"TITANBOT | {symbol} ({timeframe})\n"
+                f"{side_label} @ {ep}  |  SL: {sl}  |  TP: {tp}"
+            )
+            send_photo(telegram_config['bot_token'], telegram_config['chat_id'], path, caption)
+            os.remove(path)
+    except Exception as e:
+        logger.warning(f"SMC-Chart senden fehlgeschlagen: {e}")
 
 
 # --------------------------------------------------------------------------- #
@@ -369,6 +546,13 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # TP als feste Trigger-Market-Order (wie mbot)
         tp_side = tsl_side  # reduceOnly, gleiche Seite wie SL
         exchange.place_trigger_market_order(symbol, tp_side, contracts, tp_rounded, {'reduceOnly': True})
+
+        # ---- Telegram: SMC-Chart mit allen Zonen senden ----
+        _send_smc_chart(
+            recent_data, smc_results_full, symbol, timeframe,
+            entry_price, sl_rounded, tp_rounded, signal_side,
+            telegram_config, logger,
+        )
 
         # --------------------------------------------------- #
         logger.info("Trade-Eröffnung erfolgreich abgeschlossen.")
