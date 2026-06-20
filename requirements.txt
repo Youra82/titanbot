@@ -23,6 +23,7 @@ idna==3.11
 iniconfig==2.3.0
 joblib==1.5.2
 Mako==1.3.10
+matplotlib
 MarkupSafe==3.0.3
 multidict==6.7.0
 multitasking==0.0.12
