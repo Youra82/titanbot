@@ -112,20 +112,28 @@ def _generate_smc_chart_png(
             boxstyle="square,pad=0", linewidth=0, facecolor=color, zorder=3,
         ))
 
-    # 2. Y-Limits
+    # 2. Y-Limits — strikt auf Kerzen + Trade-Levels begrenzt
     y_min = float(lows.min())
     y_max = float(highs.max())
     for p in filter(None, [entry_price, sl_price, tp_price]):
         y_min = min(y_min, float(p) * 0.999)
         y_max = max(y_max, float(p) * 1.001)
-    margin = (y_max - y_min) * 0.14
+    margin   = (y_max - y_min) * 0.14
+    y_lo     = y_min - margin
+    y_hi     = y_max + margin
     ax.set_xlim(-1, n + 1)
-    ax.set_ylim(y_min - margin, y_max + margin)
+    ax.set_ylim(y_lo, y_hi)
 
-    # 3. Order Blocks (OBs — volle Breite, da Preisniveaus ohne Zeitbindung)
+    def _in_range(lo, hi):
+        """True wenn die Zone [lo, hi] den sichtbaren Y-Bereich überlappt."""
+        return lo < y_hi and hi > y_lo
+
+    # 3. Order Blocks (OBs — volle Breite, Patches werden von Achsen geclippt)
     all_obs = (smc_results.get('unmitigated_swing_obs', []) +
                smc_results.get('unmitigated_internal_obs', []))
     for ob in all_obs:
+        if not _in_range(ob.barLow, ob.barHigh):
+            continue
         is_bull = ob.bias == Bias.BULLISH
         fc = '#1a4a3a' if is_bull else '#4a1a1a'
         ec = '#26a69a' if is_bull else '#ef5350'
@@ -135,20 +143,23 @@ def _generate_smc_chart_png(
             boxstyle="square,pad=0", linewidth=0.8,
             edgecolor=ec, facecolor=fc, alpha=0.40, zorder=1,
         ))
-        label = 'Bull OB' if is_bull else 'Bear OB'
-        ax.text(n - 0.3, (ob_h + ob_l) / 2, label,
-                color=ec, fontsize=6.5, va='center', ha='right', zorder=5,
-                bbox=dict(facecolor='#0d1117', edgecolor='none', alpha=0.6, pad=1))
+        mid = (ob_h + ob_l) / 2
+        if y_lo < mid < y_hi:
+            label = 'Bull OB' if is_bull else 'Bear OB'
+            ax.text(n - 0.3, mid, label,
+                    color=ec, fontsize=6.5, va='center', ha='right', zorder=5,
+                    bbox=dict(facecolor='#0d1117', edgecolor='none', alpha=0.6, pad=1))
 
-    # 4. Fair Value Gaps — ab ihrer Entstehungskerze (nicht volle Breite)
+    # 4. Fair Value Gaps — ab ihrer Entstehungskerze, nur wenn im Y-Bereich sichtbar
     for fvg in smc_results.get('unmitigated_fvgs', []):
+        if not _in_range(fvg.bottom, fvg.top):
+            continue
         is_bull = fvg.bias == Bias.BULLISH
         fc = '#0a3a2a' if is_bull else '#3a0a0a'
         ec = '#00cc88' if is_bull else '#cc4444'
-        # Entstehungskerze im Display-Koordinatensystem
         fvg_x = fvg.start_bar_index - display_start_seq
-        fvg_x = max(fvg_x, 0)           # clip wenn FVG vor dem sichtbaren Bereich entstand
-        fvg_w = n + 0.5 - fvg_x         # bis rechter Rand
+        fvg_x = max(fvg_x, 0)
+        fvg_w = n + 0.5 - fvg_x
         if fvg_w <= 0:
             continue
         ax.add_patch(mpatches.FancyBboxPatch(
@@ -156,12 +167,14 @@ def _generate_smc_chart_png(
             boxstyle="square,pad=0", linewidth=0.8,
             edgecolor=ec, facecolor=fc, alpha=0.40, zorder=1,
         ))
-        label = 'FVG↑' if is_bull else 'FVG↓'
-        ax.text(fvg_x + 0.3, (fvg.top + fvg.bottom) / 2, label,
-                color=ec, fontsize=6.5, va='center', ha='left', zorder=5,
-                bbox=dict(facecolor='#0d1117', edgecolor='none', alpha=0.6, pad=1))
+        mid = (fvg.top + fvg.bottom) / 2
+        if y_lo < mid < y_hi:
+            label = 'FVG↑' if is_bull else 'FVG↓'
+            ax.text(fvg_x + 0.3, mid, label,
+                    color=ec, fontsize=6.5, va='center', ha='left', zorder=5,
+                    bbox=dict(facecolor='#0d1117', edgecolor='none', alpha=0.6, pad=1))
 
-    # 5. Liquiditätsniveaus (BSL/SSL) — dedupliziert
+    # 5. Liquiditätsniveaus (BSL/SSL) — nur wenn im sichtbaren Y-Bereich
     seen_liq = set()
     for lvl in smc_results.get('liquidity_levels', []):
         if lvl.swept:
@@ -170,6 +183,8 @@ def _generate_smc_chart_png(
         if key in seen_liq:
             continue
         seen_liq.add(key)
+        if not (y_lo < lvl.price < y_hi):
+            continue
         is_bsl = lvl.bias == 'bsl'
         lc = '#4488ff' if is_bsl else '#ffaa44'
         ax.axhline(lvl.price, color=lc, linewidth=0.7, linestyle='--', alpha=0.65, zorder=2)
