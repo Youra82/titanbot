@@ -64,7 +64,7 @@ def _generate_smc_chart_png(
     sl_price: float = None,
     tp_price: float = None,
     signal_side: str = None,
-    n_candles: int = 80,
+    n_candles: int = 40,
 ) -> str:
     """
     Zeichnet Kerzendiagramm mit SMC-Zonen (OB, FVG, Liquidität) + Entry/SL/TP als PNG.
@@ -81,10 +81,14 @@ def _generate_smc_chart_png(
     if df is None or df.empty:
         return None
 
+    df_total = len(df)
     display_df = df[['open', 'high', 'low', 'close']].iloc[-n_candles:].reset_index(drop=True)
     n = len(display_df)
     if n == 0:
         return None
+
+    # Startindex im SMC-Sequential-Raum (engine iteriert 0..df_total-1)
+    display_start_seq = df_total - n
 
     fig, ax = plt.subplots(figsize=(14, 7))
     fig.patch.set_facecolor('#0d1117')
@@ -114,11 +118,11 @@ def _generate_smc_chart_png(
     for p in filter(None, [entry_price, sl_price, tp_price]):
         y_min = min(y_min, float(p) * 0.999)
         y_max = max(y_max, float(p) * 1.001)
-    margin = (y_max - y_min) * 0.12
-    ax.set_xlim(-1, n + 4)
+    margin = (y_max - y_min) * 0.14
+    ax.set_xlim(-1, n + 1)
     ax.set_ylim(y_min - margin, y_max + margin)
 
-    # 3. Order Blocks (horizontale Bänder über gesamte Chart-Breite)
+    # 3. Order Blocks (OBs — volle Breite, da Preisniveaus ohne Zeitbindung)
     all_obs = (smc_results.get('unmitigated_swing_obs', []) +
                smc_results.get('unmitigated_internal_obs', []))
     for ob in all_obs:
@@ -127,29 +131,37 @@ def _generate_smc_chart_png(
         ec = '#26a69a' if is_bull else '#ef5350'
         ob_h, ob_l = ob.barHigh, ob.barLow
         ax.add_patch(mpatches.FancyBboxPatch(
-            (-0.5, ob_l), n + 4, ob_h - ob_l,
+            (-0.5, ob_l), n + 1, ob_h - ob_l,
             boxstyle="square,pad=0", linewidth=0.8,
             edgecolor=ec, facecolor=fc, alpha=0.40, zorder=1,
         ))
         label = 'Bull OB' if is_bull else 'Bear OB'
-        ax.text(n + 3.5, (ob_h + ob_l) / 2, label,
-                color=ec, fontsize=6.5, va='center', ha='right', zorder=5)
+        ax.text(n - 0.3, (ob_h + ob_l) / 2, label,
+                color=ec, fontsize=6.5, va='center', ha='right', zorder=5,
+                bbox=dict(facecolor='#0d1117', edgecolor='none', alpha=0.6, pad=1))
 
-    # 4. Fair Value Gaps
+    # 4. Fair Value Gaps — ab ihrer Entstehungskerze (nicht volle Breite)
     for fvg in smc_results.get('unmitigated_fvgs', []):
         is_bull = fvg.bias == Bias.BULLISH
         fc = '#0a3a2a' if is_bull else '#3a0a0a'
         ec = '#00cc88' if is_bull else '#cc4444'
+        # Entstehungskerze im Display-Koordinatensystem
+        fvg_x = fvg.start_bar_index - display_start_seq
+        fvg_x = max(fvg_x, 0)           # clip wenn FVG vor dem sichtbaren Bereich entstand
+        fvg_w = n + 0.5 - fvg_x         # bis rechter Rand
+        if fvg_w <= 0:
+            continue
         ax.add_patch(mpatches.FancyBboxPatch(
-            (-0.5, fvg.bottom), n + 4, fvg.top - fvg.bottom,
-            boxstyle="square,pad=0", linewidth=0.6,
-            edgecolor=ec, facecolor=fc, alpha=0.35, zorder=1,
+            (fvg_x, fvg.bottom), fvg_w, fvg.top - fvg.bottom,
+            boxstyle="square,pad=0", linewidth=0.8,
+            edgecolor=ec, facecolor=fc, alpha=0.40, zorder=1,
         ))
         label = 'FVG↑' if is_bull else 'FVG↓'
-        ax.text(1.0, (fvg.top + fvg.bottom) / 2, label,
-                color=ec, fontsize=6, va='center', ha='left', zorder=5)
+        ax.text(fvg_x + 0.3, (fvg.top + fvg.bottom) / 2, label,
+                color=ec, fontsize=6.5, va='center', ha='left', zorder=5,
+                bbox=dict(facecolor='#0d1117', edgecolor='none', alpha=0.6, pad=1))
 
-    # 5. Liquiditätsniveaus (BSL/SSL) — nur ungesweepte, dedupliziert
+    # 5. Liquiditätsniveaus (BSL/SSL) — dedupliziert
     seen_liq = set()
     for lvl in smc_results.get('liquidity_levels', []):
         if lvl.swept:
@@ -162,22 +174,25 @@ def _generate_smc_chart_png(
         lc = '#4488ff' if is_bsl else '#ffaa44'
         ax.axhline(lvl.price, color=lc, linewidth=0.7, linestyle='--', alpha=0.65, zorder=2)
         tag = ('E' if lvl.is_equal else '') + ('BSL' if is_bsl else 'SSL')
-        ax.text(n + 3.5, lvl.price, f' {tag}',
-                color=lc, fontsize=5.5, va='center', ha='right', zorder=5)
+        ax.text(n - 0.3, lvl.price, f' {tag}',
+                color=lc, fontsize=6, va='center', ha='right', zorder=5,
+                bbox=dict(facecolor='#0d1117', edgecolor='none', alpha=0.5, pad=1))
 
-    # 6. Trade-Levels (Entry / SL / TP)
-    if entry_price:
-        ax.axhline(entry_price, color='#ffd700', linewidth=1.4, linestyle='--', zorder=6)
-        ax.text(n + 3.5, entry_price, f' Entry\n {entry_price:.6g}',
-                color='#ffd700', fontsize=7.5, va='center', ha='right', zorder=7)
-    if sl_price:
-        ax.axhline(sl_price, color='#ff4444', linewidth=1.2, linestyle='--', zorder=6)
-        ax.text(n + 3.5, sl_price, f' SL\n {sl_price:.6g}',
-                color='#ff4444', fontsize=7.5, va='center', ha='right', zorder=7)
+    # 6. Trade-Levels: horizontale Linien + TradingView-Style Preis-Tags
+    def _price_tag(price, label, color, lw=1.5, ls='--'):
+        ax.axhline(price, color=color, linewidth=lw, linestyle=ls, zorder=6)
+        ax.text(n - 0.3, price, f'  {label}: {price:.6g}  ',
+                color='#0d1117', fontsize=8.5, va='center', ha='right',
+                fontweight='bold', zorder=8,
+                bbox=dict(facecolor=color, edgecolor='none', alpha=0.92,
+                          boxstyle='square,pad=0.25'))
+
     if tp_price:
-        ax.axhline(tp_price, color='#00dd88', linewidth=1.2, linestyle=':', zorder=6)
-        ax.text(n + 3.5, tp_price, f' TP\n {tp_price:.6g}',
-                color='#00dd88', fontsize=7.5, va='center', ha='right', zorder=7)
+        _price_tag(tp_price, 'TP', '#00c853')
+    if entry_price:
+        _price_tag(entry_price, 'Entry', '#ffd700')
+    if sl_price:
+        _price_tag(sl_price, 'SL', '#ff1744')
 
     # 7. Styling
     side_label = 'LONG' if signal_side == 'buy' else 'SHORT' if signal_side else ''
