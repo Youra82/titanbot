@@ -347,6 +347,25 @@ rm -f ~/titanbot/data/cache/.optimization_in_progress ~/titanbot/data/cache/.opt
 
 ---
 
+## 📊 Chart-Simulation
+
+Generiert SMC-Charts mit allen Zonen (Order Blocks, FVGs, Liquiditätsniveaus) und simulierten Entry/SL/TP-Levels — **ohne echten Trade**. Sendet die Charts direkt per Telegram.
+
+```bash
+# Alle aktiven Strategien aus settings.json (LONG-Simulation)
+.venv/bin/python show_chart.py
+
+# Nur ein bestimmtes Symbol/Timeframe
+.venv/bin/python show_chart.py --symbol LTC/USDT:USDT --timeframe 6h
+
+# Als SHORT simulieren
+.venv/bin/python show_chart.py --symbol LTC/USDT:USDT --timeframe 6h --side sell
+```
+
+Die simulierten Trade-Levels werden aus dem aktuellen Close-Preis + ATR berechnet — identisch zur Live-Logik.
+
+---
+
 ## 📊 Monitoring & Status
 
 ### Status-Dashboard
