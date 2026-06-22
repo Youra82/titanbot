@@ -4,13 +4,15 @@
         "use_auto_optimizer_results": true,
         "active_strategies": [
             {
-                "symbol": "BTC/USDT:USDT",
-                "timeframe": "6h",
+                "symbol": "XRP/USDT:USDT",
+                "timeframe": "4h",
+                "use_macd_filter": false,
                 "active": true
             },
             {
-                "symbol": "XRP/USDT:USDT",
-                "timeframe": "6h",
+                "symbol": "ETH/USDT:USDT",
+                "timeframe": "4h",
+                "use_macd_filter": false,
                 "active": true
             }
         ]
