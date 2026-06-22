@@ -5,6 +5,8 @@ import os
 import sys
 import json
 import glob as _glob
+import contextlib
+import io
 from datetime import datetime, timedelta, timezone
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
@@ -67,11 +69,20 @@ def load_all_configs():
     return configs
 
 
-def run_backtest_for_config(cfg, start_date, end_date, start_capital, warmup_date=None):
+@contextlib.contextmanager
+def _quiet():
+    """Suppress stdout/stderr — used to silence download/cache messages."""
+    with contextlib.redirect_stdout(io.StringIO()), \
+         contextlib.redirect_stderr(io.StringIO()):
+        yield
+
+
+def run_backtest_for_config(cfg, start_date, end_date, start_capital, warmup_date=None, silent=True):
     """Run load_data + run_smc_backtest for a single config dict.
 
     Returns (result_dict, label_str) or None on error.
     label_str example: 'BTC/USDT:USDT 4h'
+    silent=True suppresses all download/cache output.
     """
     try:
         from titanbot.analysis.backtester import load_data, run_smc_backtest
@@ -85,22 +96,23 @@ def run_backtest_for_config(cfg, start_date, end_date, start_capital, warmup_dat
         if not symbol or not tf:
             return None
 
-        # Pass _timeframe so backtester can resolve HTF mapping
         smc_p['_timeframe'] = tf
-
         label = f"{symbol} {tf}"
 
-        data = load_data(symbol, tf, start_date, end_date)
+        ctx = _quiet() if silent else contextlib.nullcontext()
+        with ctx:
+            data = load_data(symbol, tf, start_date, end_date)
+
         if data is None or data.empty:
-            print(f"{YELLOW}  Keine Daten für {label}{NC}")
             return None
 
-        result = run_smc_backtest(
-            data, smc_p, risk_p,
-            start_capital=start_capital,
-            verbose=False,
-            backtest_start_date=warmup_date,
-        )
+        with (_quiet() if silent else contextlib.nullcontext()):
+            result = run_smc_backtest(
+                data, smc_p, risk_p,
+                start_capital=start_capital,
+                verbose=False,
+                backtest_start_date=warmup_date,
+            )
         return result, label
     except Exception as e:
         sym = cfg.get('market', {}).get('symbol', '?')

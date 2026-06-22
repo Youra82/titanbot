@@ -8,6 +8,11 @@ Uses binomial test (scipy if available, else normal approximation).
 import os
 import sys
 import argparse
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw): return it
+
 import math
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))

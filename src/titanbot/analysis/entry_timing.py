@@ -10,6 +10,11 @@ More detailed than time_analysis.py:
 import os
 import sys
 import argparse
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw): return it
+
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))

@@ -12,6 +12,11 @@ For each value: trains on first 70% of date range -> picks best -> validates on 
 import os
 import sys
 import argparse
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw): return it
+
 import copy
 from datetime import datetime, timedelta, timezone
 
@@ -97,7 +102,8 @@ def main():
     train_scores = {}  # param_value -> avg_pnl
     for val in param_values:
         pnls = []
-        for cfg in configs:
+        for cfg in tqdm(configs, desc="  Configs", unit="cfg", leave=False,
+                        bar_format="{desc}: {n_fmt}/{total_fmt} [{bar:25}] {elapsed}"):
             new_cfg = override_param(cfg, param_name, section, val)
             if args.risk:
                 new_cfg['risk']['risk_per_trade_pct'] = args.risk

@@ -9,6 +9,11 @@ Shows optimal threshold.
 import os
 import sys
 import argparse
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw): return it
+
 import copy
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
@@ -48,7 +53,8 @@ def main():
         print(f"  Teste min_ob_quality={threshold}...")
         pnls, wrs, trades = [], [], []
 
-        for cfg in configs:
+        for cfg in tqdm(configs, desc="  Configs", unit="cfg", leave=False,
+                        bar_format="{desc}: {n_fmt}/{total_fmt} [{bar:25}] {elapsed}"):
             new_cfg = copy.deepcopy(cfg)
             new_cfg.setdefault('strategy', {})['min_ob_quality'] = threshold
 
