@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 
@@ -132,7 +132,6 @@ def main():
     if not args.no_telegram:
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
             import numpy as np
 
@@ -143,6 +142,7 @@ def main():
             x = np.arange(len(categories))
             w = 0.35
             fig, ax = plt.subplots(figsize=(10, 5))
+        style_fig(fig)
             ax.bar(x - w/2, vals_no,  w, label='MTF=False', color='steelblue', alpha=0.8)
             ax.bar(x + w/2, vals_yes, w, label='MTF=True',  color='orange',    alpha=0.8)
             ax.set_xticks(x)
@@ -154,7 +154,7 @@ def main():
 
             caption = (f"MTF-Filter Analyse | False: {no_mtf['avg_pnl']:+.1f}% | "
                        f"True: {with_mtf['avg_pnl']:+.1f}% | ΔPnL: {pnl_diff:+.1f}%")
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

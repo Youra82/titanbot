@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 FVG_SIZE_VALUES = [0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5]
@@ -109,7 +109,6 @@ def main():
     if not args.no_telegram and valid:
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
 
             thresholds = [r['threshold'] for r in sweep_results if r['avg_pnl'] is not None]
@@ -118,6 +117,7 @@ def main():
             avg_wrs    = [r['avg_wr']     for r in sweep_results if r['avg_pnl'] is not None]
 
             fig, axes = plt.subplots(3, 1, figsize=(10, 10))
+        style_fig(fig)
             labels = [f"{t:.3f}" for t in thresholds]
 
             colors = ['green' if p > 0 else 'red' for p in avg_pnls]
@@ -144,7 +144,7 @@ def main():
             plt.tight_layout()
             caption = (f"FVG-Size Sweep | Optimal: {best['threshold'] if best else 'N/A'} | "
                        + (f"PnL {best['avg_pnl']:+.1f}%" if best else ""))
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

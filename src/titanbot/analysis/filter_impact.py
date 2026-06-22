@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 FILTER_KEYS = ['use_pd_filter', 'use_liquidity_sweep_filter', 'use_rejection_candle']
@@ -125,7 +125,6 @@ def main():
     if not args.no_telegram and valid:
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
             import numpy as np
 
@@ -135,6 +134,7 @@ def main():
             colors = ['green' if p > 0 else 'red' for p in pnls]
 
             fig, ax = plt.subplots(figsize=(12, 5))
+        style_fig(fig)
             ax.bar(labels, pnls, color=colors, alpha=0.8)
             ax.axhline(0, color='black', linewidth=0.8)
             ax.set_xlabel('Filter-Kombination')
@@ -145,7 +145,7 @@ def main():
 
             caption = (f"Filter-Impact | Best: {valid[0]['avg_pnl']:+.1f}% | "
                        f"pd={valid[0]['combo'][0]}/liq={valid[0]['combo'][1]}/rej={valid[0]['combo'][2]}")
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

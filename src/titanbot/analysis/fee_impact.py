@@ -31,7 +31,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 FEE_RATES = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10]
@@ -162,13 +162,13 @@ def main():
     if not args.no_telegram:
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
 
             valid_fees = [f for f in FEE_RATES if fee_table[f]]
             avgs = [sum(fee_table[f]) / len(fee_table[f]) for f in valid_fees]
 
             fig, ax = plt.subplots(figsize=(10, 5))
+        style_fig(fig)
             colors = ['green' if a > 0 else 'red' for a in avgs]
             ax.bar([str(f) for f in valid_fees], avgs, color=colors)
             ax.axhline(0, color='black', linewidth=0.8)
@@ -180,7 +180,7 @@ def main():
 
             plt.tight_layout()
             caption = f"Fee-Impact | Baseline: {BASELINE_FEE}% | Break-Even: {breakeven_fee or 'N/A'}%"
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")
