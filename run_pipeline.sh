@@ -156,18 +156,14 @@ else
 fi
 
 # --- Mindest-Trades pro Jahr ---
-# Berechne Anzahl der Paare für Vorschlag (300 Gesamt / Paare = pro Strategie)
-_N_SYMS=$(echo $SYMBOLS | wc -w)
-_N_TFS=$(echo $TIMEFRAMES | wc -w)
-_N_PAIRS=$(( _N_SYMS * _N_TFS ))
-_N_PAIRS=$(( _N_PAIRS > 0 ? _N_PAIRS : 1 ))
-_DEFAULT_MIN_TRADES=$(( 300 / _N_PAIRS ))
 echo ""
-echo -e "${YELLOW}Mindest-Trades pro Jahr:${NC}"
-echo "  Ziel: ~300 Trades/Jahr gesamt | ${_N_PAIRS} Paare → Standard: ${_DEFAULT_MIN_TRADES}/Paar"
-echo "  (Weniger = weniger Trades nötig, riskanter; Mehr = strengere Anforderung)"
-read -p "Mindest-Trades/Jahr pro Strategie [Standard: ${_DEFAULT_MIN_TRADES}]: " MIN_TRADES_PER_YEAR
-MIN_TRADES_PER_YEAR=${MIN_TRADES_PER_YEAR:-$_DEFAULT_MIN_TRADES}
+echo -e "${YELLOW}Mindest-Trades pro Jahr pro Strategie:${NC}"
+echo "  Statistisch relevant ab ~300 Trades. Jede Strategie muss diesen Wert"
+echo "  pro Jahr erreichen — sonst wird der Trial gepruned (verworfen)."
+echo "  Tipp: 4h-Timeframe = max ~2190 Kerzen/Jahr, SMC filtert stark."
+echo "  Empfehlung: 300 (streng) | 100 (ausgewogen) | 30 (locker)"
+read -p "Mindest-Trades/Jahr pro Strategie [Standard: 300]: " MIN_TRADES_PER_YEAR
+MIN_TRADES_PER_YEAR=${MIN_TRADES_PER_YEAR:-300}
 
 # --- Config-Schutz-Modus ---
 OVERWRITE_ALL=""
