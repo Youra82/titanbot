@@ -1,15 +1,17 @@
 # src/titanbot/analysis/monte_carlo.py
 """Monte Carlo Simulation — titanbot.
 
-Alle Trade-Outcomes (Win/Loss) aus allen Configs werden kombiniert.
-Jede Simulation: Trade-Reihenfolge zufaellig, Compound-Sizing (X% des
-aktuellen Kapitals risikiert). Reihenfolge bestimmt das Endkapital.
+Alle Trade-Outcomes aus allen Configs kombiniert.
+Links: Equity-Pfad-Faecher (p5/p25/p50/p75/p95 ueber alle Trades).
+Rechts: Max-Drawdown-Verteilung.
 """
 
 import os
 import sys
 import argparse
 import random
+
+import numpy as np
 
 try:
     from tqdm import tqdm
@@ -35,7 +37,6 @@ def _extract_trade_params(result, cfg):
     for t in trades:
         pnl_pct = t.get('pnl_pct')
         if pnl_pct is None:
-            # Berechnen aus entry/exit-Preisen
             side = entry_price = exit_price = None
             for k in ('entry_long', 'entry_short'):
                 if k in t:
@@ -46,60 +47,63 @@ def _extract_trade_params(result, cfg):
                     exit_price = t[k].get('price')
             if side and entry_price and exit_price and entry_price > 0:
                 raw = (exit_price / entry_price - 1) if side == 'long' else (1 - exit_price / entry_price)
-                pnl_pct = raw * 100
+                pnl_pct = raw * 100.0
         if pnl_pct is not None:
             out.append((pnl_pct > 0, float(risk_pct), float(rr)))
     return out
 
 
-def _simulate_once(trade_params, start_capital, ruin_threshold):
-    """Compound MC: jeder Trade risikiert risk_pct des aktuellen Kapitals."""
-    capital = start_capital
-    peak    = start_capital
-    max_dd  = 0.0
-    for is_win, risk_pct, rr in trade_params:
-        if is_win:
-            capital *= (1.0 + risk_pct * rr / 100.0)
-        else:
-            capital *= (1.0 - risk_pct / 100.0)
-        if capital <= 0:
-            return 0.0, 100.0
-        if capital > peak:
-            peak = capital
-        dd = (peak - capital) / peak * 100.0
-        if dd > max_dd:
-            max_dd = dd
-    return capital, max_dd
-
-
 def run_monte_carlo(trade_params, start_capital, n_simulations, ruin_pct=50.0, seed=42):
+    """
+    Simuliert n_simulations Shuffles. Speichert volle Equity-Pfade fuer
+    den Faecher-Chart sowie MaxDD und Endkapital pro Simulation.
+    """
     rng            = random.Random(seed)
-    final_equities = []
-    max_drawdowns  = []
-    ruin_count     = 0
+    n_trades       = len(trade_params)
     ruin_threshold = start_capital * ruin_pct / 100.0
 
-    for _ in range(n_simulations):
+    # Speichere volle Pfade: Array (n_simulations × n_trades+1)
+    paths = np.zeros((n_simulations, n_trades + 1), dtype=np.float32)
+    max_drawdowns  = []
+    ruin_count     = 0
+
+    for i in range(n_simulations):
         shuffled = trade_params[:]
         rng.shuffle(shuffled)
-        end_eq, mdd = _simulate_once(shuffled, start_capital, ruin_threshold)
-        final_equities.append(end_eq)
-        max_drawdowns.append(mdd)
-        if end_eq < ruin_threshold:
+        capital  = start_capital
+        peak     = start_capital
+        max_dd   = 0.0
+        paths[i, 0] = capital
+        for j, (is_win, risk_pct, rr) in enumerate(shuffled, 1):
+            if is_win:
+                capital *= (1.0 + risk_pct * rr / 100.0)
+            else:
+                capital *= (1.0 - risk_pct / 100.0)
+            if capital <= 0:
+                capital = 0.0
+            paths[i, j] = capital
+            if capital > peak:
+                peak = capital
+            dd = (peak - capital) / peak * 100.0 if peak > 0 else 0.0
+            if dd > max_dd:
+                max_dd = dd
+        max_drawdowns.append(max_dd)
+        if capital < ruin_threshold:
             ruin_count += 1
 
-    final_equities.sort()
-    max_drawdowns.sort()
-    n = len(final_equities)
+    final_equities = paths[:, -1]
+    max_drawdowns  = sorted(max_drawdowns)
+    final_sorted   = sorted(final_equities.tolist())
+    n              = n_simulations
 
     return {
-        'p5_eq':   final_equities[int(n * 0.05)],
-        'p50_eq':  final_equities[int(n * 0.50)],
-        'p95_eq':  final_equities[int(n * 0.95)],
-        'p50_dd':  max_drawdowns[int(n * 0.50)],
-        'p95_dd':  max_drawdowns[int(n * 0.95)],
+        'paths':     paths,
+        'p5_eq':     final_sorted[int(n * 0.05)],
+        'p50_eq':    final_sorted[int(n * 0.50)],
+        'p95_eq':    final_sorted[int(n * 0.95)],
+        'p50_dd':    max_drawdowns[int(n * 0.50)],
+        'p95_dd':    max_drawdowns[int(n * 0.95)],
         'ruin_prob': ruin_count / n_simulations * 100.0,
-        'equities':  final_equities,
         'drawdowns': max_drawdowns,
     }
 
@@ -108,8 +112,7 @@ def main():
     parser = argparse.ArgumentParser(description='Monte Carlo Simulation — titanbot')
     parser.add_argument('--simulations', type=int,   default=10000)
     parser.add_argument('--capital',     type=float, default=None)
-    parser.add_argument('--risk',        type=float, default=None,
-                        help='Risk %% pro Trade (ueberschreibt Config)')
+    parser.add_argument('--risk',        type=float, default=None)
     parser.add_argument('--no-telegram', action='store_true')
     args = parser.parse_args()
 
@@ -126,7 +129,6 @@ def main():
     print(f"  Kapital: {start_capital} USDT | Simulationen: {args.simulations:,} | {len(configs)} Configs\n")
 
     all_trade_params = []
-
     for cfg in tqdm(configs, desc="  Backtests", unit="cfg"):
         if args.risk:
             cfg = dict(cfg)
@@ -136,8 +138,7 @@ def main():
         if ret is None:
             continue
         result, _ = ret
-        params = _extract_trade_params(result, cfg)
-        all_trade_params.extend(params)
+        all_trade_params.extend(_extract_trade_params(result, cfg))
 
     if not all_trade_params:
         print(f"{RED}Keine Trades gefunden — bitte zuerst ./run_pipeline.sh ausfuehren.{NC}")
@@ -158,11 +159,10 @@ def main():
     p95_pct = (mc['p95_eq'] - start_capital) / start_capital * 100
 
     ruin_col = RED if mc['ruin_prob'] > 20 else (YELLOW if mc['ruin_prob'] > 5 else GREEN)
-    print(f"  5th Pct:  {p5_pct:+.1f}%  (End-Kapital: {mc['p5_eq']:.2f} USDT)")
-    print(f"  Median:   {p50_pct:+.1f}%  (End-Kapital: {mc['p50_eq']:.2f} USDT)")
-    print(f"  95th Pct: {p95_pct:+.1f}%  (End-Kapital: {mc['p95_eq']:.2f} USDT)")
-    print(f"  Median MaxDD:   {mc['p50_dd']:.1f}%")
-    print(f"  95th MaxDD:     {mc['p95_dd']:.1f}%")
+    print(f"  5th Pct:  {p5_pct:+.1f}%  (End: {mc['p5_eq']:.2f} USDT)")
+    print(f"  Median:   {p50_pct:+.1f}%  (End: {mc['p50_eq']:.2f} USDT)")
+    print(f"  95th Pct: {p95_pct:+.1f}%  (End: {mc['p95_eq']:.2f} USDT)")
+    print(f"  Median MaxDD:  {mc['p50_dd']:.1f}%   95th MaxDD: {mc['p95_dd']:.1f}%")
     print(f"  Ruin (<50%): {ruin_col}{mc['ruin_prob']:.1f}%{NC}")
 
     # ── Chart ────────────────────────────────────────────────────────────────
@@ -177,24 +177,40 @@ def main():
                  f"Ruin (<50%): {mc['ruin_prob']:.1f}%")
         fig.suptitle(title, fontsize=10, color='white', fontweight='bold')
 
-        # ── Equity-Verteilung ─────────────────────────────────────────────
-        equities = mc['equities']
-        bins_eq  = max(10, min(80, len(set(round(e, 2) for e in equities))))
-        ax1.hist(equities, bins=bins_eq, color='#3b82f6', alpha=0.85)
-        ax1.axvline(mc['p5_eq'],  color='#ef4444', linestyle='--', linewidth=1.5,
-                    label=f'5. Pct: {p5_pct:+.1f}%')
-        ax1.axvline(mc['p50_eq'], color='#f59e0b', linestyle='-',  linewidth=1.5,
-                    label=f'Median: {p50_pct:+.1f}%')
-        ax1.axvline(mc['p95_eq'], color='#22c55e', linestyle='--', linewidth=1.5,
-                    label=f'95. Pct: {p95_pct:+.1f}%')
-        ax1.axvline(start_capital * 0.5, color='#dc2626', linestyle=':', linewidth=2,
-                    label=f'Ruin (<50%)')
-        ax1.set_xlabel('End-Kapital (USDT)')
-        ax1.set_ylabel('Häufigkeit')
-        ax1.set_title('Verteilung der Endkapitale')
-        ax1.legend(fontsize=9)
+        # ── Links: Equity-Pfad-Fächer ─────────────────────────────────────
+        paths = mc['paths'].astype(np.float64)
+        x     = np.arange(paths.shape[1])
 
-        # ── MaxDD-Verteilung ──────────────────────────────────────────────
+        p5_path  = np.percentile(paths, 5,  axis=0)
+        p25_path = np.percentile(paths, 25, axis=0)
+        p50_path = np.percentile(paths, 50, axis=0)
+        p75_path = np.percentile(paths, 75, axis=0)
+        p95_path = np.percentile(paths, 95, axis=0)
+
+        # 50 zufaellige Beispielpfade im Hintergrund
+        rng_plot = random.Random(0)
+        sample_idx = rng_plot.sample(range(args.simulations), min(50, args.simulations))
+        for idx in sample_idx:
+            ax1.plot(x, paths[idx], color='#3b82f6', alpha=0.06, linewidth=0.6)
+
+        ax1.fill_between(x, p5_path,  p95_path, alpha=0.15, color='#3b82f6')
+        ax1.fill_between(x, p25_path, p75_path, alpha=0.25, color='#3b82f6')
+        ax1.plot(x, p50_path,  color='#f59e0b', linewidth=2,
+                 label=f'Median: {p50_pct:+.1f}%')
+        ax1.plot(x, p5_path,   color='#ef4444', linewidth=1, linestyle='--',
+                 label=f'5. Pct: {p5_pct:+.1f}%')
+        ax1.plot(x, p95_path,  color='#22c55e', linewidth=1, linestyle='--',
+                 label=f'95. Pct: {p95_pct:+.1f}%')
+        ax1.axhline(start_capital,       color='#94a3b8', linestyle=':',  linewidth=1, alpha=0.7)
+        ax1.axhline(start_capital * 0.5, color='#dc2626', linestyle='--', linewidth=1.5,
+                    label=f'Ruin (<50%)')
+
+        ax1.set_xlabel('Trade-Nummer')
+        ax1.set_ylabel('Kapital (USDT)')
+        ax1.set_title('Equity-Pfad-Fächer')
+        ax1.legend(fontsize=9, loc='lower left')
+
+        # ── Rechts: MaxDD-Verteilung ──────────────────────────────────────
         dds     = mc['drawdowns']
         bins_dd = max(10, min(80, len(set(round(d, 1) for d in dds))))
         ax2.hist(dds, bins=bins_dd, color='#ef4444', alpha=0.85)
@@ -217,6 +233,7 @@ def main():
 
     except Exception as e:
         print(f"{YELLOW}Chart-Fehler: {e}{NC}")
+        import traceback; traceback.print_exc()
 
 
 if __name__ == '__main__':
