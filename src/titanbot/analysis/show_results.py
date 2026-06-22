@@ -470,8 +470,9 @@ def run_single_analysis(start_date, end_date, start_capital, warmup_date=None, a
 
 
 # --- Geteilter Modus (Manuell / Auto) ---
-def run_shared_mode(is_auto: bool, start_date, end_date, start_capital, target_max_dd: float):
+def run_shared_mode(is_auto: bool, start_date, end_date, start_capital, target_max_dd: float, warmup_date=None):
     mode_name = "Automatische Portfolio-Optimierung" if is_auto else "Manuelle Portfolio-Simulation"
+    data_start = warmup_date or start_date
     print(f"--- TitanBot {mode_name} ---")
     if is_auto:
         print(f"Ziel: Maximaler Profit bei maximal {target_max_dd:.2f}% Drawdown.")
