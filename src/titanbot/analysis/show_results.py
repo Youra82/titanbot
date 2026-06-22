@@ -599,6 +599,54 @@ if __name__ == "__main__":
     end_date = args.end_date or date.today().strftime("%Y-%m-%d")
     start_capital = args.start_capital
 
+
+    # --- OOS-Info: Zeige Training/OOS-Aufteilung je Timeframe ---
+    try:
+        import json as _json
+        from datetime import date as _date, timedelta as _td
+        _settings_path = os.path.join(PROJECT_ROOT, 'settings.json')
+        with open(_settings_path) as _sf:
+            _settings = _json.load(_sf)
+        _oos_ref = _settings.get('optimization_settings', {}).get('oos_reference_date')
+        if _oos_ref:
+            _configs_dir = os.path.join(PROJECT_ROOT, 'src', 'titanbot', 'strategy', 'configs')
+            _cfg_tfs = set()
+            for _fn in os.listdir(_configs_dir):
+                if _fn.startswith('config_') and _fn.endswith('.json'):
+                    try:
+                        with open(os.path.join(_configs_dir, _fn)) as _cf:
+                            _cfg_tfs.add(_json.load(_cf)['market']['timeframe'])
+                    except Exception:
+                        pass
+            _LOOKBACK_MAP = {'5m': 60, '15m': 60, '30m': 365, '1h': 365,
+                             '2h': 730, '4h': 730, '6h': 730, '1d': 1095}
+            _tfs_to_check = {_tf: _lb for _tf, _lb in _LOOKBACK_MAP.items()
+                             if not _cfg_tfs or _tf in _cfg_tfs}
+            _ref_dt         = _date.fromisoformat(str(_oos_ref))
+            _analysis_start = _date.fromisoformat(start_date)
+            _analysis_end   = _date.fromisoformat(end_date)
+            _total_days     = (_analysis_end - _analysis_start).days + 1
+            print()
+            print(f"  OOS-Referenz: {_oos_ref}  |  Analysezeitraum: {start_date} → {end_date} ({_total_days} Tage)")
+            print(f"  {'TF':>4s}  {'OOS ab':>12s}  {'Training':>10s}  {'OOS':>8s}  Status")
+            print(f"  {'─'*4}  {'─'*12}  {'─'*10}  {'─'*8}  {'─'*30}")
+            for _tf, _lb in sorted(_tfs_to_check.items()):
+                _oos_days_tf = _lb * 30 // 100
+                _oos_start   = _ref_dt - _td(days=_oos_days_tf)
+                _train_end   = _oos_start - _td(days=1)
+                _t_days = (min(_analysis_end, _train_end) - _analysis_start).days + 1 if _analysis_start <= _train_end else 0
+                _o_days = (_analysis_end - max(_analysis_start, _oos_start)).days + 1 if _analysis_end >= _oos_start else 0
+                if _t_days <= 0:
+                    _status = "✅ vollständig OOS"
+                elif _o_days <= 0:
+                    _status = "⚠️  vollständig Training"
+                else:
+                    _pct_train = _t_days * 100 // _total_days
+                    _status = f"ℹ️  {_t_days}d Training / {_o_days}d OOS ({_pct_train}% im Training)"
+                print(f"  {_tf:>4s}  {str(_oos_start):>12s}  {max(0,_t_days):>9d}d  {max(0,_o_days):>7d}d  {_status}")
+            print()
+    except Exception:
+        pass  # OOS-Pruefung optional
     if args.mode == '4':
         # Modus 4: Interaktive Charts (SMC)
         print("\n--- Starte interaktive Chart-Generierung (SMC) ---")
