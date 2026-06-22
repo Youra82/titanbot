@@ -462,7 +462,7 @@ def run_single_analysis(start_date, end_date, start_capital, warmup_date=None, a
                     json.dump(settings, f, indent=4)
                 print(f"\n{GREEN}\u2705 {len(new_active)} Strategien in settings.json eingetragen:{NC}")
                 for s in new_active:
-                    print(f"   - {s[\"symbol\"]} ({s[\"timeframe\"]})")
+                    print(f"   - {s['symbol']} ({s['timeframe']})")
             else:
                 print(f"\n{YELLOW}\u26a0  Keine Strategie mit positivem PnL - settings.json unveraendert.{NC}")
         except Exception as e:
