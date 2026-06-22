@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, save_send,
+    run_backtest_for_config, send_chart_telegram,
 )
 
 
@@ -132,6 +132,7 @@ def main():
     if not args.no_telegram:
         try:
             import matplotlib
+            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
 
             tested = [r for r in rows if r['p'] is not None]
@@ -141,7 +142,6 @@ def main():
                 colors = ['green' if r['sig'] else 'red' for r in tested]
 
                 fig, ax = plt.subplots(figsize=(12, max(4, len(tested) * 0.35)))
-        style_fig(fig)
                 y_pos = range(len(tested))
                 ax.barh(list(y_pos), p_vals, color=colors, alpha=0.7)
                 ax.axvline(args.alpha, color='orange', linestyle='--', linewidth=1.5,
@@ -156,7 +156,7 @@ def main():
 
                 caption = (f"Bootstrap-Test | Alpha {args.alpha} | "
                            f"{significant_count}/{total_tested} signifikant")
-                save_send(fig, caption)
+                send_chart_telegram(fig, caption)
                 plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, save_send,
+    run_backtest_for_config, send_chart_telegram,
 )
 
 PARAM_DEFS = [
@@ -144,6 +144,7 @@ def main():
     if not args.no_telegram:
         try:
             import matplotlib
+            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
             import numpy as np
 
@@ -153,7 +154,6 @@ def main():
             neg_deltas = [r['deltas'].get('-50%', 0) for r in sensitivity_results]
 
             fig, ax = plt.subplots(figsize=(11, max(4, len(params) * 0.6)))
-        style_fig(fig)
             y_pos = range(len(params))
 
             ax.barh(list(y_pos), pos_deltas, color='green', alpha=0.7, label='+50% Variation')
@@ -168,7 +168,7 @@ def main():
             plt.tight_layout()
 
             caption = f"Sensitivitäts-Analyse | Baseline {baseline:+.1f}% | Top: {params[0]}"
-            save_send(fig, caption)
+            send_chart_telegram(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")
