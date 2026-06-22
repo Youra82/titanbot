@@ -306,26 +306,27 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         
         recent_data.dropna(subset=['atr', 'adx'], inplace=True) # Zeilen ohne Indikatoren entfernen
 
-        # Aktualisiere current_candle mit den Indikatoren (letzte Kerze)
-        if recent_data.empty: return
-        current_candle = recent_data.iloc[-1]
+        # Verwende die letzte GESCHLOSSENE Kerze für Signal-Berechnung (iloc[-2]).
+        # iloc[-1] ist die aktuell laufende, unvollständige Kerze — SMC-Signale auf
+        # offenen Kerzen zu prüfen führt zu Fehlentries mitten in einer Kerze.
+        if recent_data.empty or len(recent_data) < 2: return
         # --- ENDE NEU: ATR/ADX Berechnung ---
 
         # --- SMC-Analyse im Live-Bot-Lauf durchführen (Unverändert) ---
         engine = SMCEngine(settings=smc_params)
+        # SMC-Engine bekommt alle Daten inkl. laufender Kerze (für korrekte Strukturberechnung)
         smc_results_full = engine.process_dataframe(recent_data[['open', 'high', 'low', 'close']].copy())
 
-        # SMC-Spalten (P/D, Sweep-State) in recent_data übertragen → current_candle aktualisieren
+        # SMC-Spalten (P/D, Sweep-State) in recent_data übertragen
         enriched_df = smc_results_full.get('enriched_df')
         if enriched_df is not None:
             for col in enriched_df.columns:
                 if col.startswith('smc_'):
                     recent_data[col] = enriched_df[col].values
-        current_candle = recent_data.iloc[-1]
 
-        # Korrigierter Aufruf: SMC-Ergebnisse und Indikator-angereicherte Kerze übergeben
-        # Hole auch die vorherige Kerze für Confirmation-Logik (falls nötig)
-        prev_candle = recent_data.iloc[-2] if len(recent_data) >= 2 else None
+        # Signal auf letzter GESCHLOSSENER Kerze prüfen ([-2]), nicht der laufenden ([-1])
+        current_candle = recent_data.iloc[-2]
+        prev_candle = recent_data.iloc[-3] if len(recent_data) >= 3 else None
 
         # --- MTF Bias (Higher-Timeframe Richtung) ---
         _HTF_MAP = {
