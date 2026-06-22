@@ -18,6 +18,11 @@ the known fee cost (2 * 0.05% * notional), then subtract new fee cost.
 import os
 import sys
 import argparse
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw): return it
+
 import copy
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))

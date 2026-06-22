@@ -9,6 +9,10 @@ Recommends optimal lookback.
 import os
 import sys
 import argparse
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw): return it
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
@@ -48,8 +52,13 @@ def main():
         print(f"{CYAN}--- Lookback {lw}w  ({start_date} → {end_date}, Warmup bis {warmup_date}) ---{NC}")
 
         pnls, wrs, dds, trade_counts = [], [], [], []
-        for cfg in configs:
-            ret = run_backtest_for_config(cfg, start_date, end_date, start_capital, warmup_date)
+        bar = tqdm(configs, desc=f"  {lw}w", unit="cfg", leave=False,
+                   bar_format="{desc}: {n_fmt}/{total_fmt} [{bar:25}] {elapsed}")
+        for cfg in bar:
+            sym = cfg.get('market', {}).get('symbol', '?')
+            tf  = cfg.get('market', {}).get('timeframe', '?')
+            bar.set_postfix_str(f"{sym} {tf}", refresh=True)
+            ret = run_backtest_for_config(cfg, start_date, end_date, start_capital, warmup_date, silent=True)
             if ret is None:
                 continue
             result, label = ret

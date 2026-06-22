@@ -9,6 +9,11 @@ Shows: median, 5th/95th percentile, ruin probability (equity < 50% start).
 import os
 import sys
 import argparse
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw): return it
+
 import random
 import math
 
