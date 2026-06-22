@@ -155,9 +155,34 @@ else
     MIN_PNL=-99999
 fi
 
+# --- Config-Schutz-Modus ---
+OVERWRITE_ALL=""
+
 # --- Schleife pro Symbol + Timeframe ---
 for symbol in $SYMBOLS; do
     for timeframe in $TIMEFRAMES; do
+
+        # Config-Pfad ermitteln (Sonderzeichen entfernen wie im Optimizer)
+        SYM_CLEAN=$(echo "$symbol" | tr -d '/:-')
+        CONFIG_FILE="src/titanbot/strategy/configs/config_${SYM_CLEAN}USDT_${timeframe}.json"
+        # Fallback: ohne "USDT"-Suffix (z.B. BTCUSDTUSDT_4h)
+        if [ ! -f "$CONFIG_FILE" ]; then
+            CONFIG_FILE2="src/titanbot/strategy/configs/config_${SYM_CLEAN}_${timeframe}.json"
+        fi
+
+        if ls src/titanbot/strategy/configs/config_*${SYM_CLEAN}*_${timeframe}.json 2>/dev/null | grep -q .; then
+            if [ "$OVERWRITE_ALL" != "j" ]; then
+                echo ""
+                echo -e "${YELLOW}⚠  Config existiert bereits: $symbol ($timeframe)${NC}"
+                read -p "   (ü)berschreiben / (s)kipppen / (a)lle überschreiben? [s]: " OVERWRITE_CHOICE
+                OVERWRITE_CHOICE=${OVERWRITE_CHOICE:-s}
+                case "$OVERWRITE_CHOICE" in
+                    ü|u) echo -e "  ${GREEN}→ Wird neu optimiert.${NC}" ;;
+                    a)   OVERWRITE_ALL="j"; echo -e "  ${GREEN}→ Alle restlichen werden überschrieben.${NC}" ;;
+                    *)   echo -e "  ${YELLOW}→ Übersprungen.${NC}"; continue ;;
+                esac
+            fi
+        fi
 
         # Lookback je Timeframe
         lookback_days=730
