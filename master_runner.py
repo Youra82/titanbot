@@ -280,6 +280,29 @@ def main():
             sched_out = ''
             sched_err = f'ERROR computing scheduler check: {e}'
 
+        # Unabhängiger Fallback: Optimizer läuft (in_progress) aber hat START-Telegram noch nicht gesendet
+        _fb_cache = os.path.join(SCRIPT_DIR, 'data', 'cache')
+        _inprog_path = os.path.join(_fb_cache, '.optimization_in_progress')
+        _start_path  = os.path.join(_fb_cache, '.optimization_start_notified')
+        _fb_path     = os.path.join(_fb_cache, '.master_runner_start_notify_fallback')
+        if os.path.exists(_inprog_path) and not os.path.exists(_start_path) and not os.path.exists(_fb_path):
+            try:
+                with open(secret_file, 'r', encoding='utf-8') as _sf:
+                    _secrets_tg = json.load(_sf)
+                _tg_conf = _secrets_tg.get('telegram', {})
+                import titanbot.utils.telegram as _tg_mod
+                _tg_mod.send_message(
+                    _tg_conf.get('bot_token', ''),
+                    _tg_conf.get('chat_id', ''),
+                    '🚀 Auto-Optimizer gestartet (Fallback-Benachrichtigung durch MasterRunner)'
+                )
+                os.makedirs(_fb_cache, exist_ok=True)
+                with open(_fb_path, 'w', encoding='utf-8') as _f:
+                    _f.write(datetime.now().isoformat())
+                print('INFO: Fallback START-Telegram gesendet.')
+            except Exception as _te:
+                print(f'WARN: Fallback-Telegram fehlgeschlagen: {_te}')
+
         # Sehr knappe Auto‑Optimizer‑Statusmeldung (nur nötigste Info)
         try:
             if auto_should_run:
