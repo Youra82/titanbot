@@ -136,11 +136,11 @@ def get_titan_signal(
     use_adx_filter = strategy_params.get('use_adx_filter', False)
     adx_threshold = strategy_params.get('adx_threshold', 25)
     use_entry_confirmation = strategy_params.get('use_entry_confirmation', True)
-    use_rejection_candle = strategy_params.get('use_rejection_candle', True)
+    use_rejection_candle = True                                          # SMC-Kern: immer AN
     use_volume_filter = strategy_params.get('use_volume_filter', False)
     volume_threshold_multiplier = strategy_params.get('volume_threshold_multiplier', 1.5)
-    use_pd_filter = strategy_params.get('use_pd_filter', True)
-    use_liquidity_sweep_filter = strategy_params.get('use_liquidity_sweep_filter', True)
+    use_pd_filter = True                                                 # SMC-Kern: immer AN
+    use_liquidity_sweep_filter = True                                    # SMC-Kern: immer AN
     min_ob_quality = strategy_params.get('min_ob_quality', 0.2)
     max_ob_touches = strategy_params.get('max_ob_touches', 1)
     use_swing_ob = strategy_params.get('use_swing_ob', True)
