@@ -339,14 +339,19 @@ def run_pipeline() -> int:
     opt        = settings.get('optimization_settings', {})
     capital    = str(opt.get('start_capital', 100))
     max_dd     = str(opt.get('constraints', {}).get('max_drawdown_pct', 30))
-    start_date = opt.get('start_date', 'auto')
-    end_date   = opt.get('end_date',   'auto')
+
+    # Startdatum aus backtest_lookback_weeks berechnen (rollierendes Fenster)
+    lookback_weeks = opt.get('backtest_lookback_weeks')
+    if lookback_weeks:
+        start_date = (datetime.now(timezone.utc) - timedelta(weeks=int(lookback_weeks))).strftime('%Y-%m-%d')
+    else:
+        start_date = opt.get('start_date', 'auto')
+
+    end_date = 'auto'
     cmd = [sys.executable, PORTFOLIO_SCRIPT,
            '--capital', capital, '--max-dd', max_dd, '--auto-write']
     if start_date not in ('auto', '', None):
         cmd += ['--start-date', start_date]
-    if end_date not in ('auto', '', None):
-        cmd += ['--end-date', end_date]
     _write_trigger_log(f"AUTO-OPTIMIZER PORTFOLIO_OPTIMIZER_START capital={capital} max_dd={max_dd}")
     result = subprocess.run(cmd, cwd=ROOT)
     _write_trigger_log(f"AUTO-OPTIMIZER PORTFOLIO_OPTIMIZER_EXIT rc={result.returncode}")

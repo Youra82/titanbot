@@ -1,4 +1,4 @@
-# /root/titanbot/src/titanbot/analysis/show_results.py (Version für TitanBot SMC mit MaxDD - FEHLERFREI)
+﻿# /root/titanbot/src/titanbot/analysis/show_results.py (Version für TitanBot SMC mit MaxDD - FEHLERFREI)
 import os
 import sys
 import json
@@ -386,14 +386,16 @@ def _generate_portfolio_chart(final_sim, portfolio_files, capital, start_date, e
 
 
 # --- Einzel-Analyse ---
-def run_single_analysis(start_date, end_date, start_capital):
+def run_single_analysis(start_date, end_date, start_capital, warmup_date=None, auto_write=False):
     print("--- TitanBot Ergebnis-Analyse (Einzel-Modus) ---")
     configs_dir = os.path.join(PROJECT_ROOT, 'src', 'titanbot', 'strategy', 'configs')
     all_results = []
     config_files = sorted([f for f in os.listdir(configs_dir) if f.startswith('config_') and f.endswith('.json')])
     if not config_files:
         print("\nKeine gültigen Konfigurationen zum Analysieren gefunden."); return
-    print(f"Zeitraum: {start_date} bis {end_date} | Startkapital: {start_capital} USDT")
+    data_start = warmup_date or start_date
+    warmup_info = f" | SMC-Warmup ab {warmup_date}" if warmup_date else ""
+    print(f"Backtest-Zeitraum: {start_date} bis {end_date} | Startkapital: {start_capital} USDT{warmup_info}")
     for filename in config_files:
         config_path = os.path.join(configs_dir, filename)
         if not os.path.exists(config_path): continue
@@ -402,10 +404,10 @@ def run_single_analysis(start_date, end_date, start_capital):
             symbol = config['market']['symbol']
             timeframe = config['market']['timeframe']
             strategy_name = f"{symbol} ({timeframe})"
-            print(f"\nAnalysiere Ergebnisse für: {filename}...")
-            data = load_data(symbol, timeframe, start_date, end_date)
+            print(f"\nAnalysiere: {filename}...")
+            data = load_data(symbol, timeframe, data_start, end_date)
             if data.empty:
-                print(f"--> WARNUNG: Konnte keine Daten laden für {strategy_name}. Überspringe."); continue
+                print(f"--> WARNUNG: Keine Daten für {strategy_name}. Überspringe."); continue
             
             smc_params = config.get('strategy', {})
             risk_params = config.get('risk', {})
@@ -416,8 +418,11 @@ def run_single_analysis(start_date, end_date, start_capital):
             smc_params['timeframe'] = timeframe
             smc_params['htf'] = config['market'].get('htf')
             
-            result = run_smc_backtest(data.copy(), smc_params, risk_params, start_capital, verbose=False)
+            result = run_smc_backtest(data.copy(), smc_params, risk_params, start_capital, verbose=False, backtest_start_date=start_date if warmup_date else None)
             all_results.append({
+                "file": filename,
+                "symbol": symbol,
+                "timeframe": timeframe,
                 "Strategie": strategy_name,
                 "Trades": result.get('trades_count', 0),
                 "Win Rate %": result.get('win_rate', 0),
@@ -426,7 +431,7 @@ def run_single_analysis(start_date, end_date, start_capital):
                 "Endkapital": result.get('end_capital', start_capital)
             })
         except Exception as e:
-            print(f"--> FEHLER bei der Analyse von {filename}: {e}")
+            print(f"--> FEHLER bei {filename}: {e}")
             continue
     if not all_results:
         print("\nKeine gültigen Ergebnisse zum Anzeigen gefunden."); return
@@ -436,9 +441,32 @@ def run_single_analysis(start_date, end_date, start_capital):
     print("\n\n=========================================================================================");
     print(f"                        Zusammenfassung aller Einzelstrategien");
     print("=========================================================================================")
-    pd.set_option('display.float_format', '{:.2f}'.format);
-    print(results_df.to_string(index=False));
+    pd.set_option('display.float_format', '{:.2f}'.format)
+    display_cols = ["Strategie", "Trades", "Win Rate %", "PnL %", "Max DD %", "Endkapital"]
+    print(results_df[display_cols].to_string(index=False))
     print("=========================================================================================")
+
+    # --- Auto-Write: Top-Strategien mit positivem PnL in settings.json eintragen ---
+    if auto_write:
+        settings_path = os.path.join(PROJECT_ROOT, "settings.json")
+        try:
+            with open(settings_path, "r") as f:
+                settings = json.load(f)
+            max_pos = int(settings.get("live_trading_settings", {}).get("max_open_positions", 5))
+            positive = [r for r in all_results if r["PnL %"] > 0]
+            top = sorted(positive, key=lambda x: x["PnL %"], reverse=True)[:max_pos]
+            if top:
+                new_active = [{"symbol": r["symbol"], "timeframe": r["timeframe"], "active": True} for r in top]
+                settings["live_trading_settings"]["active_strategies"] = new_active
+                with open(settings_path, "w") as f:
+                    json.dump(settings, f, indent=4)
+                print(f"\n{GREEN}\u2705 {len(new_active)} Strategien in settings.json eingetragen:{NC}")
+                for s in new_active:
+                    print(f"   - {s[\"symbol\"]} ({s[\"timeframe\"]})")
+            else:
+                print(f"\n{YELLOW}\u26a0  Keine Strategie mit positivem PnL - settings.json unveraendert.{NC}")
+        except Exception as e:
+            print(f"\nFEHLER beim Schreiben in settings.json: {e}")
 
 
 # --- Geteilter Modus (Manuell / Auto) ---
@@ -479,7 +507,7 @@ def run_shared_mode(is_auto: bool, start_date, end_date, start_capital, target_m
             # Lese HTF aus der Konfiguration
             htf = config['market'].get('htf')
             
-            data = load_data(symbol, timeframe, start_date, end_date)
+            data = load_data(symbol, timeframe, data_start, end_date)
             if not data.empty:
                 strategies_data[filename] = {
                     'symbol': symbol, 'timeframe': timeframe, 'data': data,
@@ -563,6 +591,8 @@ if __name__ == "__main__":
     parser.add_argument('--start_date', default='2023-01-01', type=str, help="Startdatum JJJJ-MM-TT")
     parser.add_argument('--end_date', default=None, type=str, help="Enddatum JJJJ-MM-TT (Standard: Heute)")
     parser.add_argument('--start_capital', default=1000, type=int, help="Startkapital in USDT")
+    parser.add_argument('--warmup_date', default=None, type=str, help="Datum ab dem Daten fuer SMC-Warmup geladen werden")
+    parser.add_argument('--auto_write', action='store_true', help="Beste Strategien automatisch in settings.json schreiben")
     args = parser.parse_args()
 
     start_date = args.start_date
@@ -596,4 +626,5 @@ if __name__ == "__main__":
                 target_max_dd=args.target_max_drawdown
             )
         else: # Modus 1 (default)
-            run_single_analysis(start_date=start_date, end_date=end_date, start_capital=start_capital)
+            run_single_analysis(start_date=start_date, end_date=end_date, start_capital=start_capital,
+                                warmup_date=args.warmup_date, auto_write=args.auto_write)
