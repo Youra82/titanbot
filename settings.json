@@ -44,8 +44,8 @@
             }
         },
         "start_capital": 20,
-        "start_date": "2026-01-01",
-        "end_date": "auto",
+        "backtest_lookback_weeks": 2,
+        "warmup_weeks": 4,
         "constraints": {
             "max_drawdown_pct": 30
         },

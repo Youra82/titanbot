@@ -84,7 +84,7 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
     except Exception as e: print(f"FEHLER beim Daten-Download: {e}"); import traceback; traceback.print_exc(); return pd.DataFrame()
 
 
-def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=False, bar_index_offset=0):
+def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=False, bar_index_offset=0, backtest_start_date=None):
     if data.empty or len(data) < 15:
         return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
 
@@ -191,9 +191,17 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
 
     params_for_logic = {"strategy": smc_params, "risk": risk_params}
 
+    # Warmup-Grenze: Kerzen vor diesem Zeitpunkt werden für SMC-Strukturen
+    # genutzt aber erzeugen keine Trades (Equity bleibt unverändert).
+    bt_start_ts = pd.Timestamp(backtest_start_date, tz='UTC') if backtest_start_date else None
+
     # --- Backtest Loop ---
     for i, (timestamp, current_candle) in enumerate(data.iterrows()):
         if current_capital <= 0: break
+
+        # Warmup-Phase: kein Trading, SMC-Strukturen werden aufgebaut
+        if bt_start_ts and timestamp < bt_start_ts:
+            continue
 
         # Mark-to-Market: unrealisierter P&L der offenen Position
         unrealized_pnl = 0.0
