@@ -250,6 +250,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 trades_count += 1
                 
                 # NEU: Trade für Visualisierung speichern
+                net_pnl_pct = pnl_pct * 100 - (fee_pct * 2 * 100)
                 trade_record = {
                     'entry_' + position['side']: {
                         'time': position['entry_time'].isoformat() if hasattr(position.get('entry_time'), 'isoformat') else str(position.get('entry_time')),
@@ -263,6 +264,8 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                     'take_profit': position['take_profit'],
                     'entry_time':  position['entry_time'],
                     'exit_time':   timestamp,
+                    'pnl_pct':     round(net_pnl_pct, 4),
+                    'side':        position['side'],
                 }
                 trades_list.append(trade_record)
 
@@ -382,6 +385,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
             if net_pnl > 0:
                 wins_count += 1
         trades_count += 1
+        net_pnl_pct_close = pnl_pct * 100 - (fee_pct * 2 * 100)
         trades_list.append({
             'entry_' + position['side']: {
                 'time': position['entry_time'].isoformat() if hasattr(position.get('entry_time'), 'isoformat') else str(position.get('entry_time')),
@@ -395,6 +399,8 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
             'take_profit': position['take_profit'],
             'entry_time':  position['entry_time'],
             'exit_time':   'Backtest-Ende',
+            'pnl_pct':     round(net_pnl_pct_close, 4),
+            'side':        position['side'],
         })
         # Equity-Kurve mit finalem realisierten Wert aktualisieren
         mtm_equity = max(0.0, current_capital)
