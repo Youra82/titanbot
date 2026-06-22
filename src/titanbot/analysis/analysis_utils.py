@@ -179,10 +179,17 @@ def style_axes(*axes):
 # ─── save_send ────────────────────────────────────────────────────────────────
 
 def save_send(fig, name, caption='', no_telegram=False):
-    """Speichert Chart als PNG + sendet via Telegram (wie dnabot)."""
+    """Speichert Chart als PNG + sendet via Telegram (wie dnabot).
+    Wendet Dark-Theme automatisch auf alle Axes an.
+    """
     import matplotlib.pyplot as plt
     os.makedirs(DOCS_DIR, exist_ok=True)
     os.makedirs(TMP_DIR, exist_ok=True)
+
+    # Auto Dark-Theme — gilt fuer alle Skripts die save_send nutzen
+    style_fig(fig)
+    for ax in fig.get_axes():
+        style_axes(ax)
 
     tmp_path  = os.path.join(TMP_DIR,  f'titanbot_{name}.png')
     docs_path = os.path.join(DOCS_DIR, f'{name}_latest.png')
