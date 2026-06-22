@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, save_send,
+    run_backtest_for_config, send_chart_telegram,
 )
 
 
@@ -191,10 +191,10 @@ def main():
             if not args.no_telegram:
                 try:
                     import matplotlib
-                            import matplotlib.pyplot as plt
+                    matplotlib.use('Agg')
+                    import matplotlib.pyplot as plt
 
                     fig, ax = plt.subplots(figsize=(10, 5))
-        style_fig(fig)
                     final_equities = mc_all['all']
                     bins = min(100, len(set(final_equities)))
                     ax.hist(final_equities, bins=bins, color='steelblue', edgecolor='white', alpha=0.8)
@@ -210,7 +210,7 @@ def main():
                     plt.tight_layout()
                     caption = (f"Monte Carlo ({args.simulations:,} Sims) | "
                                f"Median {p50_pct:+.1f}% | 5th {p5_pct:+.1f}% | Ruin {mc_all['ruin_prob']:.1f}%")
-                    save_send(fig, caption)
+                    send_chart_telegram(fig, caption)
                     plt.close(fig)
                 except Exception as e:
                     print(f"{YELLOW}Chart-Fehler: {e}{NC}")

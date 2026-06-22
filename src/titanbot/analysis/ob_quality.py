@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, save_send,
+    run_backtest_for_config, send_chart_telegram,
 )
 
 OB_QUALITY_VALUES = [0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5]
@@ -102,6 +102,7 @@ def main():
     if not args.no_telegram and valid:
         try:
             import matplotlib
+            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
 
             thresholds  = [r['threshold'] for r in sweep_results if r['avg_pnl'] is not None]
@@ -128,7 +129,7 @@ def main():
             plt.tight_layout()
             caption = (f"OB-Quality Sweep | Optimal: {best['threshold'] if best else 'N/A'} | "
                        f"PnL {best['avg_pnl']:+.1f}%" if best else "OB-Quality Sweep")
-            save_send(fig, caption)
+            send_chart_telegram(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

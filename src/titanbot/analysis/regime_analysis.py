@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, save_send,
+    run_backtest_for_config, send_chart_telegram,
 )
 
 REGIMES = ['TREND_UP', 'TREND_DOWN', 'RANGE', 'NEUTRAL']
@@ -192,6 +192,7 @@ def main():
     if not args.no_telegram:
         try:
             import matplotlib
+            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
 
             valid_regimes = [r for r in REGIMES if regime_stats[r]['total'] >= 1]
@@ -216,7 +217,7 @@ def main():
                 plt.tight_layout()
                 caption = (f"Regime-Analyse | Gesamt: {total_trades} Trades | "
                            f"WR: {overall_wr:.1f}%")
-                save_send(fig, caption)
+                send_chart_telegram(fig, caption)
                 plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")
