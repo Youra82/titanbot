@@ -61,10 +61,9 @@ def _generate_trades_excel(final_sim, capital):
 
     for i, t in enumerate(trade_history):
         pnl    = float(t['pnl'])
-        equity += pnl
         symbol = t.get('symbol', '')
         tf     = t.get('timeframe', '')
-        strat  = f"{symbol.split('/')[0]}/{tf}" if symbol else tf
+        coin   = symbol.split('/')[0] if symbol else '—'
         dir_   = t.get('direction', '').upper()
         entry  = round(float(t.get('entry', 0)), 6)
         exit_p = round(float(t.get('exit',  0)), 6)
@@ -72,31 +71,29 @@ def _generate_trades_excel(final_sim, capital):
         sl_pct   = t.get('sl_pct', 0)
         lev      = float(t.get('leverage', 1) or 1)
         margin   = float(t.get('margin_used', 0))
-        act_rr   = t.get('tsl_activation_rr', 0)
-        callback = t.get('tsl_callback_pct', 0)
         if entry > 0:
             raw_move = (exit_p - entry) / entry * 100.0
             move_pct = raw_move if dir_ == 'LONG' else -raw_move
         else:
             move_pct = 0.0
         riskiert = round(margin * (sl_pct / 100.0) * lev, 4) if sl_pct else 0.0
+        equity += pnl
         rows.append({
-            'Nr':               i + 1,
-            'Datum':            _strip_tz(t.get('entry_time', '')),
-            'Strategie':        strat,
-            'Richtung':         dir_,
-            'Hebel':            t.get('leverage', '—'),
+            'Nr':                 i + 1,
+            'Datum':              _strip_tz(t.get('entry_time', '')),
+            'Symbol':             coin,
+            'Timeframe':          tf,
+            'Richtung':           dir_,
+            'Ergebnis':           ergebnis,
             'Reale Bewegung (%)': round(move_pct, 4),
-            'Riskiert (USDT)':  riskiert,
-            'Marge (USDT)':     round(margin, 4),
-            'SL %':             f"{sl_pct:.3f}%" if sl_pct else '—',
-            'TSL Akt.':         f"@{act_rr:.2f}x" if act_rr else '—',
-            'TSL Callback':     f"{callback:.3f}%" if callback else '—',
-            'Entry':            entry,
-            'Exit':             exit_p,
-            'Ergebnis':         ergebnis,
-            'PnL (USDT)':       round(pnl, 4),
-            'Kapital':          round(equity, 4),
+            'Riskiert (USDT)':    riskiert,
+            'Marge (USDT)':       round(margin, 4),
+            'Hebel':              int(lev) if lev == int(lev) else round(lev, 1),
+            'SL %':               f"{sl_pct:.3f}%" if sl_pct else '—',
+            'Entry':              entry,
+            'Exit':               exit_p,
+            'PnL (USDT)':         round(pnl, 4),
+            'Gesamtkapital':      round(equity, 4),
         })
 
     wb = openpyxl.Workbook()
@@ -112,10 +109,9 @@ def _generate_trades_excel(final_sim, capital):
         top=Side(style='thin', color='CCCCCC'),  bottom=Side(style='thin', color='CCCCCC'),
     )
     col_widths = {
-        'Nr': 5, 'Datum': 18, 'Strategie': 18, 'Richtung': 10,
-        'Hebel': 8, 'Reale Bewegung (%)': 18, 'Riskiert (USDT)': 16, 'Marge (USDT)': 14,
-        'SL %': 12, 'TSL Akt.': 10, 'TSL Callback': 13,
-        'Entry': 14, 'Exit': 14, 'Ergebnis': 14, 'PnL (USDT)': 14, 'Kapital': 16,
+        'Nr': 5, 'Datum': 18, 'Symbol': 10, 'Timeframe': 11, 'Richtung': 10,
+        'Ergebnis': 14, 'Reale Bewegung (%)': 18, 'Riskiert (USDT)': 16, 'Marge (USDT)': 14,
+        'Hebel': 8, 'SL %': 10, 'Entry': 14, 'Exit': 14, 'PnL (USDT)': 14, 'Gesamtkapital': 16,
     }
 
     headers = list(rows[0].keys())
@@ -140,7 +136,7 @@ def _generate_trades_excel(final_sim, capital):
             cell.fill      = fill
             cell.border    = thin_border
             cell.alignment = Alignment(horizontal='center', vertical='center')
-            if key in ('Entry', 'Exit', 'PnL (USDT)', 'Kapital',
+            if key in ('Entry', 'Exit', 'PnL (USDT)', 'Gesamtkapital',
                        'Reale Bewegung (%)', 'Riskiert (USDT)', 'Marge (USDT)'):
                 cell.number_format = '#,##0.0000'
         ws.row_dimensions[r_idx].height = 18
@@ -148,7 +144,7 @@ def _generate_trades_excel(final_sim, capital):
     total     = len(rows)
     wins      = sum(1 for r in rows if r['Ergebnis'] == 'TP erreicht')
     sr        = total + 3
-    pnl_total = rows[-1]['Kapital'] - capital if rows else 0.0
+    pnl_total = rows[-1]['Gesamtkapital'] - capital if rows else 0.0
     pnl_pct   = pnl_total / capital * 100 if capital else 0.0
     for label, value in [
         ('Trades gesamt', total),
