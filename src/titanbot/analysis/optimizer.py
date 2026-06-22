@@ -84,13 +84,13 @@ def objective(trial):
         'use_adx_filter': trial.suggest_categorical('use_adx_filter', [True, False]),
         'adx_period': 14,
         'adx_threshold': trial.suggest_int('adx_threshold', 20, 30),
-        'use_pd_filter': trial.suggest_categorical('use_pd_filter', [True, False]),
-        'use_liquidity_sweep_filter': trial.suggest_categorical('use_liquidity_sweep_filter', [True, False]),
+        'use_pd_filter': True,                  # SMC-Kern: nur in Premium/Discount traden
+        'use_liquidity_sweep_filter': True,     # SMC-Kern: erst nach Liquidity Sweep einsteigen
         'liquidity_lookback': trial.suggest_categorical('liquidity_lookback', [10, 15, 20, 25]),
         'min_fvg_size_pct': trial.suggest_float('min_fvg_size_pct', 0.05, 0.20),
         'min_ob_quality': trial.suggest_float('min_ob_quality', 0.10, 0.50),
         'max_ob_touches': trial.suggest_int('max_ob_touches', 0, 2),
-        'use_rejection_candle': trial.suggest_categorical('use_rejection_candle', [True, False]),
+        'use_rejection_candle': True,           # SMC-Kern: Entry nur mit Confirmation-Kerze
         'use_mtf_filter': trial.suggest_categorical('use_mtf_filter', [True, False]),
         'symbol': CURRENT_SYMBOL,
         'timeframe': CURRENT_TIMEFRAME,
