@@ -26,6 +26,7 @@ LOOKBACK_VALUES = [1, 2, 3, 4, 6, 8]
 def main():
     parser = argparse.ArgumentParser(description='Walk-Forward Test: verschiedene Lookback-Wochen testen')
     parser.add_argument('--capital', type=float, default=None, help='Start-Kapital in USDT')
+    parser.add_argument('--min-trades', type=int, default=2, help='Min. Trades pro Config im Lookback-Fenster')
     parser.add_argument('--no-telegram', action='store_true', help='Kein Telegram-Report')
     args = parser.parse_args()
 
@@ -52,6 +53,8 @@ def main():
             if ret is None:
                 continue
             result, label = ret
+            if result.get('trades_count', 0) < args.min_trades:
+                continue
             pnls.append(result.get('total_pnl_pct', 0))
             wrs.append(result.get('win_rate', 0))
             dds.append(result.get('max_drawdown_pct', 0) * 100)
