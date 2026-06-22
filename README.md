@@ -9,7 +9,7 @@
 
 **Ein leistungsstarker Trading-Bot mit SMC-Momentum-Hybrid, dynamischem Stop-Loss und intelligenter Multi-Position-Verwaltung**
 
-[Features](#-features) • [Installation](#-installation) • [Konfiguration](#-konfiguration) • [Live-Trading](#-live-trading) • [Pipeline](#-interaktives-pipeline-script) • [Monitoring](#-monitoring--status) • [Wartung](#-wartung)
+[Features](#-features) • [Installation](#-installation) • [Konfiguration](#-konfiguration) • [Live-Trading](#-live-trading) • [Pipeline](#-interaktives-pipeline-script) • [Analyse](#-analyse-script-run_analysissh) • [Monitoring](#-monitoring--status) • [Wartung](#-wartung)
 
 </div>
 
@@ -281,6 +281,59 @@ artifacts/optimal_configs/
   }
 }
 ```
+
+
+## 📈 Analyse-Script: `run_analysis.sh`
+
+Das **`run_analysis.sh`** Script testet alle optimierten Configs im rollierende Backtest-Fenster und schreibt die besten Strategien **automatisch** in `settings.json`. Es ist der zentrale Einstiegspunkt für manuelle Analyse nach einer Optimierung.
+
+### Starten
+
+```bash
+chmod +x run_analysis.sh
+./run_analysis.sh
+```
+
+### Was passiert beim Start?
+
+Das Script liest `backtest_lookback_weeks` und `warmup_weeks` direkt aus `settings.json` — kein manuelles Datum nötig:
+
+```
+══════════════════════════════════════════════════════
+             TitanBot Analyse System
+══════════════════════════════════════════════════════
+  Backtest-Zeitraum: 2026-06-08 → 2026-06-22  (2 Wochen)
+  SMC-Warmup:        2026-05-11 → 2026-06-08  (4 Wochen extra)
+  Startkapital:      20 USDT  |  Max DD: 30%
+══════════════════════════════════════════════════════
+```
+
+### Modi
+
+| Modus | Beschreibung | Schreibt settings.json? |
+|---|---|---|
+| **1** Einzel-Analyse | Alle Configs einzeln testen, beste nach PnL ranken | ✅ Auto |
+| **2** Portfolio-Simulation | Manuelle Portfolio-Sim mit frei wählbaren Strategien | ❌ |
+| **3** Portfolio-Optimierung | Automatisch beste Kombination finden | ✅ Auto |
+| **4** Interaktive Charts | SMC-Zonen + Equity Curve im Browser | ❌ |
+
+### Zeitraum-Konfiguration (settings.json)
+
+```json
+"optimization_settings": {
+    "backtest_lookback_weeks": 2,
+    "warmup_weeks": 4
+}
+```
+
+- **`backtest_lookback_weeks`**: Wie viele Wochen zurück der Backtest geht (rollierende Fenster, kein festes Datum)
+- **`warmup_weeks`**: Extra-Wochen vor dem Backtest-Zeitraum — SMC-Strukturen (Order Blocks, FVGs) brauchen historische Daten zum Aufbau, diese Trades zählen **nicht** in der Statistik
+
+### Auto-Write Verhalten (Mode 1 & 3)
+
+- Strategien mit **negativem PnL** werden automatisch ausgeschlossen
+- Die besten `max_open_positions` Strategien (nach PnL%) werden in `settings.json → active_strategies` eingetragen
+- Der Live-Bot nutzt diese Strategien ab dem nächsten Start
 
 ## 🔄 Auto-Optimizer Verwaltung
 Der Bot verfügt über einen automatischen Optimizer, der wöchentlich die besten Parameter für alle aktiven Strategien sucht. Die folgenden Befehle helfen beim manuellen Triggern, Debugging und Monitoring des Optimizers (angepasst für `titanbot`).
