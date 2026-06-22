@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 
@@ -140,12 +140,12 @@ def main():
         # Only plot heatmap if not too many configs
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
             import numpy as np
 
             mat = np.array(corr_matrix)
             fig, ax = plt.subplots(figsize=(max(8, n * 0.5), max(7, n * 0.45)))
+        style_fig(fig)
 
             short_labels = [l.replace('/USDT:USDT ', '').replace('BTC/', 'BTC/')
                             for l in labels]
@@ -161,7 +161,7 @@ def main():
             plt.tight_layout()
             caption = (f"Korrelations-Heatmap | {n} Configs | "
                        f"Min-Korr: {pairs[0][0]:.3f}")
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

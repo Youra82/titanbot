@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 PARAM_RANGES = {
@@ -181,13 +181,13 @@ def main():
     if not args.no_telegram:
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
 
             valid_vals  = [v for v in param_values if train_scores[v] is not None]
             train_pnls  = [train_scores[v] for v in valid_vals]
 
             fig, ax = plt.subplots(figsize=(10, 5))
+        style_fig(fig)
             colors = ['green' if p > 0 else 'red' for p in train_pnls]
             bars = ax.bar([str(v) for v in valid_vals], train_pnls, color=colors, alpha=0.8)
             ax.axhline(0, color='black', linewidth=0.8)
@@ -209,7 +209,7 @@ def main():
             caption = (f"Param-Optimizer: {param_name} | Best: {best_val} → "
                        f"Train {train_scores[best_val]:+.1f}% | "
                        + (f"Test {avg_test_pnl:+.1f}%" if test_pnls else ""))
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

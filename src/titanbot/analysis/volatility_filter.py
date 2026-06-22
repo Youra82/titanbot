@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 ADX_THRESHOLDS = [15, 20, 25, 30, 35]
@@ -127,7 +127,6 @@ def main():
     if not args.no_telegram and rows:
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
             import numpy as np
 
@@ -137,6 +136,7 @@ def main():
             avg_trades = [r['avg_trades'] for r in rows]
 
             fig, axes = plt.subplots(3, 1, figsize=(10, 9))
+        style_fig(fig)
             colors = ['gold' if r['label'] == 'BASELINE (no ADX)' else
                       ('green' if r['avg_pnl'] > 0 else 'red') for r in rows]
 
@@ -157,7 +157,7 @@ def main():
             plt.tight_layout()
             caption = (f"ADX-Filter Analyse | Best: {best['label'] if best else 'N/A'} | "
                        + (f"PnL {best['avg_pnl']:+.1f}%" if best else ""))
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

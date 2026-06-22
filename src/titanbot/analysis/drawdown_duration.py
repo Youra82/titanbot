@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 
@@ -181,7 +181,6 @@ def main():
     if not args.no_telegram and all_max_depths:
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
             import numpy as np
 
@@ -214,7 +213,7 @@ def main():
             plt.tight_layout()
             caption = (f"Drawdown-Duration | Avg Max Dur: {sum(all_max_durations)/len(all_max_durations):.1f}c | "
                        f"Avg Max Depth: {sum(all_max_depths)/len(all_max_depths):.1f}%")
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

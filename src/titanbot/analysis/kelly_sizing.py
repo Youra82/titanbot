@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 
@@ -174,7 +174,6 @@ def main():
     if not args.no_telegram:
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
             import numpy as np
 
@@ -183,6 +182,7 @@ def main():
             kellys   = [r['rec']        for r in rows]
 
             fig, ax = plt.subplots(figsize=(max(8, len(rows) * 0.5), 6))
+        style_fig(fig)
             x = np.arange(len(rows))
             w = 0.35
             ax.bar(x - w/2, currents, w, label='Aktuell%', color='steelblue', alpha=0.8)
@@ -197,7 +197,7 @@ def main():
 
             caption = (f"Kelly-Analyse | Avg aktuell: {avg_current:.2f}% | "
                        f"Avg {kelly_type}: {avg_kelly:.2f}%")
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")

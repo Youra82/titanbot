@@ -20,7 +20,8 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send, style_fig, style_axes,
+    BG_DARK,
 )
 
 
@@ -106,49 +107,53 @@ def main():
         print(f"  Score (PnL - DD + WR*0.1): {best_score:.2f}")
         print(f"  Avg PnL: {best_row['avg_pnl']:+.2f}%  |  Avg WR: {best_row['avg_wr']:.1f}%  |  Avg DD: {best_row['avg_dd']:.1f}%")
 
-    # Optional chart
-    if not args.no_telegram and best_row:
+    # Chart
+    if best_row:
         try:
-            import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
-            import numpy as np
 
             valid = [r for r in rows if r['avg_pnl'] is not None]
             lws   = [r['lw'] for r in valid]
             pnls  = [r['avg_pnl'] for r in valid]
             dds   = [r['avg_dd'] for r in valid]
             wrs   = [r['avg_wr'] for r in valid]
+            scores = [r['avg_pnl'] - r['avg_dd'] + r['avg_wr'] * 0.1 for r in valid]
+            best_lw = best_row['lw']
 
-            fig, axes = plt.subplots(3, 1, figsize=(10, 9))
-            fig.suptitle('Walk-Forward Test: Lookback-Wochen Analyse', fontsize=13, fontweight='bold')
+            fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+            style_fig(fig)
+            fig.suptitle('titanbot Walk-Forward — Lookback-Vergleich',
+                         fontsize=13, fontweight='bold', color='white')
 
-            colors = ['green' if p > 0 else 'red' for p in pnls]
-            axes[0].bar(lws, pnls, color=colors)
-            axes[0].axhline(0, color='black', linewidth=0.8)
-            axes[0].set_ylabel('Avg PnL%')
+            bar_colors = ['#22c55e' if p > 0 else '#ef4444' for p in pnls]
+            axes[0].bar([f"{lw}W" for lw in lws], pnls, color=bar_colors)
+            axes[0].axhline(0, color='#94a3b8', linewidth=0.8)
+            axes[0].set_ylabel('Avg PnL %')
             axes[0].set_title('Durchschnittlicher PnL pro Lookback')
-            axes[0].set_xticks(lws)
+            for i, (lw, p) in enumerate(zip(lws, pnls)):
+                clr = '#22c55e' if p > 0 else '#ef4444'
+                axes[0].text(i, p + (0.05 if p >= 0 else -0.15),
+                             f"{p:+.1f}%", ha='center', va='bottom', color=clr, fontsize=9)
+            if best_lw in lws:
+                idx = lws.index(best_lw)
+                axes[0].get_children()[idx].set_edgecolor('white')
+                axes[0].get_children()[idx].set_linewidth(2)
 
-            axes[1].bar(lws, wrs, color='steelblue')
-            axes[1].axhline(50, color='orange', linewidth=1, linestyle='--', label='50%')
-            axes[1].set_ylabel('Avg Win-Rate%')
-            axes[1].set_title('Durchschnittliche Win-Rate')
-            axes[1].set_xticks(lws)
-            axes[1].legend()
+            score_colors = ['#f59e0b' if lw == best_lw else '#6366f1' for lw in lws]
+            axes[1].bar([f"{lw}W" for lw in lws], scores, color=score_colors)
+            axes[1].set_ylabel('Score (PnL − DD + WR×0.1)')
+            axes[1].set_title(f'Gesamtscore pro Lookback  (★ BEST = {best_lw}W)')
+            for i, (lw, s) in enumerate(zip(lws, scores)):
+                axes[1].text(i, s + 0.02, f"{s:.1f}", ha='center', va='bottom',
+                             color='white', fontsize=9)
 
-            axes[2].bar(lws, dds, color='salmon')
-            axes[2].set_ylabel('Avg Max DD%')
-            axes[2].set_title('Durchschnittlicher Max Drawdown')
-            axes[2].set_xticks(lws)
+            style_axes(*axes)
+            plt.tight_layout(rect=[0, 0, 1, 0.95])
 
-            plt.xlabel('Lookback (Wochen)')
-            plt.tight_layout()
-
-            caption = (f"Walk-Forward Test | Empfehlung: {best_row['lw']}w | "
-                       f"PnL {best_row['avg_pnl']:+.1f}% | DD {best_row['avg_dd']:.1f}%")
-            send_chart_telegram(fig, caption)
-            plt.close(fig)
+            caption = (f"titanbot Walk-Forward | Empfehlung: {best_lw}W | "
+                       f"Avg PnL {best_row['avg_pnl']:+.1f}% | "
+                       f"WR {best_row['avg_wr']:.1f}% | DD {best_row['avg_dd']:.1f}%")
+            save_send(fig, 'walk_forward', caption=caption, no_telegram=args.no_telegram)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")
 

@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 from titanbot.analysis.analysis_utils import (
     GREEN, YELLOW, RED, CYAN, NC,
     get_settings, get_date_range, load_all_configs,
-    run_backtest_for_config, send_chart_telegram,
+    run_backtest_for_config, save_send,
 )
 
 WEEKDAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -160,7 +160,6 @@ def main():
     if not args.no_telegram:
         try:
             import matplotlib
-            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
             import numpy as np
 
@@ -178,6 +177,7 @@ def main():
                         matrix[wd][h] = float('nan')
 
             fig, axes = plt.subplots(1, 2, figsize=(18, 5))
+        style_fig(fig)
 
             # Win-rate heatmap
             im1 = axes[0].imshow(matrix, cmap='RdYlGn', vmin=0, vmax=100,
@@ -207,7 +207,7 @@ def main():
 
             caption = (f"Entry-Timing Heatmap | {total_trades} Trades | "
                        + (f"Beste Stunde: {best_hour[0]}:00 UTC ({best_wr:.1f}%)" if active_hours else ""))
-            send_chart_telegram(fig, caption)
+            save_send(fig, caption)
             plt.close(fig)
         except Exception as e:
             print(f"{YELLOW}Chart-Fehler: {e}{NC}")
