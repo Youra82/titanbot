@@ -4,33 +4,13 @@
         "use_auto_optimizer_results": true,
         "active_strategies": [
             {
-                "symbol": "AAVE/USDT:USDT",
-                "timeframe": "5m",
-                "use_macd_filter": false,
-                "active": true
-            },
-            {
-                "symbol": "ETH/USDT:USDT",
+                "symbol": "BTC/USDT:USDT",
                 "timeframe": "6h",
-                "use_macd_filter": false,
                 "active": true
             },
             {
                 "symbol": "XRP/USDT:USDT",
                 "timeframe": "6h",
-                "use_macd_filter": false,
-                "active": true
-            },
-            {
-                "symbol": "BTC/USDT:USDT",
-                "timeframe": "4h",
-                "use_macd_filter": false,
-                "active": true
-            },
-            {
-                "symbol": "SOL/USDT:USDT",
-                "timeframe": "2h",
-                "use_macd_filter": false,
                 "active": true
             }
         ]
