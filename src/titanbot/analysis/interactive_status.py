@@ -322,17 +322,20 @@ def create_interactive_chart(symbol, timeframe, df, trades, equity_df, stats, st
     entry_short_x, entry_short_y = [], []
     exit_short_x, exit_short_y = [], []
     
+    def _is_valid_time(t):
+        return t and str(t) != 'Backtest-Ende'
+
     for trade in trades:
-        if 'entry_long' in trade and trade['entry_long'].get('time') and trade['entry_long'].get('price'):
+        if 'entry_long' in trade and _is_valid_time(trade['entry_long'].get('time')) and trade['entry_long'].get('price'):
             entry_long_x.append(pd.to_datetime(trade['entry_long']['time']))
             entry_long_y.append(trade['entry_long']['price'])
-        if 'exit_long' in trade and trade['exit_long'].get('time') and trade['exit_long'].get('price'):
+        if 'exit_long' in trade and _is_valid_time(trade['exit_long'].get('time')) and trade['exit_long'].get('price'):
             exit_long_x.append(pd.to_datetime(trade['exit_long']['time']))
             exit_long_y.append(trade['exit_long']['price'])
-        if 'entry_short' in trade and trade['entry_short'].get('time') and trade['entry_short'].get('price'):
+        if 'entry_short' in trade and _is_valid_time(trade['entry_short'].get('time')) and trade['entry_short'].get('price'):
             entry_short_x.append(pd.to_datetime(trade['entry_short']['time']))
             entry_short_y.append(trade['entry_short']['price'])
-        if 'exit_short' in trade and trade['exit_short'].get('time') and trade['exit_short'].get('price'):
+        if 'exit_short' in trade and _is_valid_time(trade['exit_short'].get('time')) and trade['exit_short'].get('price'):
             exit_short_x.append(pd.to_datetime(trade['exit_short']['time']))
             exit_short_y.append(trade['exit_short']['price'])
     
