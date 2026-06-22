@@ -48,6 +48,7 @@ MIN_WIN_RATE_CONSTRAINT = 55.0
 MIN_PNL_CONSTRAINT = 0.0
 START_CAPITAL = 1000
 OPTIM_MODE = "strict"
+MIN_TRADES_PER_YEAR = 300   # Mindest-Trades/Jahr pro Strategie (wird proportional auf Datenlänge skaliert)
 
 def create_safe_filename(symbol, timeframe):
     return f"{symbol.replace('/', '').replace(':', '')}_{timeframe}"
@@ -106,6 +107,12 @@ def objective(trial):
         'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5),
     }
 
+    # Proportionale Mindest-Trades: MIN_TRADES_PER_YEAR skaliert auf die tatsächliche Datenlänge
+    train_days = max(1, (TRAIN_DATA.index[-1] - TRAIN_DATA.index[0]).days)
+    test_days  = max(1, (TEST_DATA.index[-1]  - TEST_DATA.index[0]).days)
+    min_train_trades = max(2, int(MIN_TRADES_PER_YEAR * train_days / 365))
+    min_test_trades  = max(1, int(MIN_TRADES_PER_YEAR * test_days  / 365))
+
     # ── STUFE 1: TRAIN-Backtest (70% der Daten) — leichtes Pruning ──────────
     smc_params['_precomputed_smc'] = _get_smc_precomputed(
         _SMC_TRAIN_CACHE, _SMC_TRAIN_CACHE_LOCK, TRAIN_DATA, smc_params)
@@ -115,7 +122,6 @@ def objective(trial):
     train_dd     = train_result.get('max_drawdown_pct', 1.0)
     train_trades = train_result.get('trades_count', 0)
 
-    min_train_trades = max(2, len(TRAIN_DATA) // 300)
     if train_trades < min_train_trades or train_dd > MAX_DRAWDOWN_CONSTRAINT:
         raise optuna.exceptions.TrialPruned()
 
@@ -131,7 +137,6 @@ def objective(trial):
     test_trades  = test_result.get('trades_count', 0)
     test_wr      = test_result.get('win_rate', 0)
 
-    min_test_trades = max(2, len(TEST_DATA) // 300)
     if test_trades < min_test_trades or test_dd > MAX_DRAWDOWN_CONSTRAINT:
         raise optuna.exceptions.TrialPruned()
     # strict: pnl>0 + win_rate + min_pnl zwingend
@@ -140,11 +145,13 @@ def objective(trial):
         if test_pnl <= 0 or test_wr < MIN_WIN_RATE_CONSTRAINT or test_pnl < MIN_PNL_CONSTRAINT:
             raise optuna.exceptions.TrialPruned()
 
-    # ── Kombinierter Score (von jaegerbot inspiriert) ────────────────────────
+    # ── Kombinierter Score ────────────────────────────────────────────────────
     # log1p komprimiert extreme Ausreißer; DD im Nenner bestraft Risiko
     train_score = math.log1p(max(0, train_pnl)) / max(train_dd * 100, 1.0)
     test_score  = math.log1p(max(0, test_pnl))  / max(test_dd  * 100, 1.0)
-    trade_bonus = math.log1p(test_trades) * 4.0          # mehr Trades = mehr Compounding (stärker gewichtet)
+    # Trade-Dichte: wie viele Male über dem Minimum? Belohnt Setups die häufig traden
+    trade_ratio = test_trades / max(min_test_trades, 1)
+    trade_bonus = math.log1p(test_trades) * 6.0 + math.log1p(max(0, trade_ratio - 1.0)) * 3.0
     wr_bonus    = max(0.0, (test_wr - 40.0) / 10.0)      # Bonus ab 40% Win-Rate
 
     final_score = train_score * 0.30 + test_score * 0.70 + trade_bonus + wr_bonus
@@ -159,7 +166,7 @@ def objective(trial):
     return final_score
 
 def main():
-    global HISTORICAL_DATA, TRAIN_DATA, TEST_DATA, TRAIN_SPLIT_IDX, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE
+    global HISTORICAL_DATA, TRAIN_DATA, TEST_DATA, TRAIN_SPLIT_IDX, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE, MIN_TRADES_PER_YEAR
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
     parser.add_argument('--symbols', required=False, type=str, default="")
     parser.add_argument('--timeframes', required=False, type=str, default="")
@@ -175,11 +182,14 @@ def main():
     parser.add_argument('--min_pnl', required=True, type=float)
     parser.add_argument('--mode', required=True, type=str)
     parser.add_argument('--config_suffix', type=str, default="")
+    parser.add_argument('--min_trades_per_year', type=int, default=300,
+                        help='Mindest-Trades pro Jahr pro Strategie (proportional auf Datenlänge skaliert)')
     args = parser.parse_args()
 
     CONFIG_SUFFIX = args.config_suffix
     MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT = args.max_drawdown / 100.0, args.min_win_rate, args.min_pnl
     START_CAPITAL, N_TRIALS, OPTIM_MODE = args.start_capital, args.trials, args.mode
+    MIN_TRADES_PER_YEAR = args.min_trades_per_year
 
     if args.pairs:
         # Paar-Modus: "AAVE:5m ETH:6h BTC:4h" → direkte Symbol/Timeframe-Zuordnung (kein Kreuzprodukt)
@@ -244,6 +254,11 @@ def main():
             test_from  = TEST_DATA.index[0].strftime('%Y-%m-%d')
             test_to    = TEST_DATA.index[-1].strftime('%Y-%m-%d')
             print(f"WFV-Split: Train={len(TRAIN_DATA)} Kerzen (70%) [{train_from} → {train_to}], Test={len(TEST_DATA)} Kerzen (30%) [{test_from} → {test_to}]")
+            _train_days = max(1, (TRAIN_DATA.index[-1] - TRAIN_DATA.index[0]).days)
+            _test_days  = max(1, (TEST_DATA.index[-1]  - TEST_DATA.index[0]).days)
+            _min_tr = max(2, int(MIN_TRADES_PER_YEAR * _train_days / 365))
+            _min_te = max(1, int(MIN_TRADES_PER_YEAR * _test_days  / 365))
+            print(f"Mindest-Trades: Train >={_min_tr} ({_train_days}d @ {MIN_TRADES_PER_YEAR}/Jahr), Test >={_min_te} ({_test_days}d)")
 
         if HISTORICAL_DATA.empty:
             print("Keine Daten geladen. Überspringe.")
