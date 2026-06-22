@@ -378,7 +378,7 @@ def create_interactive_chart(symbol, timeframe, df, trades, equity_df, stats, st
         tp_price = trade.get('take_profit')
         t_entry  = trade.get('entry_time')
         t_exit   = trade.get('exit_time')
-        if not (sl_price and tp_price and t_entry and t_exit):
+        if not (sl_price and tp_price and t_entry and _is_valid_time(t_exit)):
             continue
         t_entry = pd.to_datetime(t_entry)
         t_exit  = pd.to_datetime(t_exit)
