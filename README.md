@@ -285,39 +285,82 @@ artifacts/optimal_configs/
 
 ## 📈 Analyse-Script: `run_analysis.sh`
 
-Das **`run_analysis.sh`** Script testet alle optimierten Configs im rollierende Backtest-Fenster und schreibt die besten Strategien **automatisch** in `settings.json`. Es ist der zentrale Einstiegspunkt für manuelle Analyse nach einer Optimierung.
+Das **`run_analysis.sh`** Script bietet 19 wissenschaftliche Analysen für den titanbot unter einem einzigen Befehl.
 
 ### Starten
 
 ```bash
 chmod +x run_analysis.sh
 ./run_analysis.sh
+./run_analysis.sh --no-telegram    # kein Telegram, nur lokale Ausgabe
 ```
 
-### Was passiert beim Start?
-
-Das Script liest `backtest_lookback_weeks` und `warmup_weeks` direkt aus `settings.json` — kein manuelles Datum nötig:
+### Menü-Übersicht
 
 ```
-══════════════════════════════════════════════════════
-             TitanBot Analyse System
-══════════════════════════════════════════════════════
-  Backtest-Zeitraum: 2026-06-08 → 2026-06-22  (2 Wochen)
-  SMC-Warmup:        2026-05-11 → 2026-06-08  (4 Wochen extra)
-  Startkapital:      20 USDT  |  Max DD: 30%
-══════════════════════════════════════════════════════
+=======================================================
+  titanbot — Wissenschaftliche Analysen
+=======================================================
+
+  ── Priorität 1: Fundament ─────────────────────────
+   1) Walk-Forward Lookback-Analyse
+   2) Slippage & Fee Impact
+   3) Monte Carlo Simulation
+   4) Bootstrap Signifikanztest
+
+  ── Priorität 2: Direkte Gewinnoptimierung ──────────
+   5) RR-Ratio Optimierung          (Walk-Forward)
+   6) ATR Multiplier Sweep          (Walk-Forward)
+   7) SMC Window Sweep              (Walk-Forward)
+   8) Parameter Sensitivity         (Tornado-Diagramm)
+
+  ── Priorität 3: Systemverbesserung ─────────────────
+   9) Regime Performance Analysis
+  10) Tageszeit-Analyse
+  11) Anti-Korrelations-Portfolio
+  12) Kelly Position Sizing
+
+  ── Priorität 4–6: Feintuning & Portfolio ───────────
+  13) SMC Filter Kombinationen
+  14) Order Block Qualitäts-Analyse
+  15) FVG Hit Rate Analyse
+  16) Volatilitäts-Filter Optimierung
+  17) Multi-Timeframe Confirmation Impact
+  18) Drawdown Duration Analysis
+  19) Entry Timing Analyse
+
+   0) Alle Analysen nacheinander ausführen
+
+Auswahl (0-19):
 ```
 
-### Modi
+### Analysen im Detail
 
-| Modus | Beschreibung | Schreibt settings.json? |
+| Nr | Name | Was es zeigt |
 |---|---|---|
-| **1** Einzel-Analyse | Alle Configs einzeln testen, beste nach PnL ranken | ✅ Auto |
-| **2** Portfolio-Simulation | Manuelle Portfolio-Sim mit frei wählbaren Strategien | ❌ |
-| **3** Portfolio-Optimierung | Automatisch beste Kombination finden | ✅ Auto |
-| **4** Interaktive Charts | SMC-Zonen + Equity Curve im Browser | ❌ |
+| 1 | Walk-Forward Lookback | Welcher `backtest_lookback_weeks`-Wert (1–8W) ist am robustesten? |
+| 2 | Fee Impact | Ab welcher Gebühr wird der Bot unrentabel? Break-Even-Fee |
+| 3 | Monte Carlo | 10.000 Trade-Shuffles → 5./95. Perzentil, Ruin-Risiko |
+| 4 | Bootstrap Test | Sind Win-Raten statistisch signifikant > 50% (Zufall)? |
+| 5 | RR-Ratio | Optimales Risk:Reward out-of-sample (1.0–4.0) |
+| 6 | ATR Multiplier | Optimaler Stop-Loss ATR-Faktor out-of-sample (0.5–3.0) |
+| 7 | SMC Window | Optimale `swingsLength` out-of-sample (10–50) |
+| 8 | Sensitivity | Tornado-Chart: welche Parameter machen das System fragil? |
+| 9 | Regime | Win-Rate pro Markt-Regime (TREND_UP/DOWN, RANGE, NEUTRAL) |
+| 10 | Tageszeit | Win-Rate pro Session (Asia/Europa/US) und Wochentag |
+| 11 | Korrelation | Korrelationsmatrix der Pairs → Portfolio mit min. Drawdown |
+| 12 | Kelly Sizing | Optimaler Risk% pro Trade (Full/Half-Kelly vs. Config-Wert) |
+| 13 | SMC Filter | Alle 8 Kombinationen der P/D × Sweep × Rejection-Filter |
+| 14 | OB Quality | `min_ob_quality` Sweep (0.0–0.5) → Qualität vs. Trade-Anzahl |
+| 15 | FVG Size | `min_fvg_size_pct` Sweep (0.02–0.5) → FVG-Filter-Optimum |
+| 16 | Vola Filter | ADX-Filter ON/OFF + Schwellwert-Sweep (15–35) |
+| 17 | MTF Filter | `use_mtf_filter` True vs. False: Qualität vs. Trade-Anzahl |
+| 18 | DD Duration | Wie lange dauern Drawdown-Phasen? Recovery-Zeit |
+| 19 | Entry Timing | Stunden-Heatmap (0–23h UTC × Wochentag) |
 
-### Zeitraum-Konfiguration (settings.json)
+### Zeitraum-Konfiguration
+
+Alle Analysen nutzen automatisch `backtest_lookback_weeks` und `warmup_weeks` aus `settings.json`:
 
 ```json
 "optimization_settings": {
@@ -326,14 +369,8 @@ Das Script liest `backtest_lookback_weeks` und `warmup_weeks` direkt aus `settin
 }
 ```
 
-- **`backtest_lookback_weeks`**: Wie viele Wochen zurück der Backtest geht (rollierende Fenster, kein festes Datum)
-- **`warmup_weeks`**: Extra-Wochen vor dem Backtest-Zeitraum — SMC-Strukturen (Order Blocks, FVGs) brauchen historische Daten zum Aufbau, diese Trades zählen **nicht** in der Statistik
-
-### Auto-Write Verhalten (Mode 1 & 3)
-
-- Strategien mit **negativem PnL** werden automatisch ausgeschlossen
-- Die besten `max_open_positions` Strategien (nach PnL%) werden in `settings.json → active_strategies` eingetragen
-- Der Live-Bot nutzt diese Strategien ab dem nächsten Start
+- **`backtest_lookback_weeks`**: Wie viele Wochen zurück der Backtest geht (rollierende Fenster)
+- **`warmup_weeks`**: Extra-Wochen für SMC-Strukturaufbau (Order Blocks, FVGs) — diese Trades zählen nicht in der Statistik
 
 ## 🔄 Auto-Optimizer Verwaltung
 Der Bot verfügt über einen automatischen Optimizer, der wöchentlich die besten Parameter für alle aktiven Strategien sucht. Die folgenden Befehle helfen beim manuellen Triggern, Debugging und Monitoring des Optimizers (angepasst für `titanbot`).
