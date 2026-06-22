@@ -155,6 +155,20 @@ else
     MIN_PNL=-99999
 fi
 
+# --- Mindest-Trades pro Jahr ---
+# Berechne Anzahl der Paare für Vorschlag (300 Gesamt / Paare = pro Strategie)
+_N_SYMS=$(echo $SYMBOLS | wc -w)
+_N_TFS=$(echo $TIMEFRAMES | wc -w)
+_N_PAIRS=$(( _N_SYMS * _N_TFS ))
+_N_PAIRS=$(( _N_PAIRS > 0 ? _N_PAIRS : 1 ))
+_DEFAULT_MIN_TRADES=$(( 300 / _N_PAIRS ))
+echo ""
+echo -e "${YELLOW}Mindest-Trades pro Jahr:${NC}"
+echo "  Ziel: ~300 Trades/Jahr gesamt | ${_N_PAIRS} Paare → Standard: ${_DEFAULT_MIN_TRADES}/Paar"
+echo "  (Weniger = weniger Trades nötig, riskanter; Mehr = strengere Anforderung)"
+read -p "Mindest-Trades/Jahr pro Strategie [Standard: ${_DEFAULT_MIN_TRADES}]: " MIN_TRADES_PER_YEAR
+MIN_TRADES_PER_YEAR=${MIN_TRADES_PER_YEAR:-$_DEFAULT_MIN_TRADES}
+
 # --- Config-Schutz-Modus ---
 OVERWRITE_ALL=""
 
@@ -232,17 +246,18 @@ for symbol in $SYMBOLS; do
 
         echo -e "\n${GREEN}>>> Starte SMC-Optimierung für $symbol ($timeframe)...${NC}"
         "$PYTHON" "$OPTIMIZER" \
-            --symbols       "$symbol" \
-            --timeframes    "$timeframe" \
-            --start_date    "$CURRENT_START_DATE" \
-            --end_date      "$CURRENT_END_DATE" \
-            --jobs          "$N_CORES" \
-            --max_drawdown  "$MAX_DD" \
-            --start_capital "$START_CAPITAL" \
-            --min_win_rate  "$MIN_WR" \
-            --trials        "$N_TRIALS" \
-            --min_pnl       "$MIN_PNL" \
-            --mode          "$OPTIM_MODE_ARG"
+            --symbols              "$symbol" \
+            --timeframes           "$timeframe" \
+            --start_date           "$CURRENT_START_DATE" \
+            --end_date             "$CURRENT_END_DATE" \
+            --jobs                 "$N_CORES" \
+            --max_drawdown         "$MAX_DD" \
+            --start_capital        "$START_CAPITAL" \
+            --min_win_rate         "$MIN_WR" \
+            --trials               "$N_TRIALS" \
+            --min_pnl              "$MIN_PNL" \
+            --mode                 "$OPTIM_MODE_ARG" \
+            --min_trades_per_year  "$MIN_TRADES_PER_YEAR"
 
         if [ $? -ne 0 ]; then
             echo -e "${RED}Fehler im Optimierer für $symbol ($timeframe). Überspringe...${NC}"
