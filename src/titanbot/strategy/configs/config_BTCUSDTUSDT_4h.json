@@ -1,0 +1,48 @@
+{
+    "market": {
+        "symbol": "BTC/USDT:USDT",
+        "timeframe": "4h"
+    },
+    "strategy": {
+        "swingsLength": 33,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": true,
+        "adx_period": 14,
+        "adx_threshold": 25,
+        "use_pd_filter": true,
+        "use_liquidity_sweep_filter": true,
+        "liquidity_lookback": 20,
+        "min_fvg_size_pct": 0.1631,
+        "min_ob_quality": 0.116,
+        "max_ob_touches": 1,
+        "use_rejection_candle": true,
+        "use_mtf_filter": false,
+        "volume_ma_period": 20
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_per_trade_pct": 3.5,
+        "risk_reward_ratio": 4.0,
+        "min_leverage": 4,
+        "max_leverage": 29,
+        "atr_multiplier_sl": 0.731,
+        "min_sl_pct": 0.5,
+        "structure_sl_buffer_pct": 0.2,
+        "trailing_stop_activation_rr": 2.5,
+        "trailing_stop_callback_rate_pct": 0.5
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": -7.52,
+        "train_pnl_pct": 5.51,
+        "test_wr": 0.0,
+        "test_trades": 2,
+        "test_dd_pct": 7.68,
+        "composite_score": 4.4329,
+        "optimized_at": "2026-06-22T20:00:51.323809Z"
+    }
+}
