@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl:*)",
+      "Bash(.venv/Scripts/python.exe -m pytest:*)"
+    ]
+  }
+}
