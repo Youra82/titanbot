@@ -49,11 +49,12 @@ def _get_oos_bounds(cfg, oos_ref_str):
     return oos_start, oos_end
 
 
-def _rolling_windows(oos_start, oos_end, lookback_weeks, warmup_weeks):
+def _rolling_windows(oos_start, oos_end, lookback_weeks, warmup_weeks, max_windows=6):
     """Return list of (start_date, end_date, warmup_date) strings.
 
     Non-overlapping windows of lookback_weeks within [oos_start, oos_end],
     each preceded by a warmup_weeks training period.
+    Capped at max_windows to keep runtime manageable.
     """
     step   = timedelta(weeks=lookback_weeks)
     warmup = timedelta(weeks=warmup_weeks)
@@ -67,13 +68,19 @@ def _rolling_windows(oos_start, oos_end, lookback_weeks, warmup_weeks):
             w_start.strftime('%Y-%m-%d'),
         ))
         w_end -= step
-    return list(reversed(windows))  # chronological order
+    windows = list(reversed(windows))  # chronological order
+    # Evenly sample if more than max_windows available
+    if len(windows) > max_windows:
+        step_f = (len(windows) - 1) / (max_windows - 1)
+        windows = [windows[round(i * step_f)] for i in range(max_windows)]
+    return windows
 
 
 def main():
     parser = argparse.ArgumentParser(description='Walk-Forward Test: verschiedene Lookback-Wochen testen')
     parser.add_argument('--capital',      type=float, default=None, help='Start-Kapital in USDT')
     parser.add_argument('--min-trades',   type=int,   default=1,    help='Min. Trades pro Fenster')
+    parser.add_argument('--max-windows',  type=int,   default=6,    help='Max. Fenster pro Lookback (Speed vs. Genauigkeit)')
     parser.add_argument('--no-telegram',  action='store_true',      help='Kein Telegram-Report')
     parser.add_argument('--no-save',      action='store_true',      help='Empfehlung NICHT in settings.json schreiben')
     args = parser.parse_args()
@@ -92,7 +99,7 @@ def main():
     if oos_ref_str:
         print(f"\n{CYAN}=== Walk-Forward Test (Rolling OOS) ==={NC}")
         print(f"  {len(configs)} Configs | Kapital: {start_capital} USDT")
-        print(f"  OOS-Referenz: {oos_ref_str} | Warmup: {warmup_weeks}W")
+        print(f"  OOS-Referenz: {oos_ref_str} | Warmup: {warmup_weeks}W | Max Fenster: {args.max_windows}")
         print(f"  Methode: Rollende Fenster im OOS-Zeitraum (wie dnabot)\n")
     else:
         print(f"\n{YELLOW}=== Walk-Forward Test (Fallback: letzte N Wochen) ==={NC}")
@@ -112,7 +119,7 @@ def main():
 
             if oos_ref_str:
                 oos_start, oos_end = _get_oos_bounds(cfg, oos_ref_str)
-                windows = _rolling_windows(oos_start, oos_end, lw, warmup_weeks)
+                windows = _rolling_windows(oos_start, oos_end, lw, warmup_weeks, args.max_windows)
             else:
                 start_date, end_date, warmup_date = get_date_range(lookback_weeks=lw)
                 windows = [(start_date, end_date, warmup_date)]
