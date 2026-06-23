@@ -1,35 +1,35 @@
 {
     "market": {
-        "symbol": "BTC/USDT:USDT",
-        "timeframe": "6h"
+        "symbol": "LTC/USDT:USDT",
+        "timeframe": "30m"
     },
     "strategy": {
         "swingsLength": 15,
         "ob_mitigation": "Close",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 26,
+        "adx_threshold": 30,
         "use_pd_filter": true,
         "use_liquidity_sweep_filter": true,
         "liquidity_lookback": 25,
-        "min_fvg_size_pct": 0.1731,
-        "min_ob_quality": 0.115,
-        "max_ob_touches": 1,
+        "min_fvg_size_pct": 0.05,
+        "min_ob_quality": 0.212,
+        "max_ob_touches": 2,
         "use_rejection_candle": true,
         "use_mtf_filter": false,
         "volume_ma_period": 20
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 0.81,
-        "risk_reward_ratio": 1.62,
-        "min_leverage": 3,
-        "max_leverage": 29,
-        "atr_multiplier_sl": 2.889,
+        "risk_per_trade_pct": 1.23,
+        "risk_reward_ratio": 1.56,
+        "min_leverage": 4,
+        "max_leverage": 27,
+        "atr_multiplier_sl": 0.561,
         "min_sl_pct": 0.5,
         "structure_sl_buffer_pct": 0.2,
-        "trailing_stop_activation_rr": 1.57,
-        "trailing_stop_callback_rate_pct": 1.42
+        "trailing_stop_activation_rr": 1.17,
+        "trailing_stop_callback_rate_pct": 0.5
     },
     "behavior": {
         "use_longs": true,
@@ -37,12 +37,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 5.26,
-        "train_pnl_pct": -5.52,
-        "test_wr": 41.67,
+        "test_pnl_pct": 8.87,
+        "train_pnl_pct": 3.26,
+        "test_wr": 66.67,
         "test_trades": 12,
-        "test_dd_pct": 3.09,
-        "composite_score": 20.1308,
-        "optimized_at": "2026-06-22T21:16:52.185034Z"
+        "test_dd_pct": 3.74,
+        "composite_score": 23.8812,
+        "optimized_at": "2026-06-23T05:01:34.447917Z"
     }
 }

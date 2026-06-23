@@ -4,15 +4,158 @@
         "use_auto_optimizer_results": true,
         "active_strategies": [
             {
-                "symbol": "XRP/USDT:USDT",
+                "symbol": "ADA/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "ADA/USDT:USDT",
+                "timeframe": "6h",
+                "active": true
+            },
+            {
+                "symbol": "ARB/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "ARB/USDT:USDT",
                 "timeframe": "4h",
-                "use_macd_filter": false,
+                "active": true
+            },
+            {
+                "symbol": "ARB/USDT:USDT",
+                "timeframe": "6h",
+                "active": true
+            },
+            {
+                "symbol": "AVAX/USDT:USDT",
+                "timeframe": "1h",
+                "active": true
+            },
+            {
+                "symbol": "AVAX/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "AVAX/USDT:USDT",
+                "timeframe": "6h",
+                "active": true
+            },
+            {
+                "symbol": "BNB/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "BNB/USDT:USDT",
+                "timeframe": "6h",
+                "active": true
+            },
+            {
+                "symbol": "BTC/USDT:USDT",
+                "timeframe": "1h",
+                "active": true
+            },
+            {
+                "symbol": "BTC/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "BTC/USDT:USDT",
+                "timeframe": "6h",
+                "active": true
+            },
+            {
+                "symbol": "DOGE/USDT:USDT",
+                "timeframe": "1h",
+                "active": true
+            },
+            {
+                "symbol": "DOGE/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "DOGE/USDT:USDT",
+                "timeframe": "6h",
                 "active": true
             },
             {
                 "symbol": "ETH/USDT:USDT",
-                "timeframe": "4h",
-                "use_macd_filter": false,
+                "timeframe": "1h",
+                "active": true
+            },
+            {
+                "symbol": "ETH/USDT:USDT",
+                "timeframe": "2h",
+                "active": true
+            },
+            {
+                "symbol": "ETH/USDT:USDT",
+                "timeframe": "6h",
+                "active": true
+            },
+            {
+                "symbol": "LINK/USDT:USDT",
+                "timeframe": "1h",
+                "active": true
+            },
+            {
+                "symbol": "LINK/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "LINK/USDT:USDT",
+                "timeframe": "6h",
+                "active": true
+            },
+            {
+                "symbol": "LTC/USDT:USDT",
+                "timeframe": "1h",
+                "active": true
+            },
+            {
+                "symbol": "LTC/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "LTC/USDT:USDT",
+                "timeframe": "6h",
+                "active": true
+            },
+            {
+                "symbol": "SOL/USDT:USDT",
+                "timeframe": "1h",
+                "active": true
+            },
+            {
+                "symbol": "SOL/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "SOL/USDT:USDT",
+                "timeframe": "6h",
+                "active": true
+            },
+            {
+                "symbol": "XRP/USDT:USDT",
+                "timeframe": "1h",
+                "active": true
+            },
+            {
+                "symbol": "XRP/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "XRP/USDT:USDT",
+                "timeframe": "6h",
                 "active": true
             }
         ]

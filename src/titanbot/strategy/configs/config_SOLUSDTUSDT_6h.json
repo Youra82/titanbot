@@ -1,19 +1,19 @@
 {
     "market": {
-        "symbol": "XRP/USDT:USDT",
+        "symbol": "SOL/USDT:USDT",
         "timeframe": "6h"
     },
     "strategy": {
-        "swingsLength": 15,
+        "swingsLength": 17,
         "ob_mitigation": "High/Low",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 24,
+        "adx_threshold": 30,
         "use_pd_filter": true,
         "use_liquidity_sweep_filter": true,
         "liquidity_lookback": 20,
-        "min_fvg_size_pct": 0.1849,
-        "min_ob_quality": 0.15,
+        "min_fvg_size_pct": 0.1968,
+        "min_ob_quality": 0.237,
         "max_ob_touches": 0,
         "use_rejection_candle": true,
         "use_mtf_filter": false,
@@ -21,15 +21,15 @@
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_per_trade_pct": 1.56,
-        "risk_reward_ratio": 1.55,
-        "min_leverage": 6,
-        "max_leverage": 13,
-        "atr_multiplier_sl": 1.435,
+        "risk_per_trade_pct": 0.51,
+        "risk_reward_ratio": 1.94,
+        "min_leverage": 5,
+        "max_leverage": 9,
+        "atr_multiplier_sl": 1.105,
         "min_sl_pct": 0.5,
         "structure_sl_buffer_pct": 0.2,
-        "trailing_stop_activation_rr": 2.18,
-        "trailing_stop_callback_rate_pct": 1.46
+        "trailing_stop_activation_rr": 3.21,
+        "trailing_stop_callback_rate_pct": 1.07
     },
     "behavior": {
         "use_longs": true,
@@ -37,12 +37,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 14.86,
-        "train_pnl_pct": 6.53,
-        "test_wr": 63.64,
-        "test_trades": 11,
-        "test_dd_pct": 2.75,
-        "composite_score": 21.9175,
-        "optimized_at": "2026-06-23T03:35:29.166930Z"
+        "test_pnl_pct": -2.85,
+        "train_pnl_pct": 4.38,
+        "test_wr": 20.0,
+        "test_trades": 5,
+        "test_dd_pct": 8.87,
+        "composite_score": 12.3081,
+        "optimized_at": "2026-06-22T23:08:01.479112Z"
     }
 }
