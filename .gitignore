@@ -14,3 +14,11 @@ logs/
 # CSV-Daten
 data/cache/*.csv
 *.csv
+
+# Claude Code local settings
+.claude/
+
+# Local trade exports / livebot data
+livebot/
+*.xls
+*.xlsx
