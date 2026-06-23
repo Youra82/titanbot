@@ -483,6 +483,13 @@ def main():
         status = 'saved'
         config_missing = not os.path.exists(config_output_path)
         new_test_pnl = best_test_pnl if best_test_pnl is not None else -9999
+
+        # Quality gate: nur speichern wenn OOS PnL positiv ist
+        if new_test_pnl <= 0:
+            print(f"\n❌ Kein profitables OOS-Ergebnis für {symbol} ({timeframe}) — Test-PnL: {new_test_pnl:.2f}%. Config wird NICHT gespeichert.")
+            run_tasks_summary.append({'symbol': symbol, 'timeframe': timeframe, 'status': 'quality_gate_failed', 'test_pnl': new_test_pnl})
+            continue
+
         if existing_best is None or config_missing or new_test_pnl > existing_best:
             # besser — schreibe die Config und aktualisiere die Historie
             try:
