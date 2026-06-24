@@ -22,8 +22,19 @@ from titanbot.utils.telegram import send_message, send_photo
 # Pfade
 # --------------------------------------------------------------------------- #
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-ARTIFACTS_PATH = os.path.join(PROJECT_ROOT, 'artifacts') 
+ARTIFACTS_PATH = os.path.join(PROJECT_ROOT, 'artifacts')
 DB_PATH = os.path.join(ARTIFACTS_PATH, 'db')
+
+
+def _get_global_risk_per_trade_pct() -> float:
+    """Liest risk_per_trade_pct aus settings.json (global, von Mode 3 optimiert)."""
+    try:
+        settings_path = os.path.join(PROJECT_ROOT, 'settings.json')
+        with open(settings_path, 'r', encoding='utf-8') as f:
+            settings = json.load(f)
+        return float(settings.get('risk_settings', {}).get('risk_per_trade_pct', 1.0))
+    except Exception:
+        return 1.0
 # --------------------------------------------------------------------------- #
 # Housekeeper – säubert verwaiste Orders/Positionen (Unverändert)
 # --------------------------------------------------------------------------- #
@@ -65,6 +76,7 @@ def _generate_smc_chart_png(
     tp_price: float = None,
     signal_side: str = None,
     n_candles: int = 40,
+    strategy_config: dict = None,
 ) -> str:
     """
     Zeichnet Kerzendiagramm mit SMC-Zonen (OB, FVG, Liquidität) + Entry/SL/TP als PNG.
@@ -221,6 +233,31 @@ def _generate_smc_chart_png(
     ax.set_xticks([])
     ax.yaxis.tick_right()
     ax.grid(axis='y', color='#1e2a3a', linewidth=0.4, zorder=0)
+
+    # Filter-Anzeige unten links im Chart
+    if strategy_config:
+        sc = strategy_config
+        def _fi(key, label, threshold_key=None):
+            active = sc.get(key, False)
+            if active and threshold_key:
+                val = sc.get(threshold_key, '')
+                return f'{label}({val}) ✓', '#00c853'
+            return (f'{label} ✓', '#00c853') if active else (f'{label} ✗', '#ef5350')
+        parts = [
+            _fi('use_pd_filter',              'PD'),
+            _fi('use_liquidity_sweep_filter', 'Sweep'),
+            _fi('use_rejection_candle',       'Rej'),
+            _fi('use_adx_filter',             'ADX', 'adx_threshold'),
+            _fi('use_mtf_filter',             'MTF'),
+        ]
+        x_pos = 0.01
+        for text, color in parts:
+            ax.annotate(text, xy=(x_pos, 0.02), xycoords='axes fraction',
+                        fontsize=7.5, color=color, fontweight='bold',
+                        bbox=dict(facecolor='#0d1117', edgecolor=color,
+                                  alpha=0.85, pad=2, boxstyle='round,pad=0.3'))
+            x_pos += len(text) * 0.013 + 0.015
+
     plt.tight_layout()
 
     tmp_dir = os.path.join(PROJECT_ROOT, 'artifacts', 'tmp')
@@ -234,7 +271,7 @@ def _generate_smc_chart_png(
 
 
 def _send_smc_chart(df, smc_results, symbol, timeframe, entry_price, sl_price,
-                    tp_price, signal_side, telegram_config, logger):
+                    tp_price, signal_side, telegram_config, logger, strategy_config=None):
     """Generiert SMC-Chart-PNG und sendet es via Telegram. Löscht Temp-Datei danach."""
     if not telegram_config or not telegram_config.get('bot_token') or not telegram_config.get('chat_id'):
         return
@@ -242,6 +279,7 @@ def _send_smc_chart(df, smc_results, symbol, timeframe, entry_price, sl_price,
         path = _generate_smc_chart_png(
             df, smc_results, symbol, timeframe,
             entry_price, sl_price, tp_price, signal_side,
+            strategy_config=strategy_config,
         )
         if path and os.path.exists(path):
             side_label = 'LONG' if signal_side == 'buy' else 'SHORT'
@@ -403,7 +441,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         # 2. Margin & Leverage setzen
         # --------------------------------------------------- #
         risk_params = params.get('risk', {})
-        leverage = risk_params.get('leverage', 10)
+        leverage = risk_params.get('leverage', risk_params.get('min_leverage', 10))
         if not exchange.set_margin_mode(symbol, risk_params.get('margin_mode', 'isolated')):
             logger.error("Margin-Modus konnte nicht gesetzt werden.")
             return
@@ -426,7 +464,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             return
 
         rr = risk_params.get('risk_reward_ratio', 2.0)
-        risk_pct = risk_params.get('risk_per_trade_pct', 1.0) / 100.0
+        risk_pct = _get_global_risk_per_trade_pct() / 100.0
         risk_usdt = balance * risk_pct
 
         # --- SL-Distanz: ATR-basiert (dynamisch & optimal!) ---
@@ -583,6 +621,7 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             recent_data, smc_results_full, symbol, timeframe,
             entry_price, sl_rounded, tp_rounded, signal_side,
             telegram_config, logger,
+            strategy_config=params.get('strategy', {}),
         )
 
         # --------------------------------------------------- #
