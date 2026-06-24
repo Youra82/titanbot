@@ -99,7 +99,7 @@ def objective(trial):
     }
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
-        'risk_per_trade_pct': trial.suggest_float('risk_per_trade_pct', 0.5, 5.0),
+        'risk_per_trade_pct': 1.0,  # Fest für fairen Vergleich — wird in Mode 3 optimiert
         'min_leverage': trial.suggest_int('min_leverage', 2, 8),
         'max_leverage': trial.suggest_int('max_leverage', 8, 30),
         'atr_multiplier_sl': trial.suggest_float('atr_multiplier_sl', 0.5, 3.0),
@@ -428,7 +428,6 @@ def main():
 
         risk_config = {
             'margin_mode': "isolated",
-            'risk_per_trade_pct': round(best_params['risk_per_trade_pct'], 2),
             'risk_reward_ratio': round(best_params['risk_reward_ratio'], 2),
             'min_leverage': best_params['min_leverage'],
             'max_leverage': best_params['max_leverage'],

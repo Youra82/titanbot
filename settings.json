@@ -40,6 +40,10 @@
             }
         ]
     },
+    "risk_settings": {
+        "risk_per_trade_pct": 1.0,
+        "_note": "Wird automatisch von Mode 3 (Portfolio-Optimierung) aktualisiert."
+    },
     "optimization_settings": {
         "enabled": true,
         "schedule": {
