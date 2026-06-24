@@ -678,9 +678,12 @@ if __name__ == "__main__":
             _analysis_end   = _date.fromisoformat(end_date)
             _total_days     = (_analysis_end - _analysis_start).days + 1
             print()
-            print(f"  OOS-Referenz: {_oos_ref}  |  Analysezeitraum: {start_date} â {end_date} ({_total_days} Tage)")
-            print(f"  {'TF':>4s}  {'OOS ab':>12s}  {'Training':>10s}  {'OOS':>8s}  Status")
-            print(f"  {'â'*4}  {'â'*12}  {'â'*10}  {'â'*8}  {'â'*30}")
+            print(f"  OOS-Referenz: {_oos_ref}  |  Analysezeitraum: {start_date} -> {end_date} ({_total_days} Tage)")
+
+            print(f"  {'TF':>4s}  {'OOS ab':>12s}  {'Training':>10s}  {'OOS':>8s}  Status")
+
+            print(f"  {'-'*4}  {'-'*12}  {'-'*10}  {'-'*8}  {'-'*30}")
+
             for _tf, _lb in sorted(_tfs_to_check.items()):
                 _oos_days_tf = _lb * 30 // 100
                 _oos_start   = _ref_dt - _td(days=_oos_days_tf)
@@ -688,12 +691,15 @@ if __name__ == "__main__":
                 _t_days = (min(_analysis_end, _train_end) - _analysis_start).days + 1 if _analysis_start <= _train_end else 0
                 _o_days = (_analysis_end - max(_analysis_start, _oos_start)).days + 1 if _analysis_end >= _oos_start else 0
                 if _t_days <= 0:
-                    _status = "â vollstÃ¤ndig OOS"
+                    _status = "[OOS] vollstaendig OOS"
+
                 elif _o_days <= 0:
-                    _status = "â ï¸  vollstÃ¤ndig Training"
+                    _status = "[TRAIN] vollstaendig Training"
+
                 else:
                     _pct_train = _t_days * 100 // _total_days
-                    _status = f"â¹ï¸  {_t_days}d Training / {_o_days}d OOS ({_pct_train}% im Training)"
+                    _status = f"[MIX] {_t_days}d Training / {_o_days}d OOS ({_pct_train}% im Training)"
+
                 print(f"  {_tf:>4s}  {str(_oos_start):>12s}  {max(0,_t_days):>9d}d  {max(0,_o_days):>7d}d  {_status}")
             print()
     except Exception:
