@@ -37,61 +37,6 @@
                 "symbol": "ARB/USDT:USDT",
                 "timeframe": "6h",
                 "active": true
-            },
-            {
-                "symbol": "LTC/USDT:USDT",
-                "timeframe": "30m",
-                "active": false
-            },
-            {
-                "symbol": "XRP/USDT:USDT",
-                "timeframe": "6h",
-                "active": false
-            },
-            {
-                "symbol": "BNB/USDT:USDT",
-                "timeframe": "6h",
-                "active": false
-            },
-            {
-                "symbol": "ADA/USDT:USDT",
-                "timeframe": "6h",
-                "active": false
-            },
-            {
-                "symbol": "ARB/USDT:USDT",
-                "timeframe": "4h",
-                "active": false
-            },
-            {
-                "symbol": "BTC/USDT:USDT",
-                "timeframe": "6h",
-                "active": false
-            },
-            {
-                "symbol": "DOGE/USDT:USDT",
-                "timeframe": "1h",
-                "active": false
-            },
-            {
-                "symbol": "ETH/USDT:USDT",
-                "timeframe": "2h",
-                "active": false
-            },
-            {
-                "symbol": "ETH/USDT:USDT",
-                "timeframe": "6h",
-                "active": false
-            },
-            {
-                "symbol": "LINK/USDT:USDT",
-                "timeframe": "30m",
-                "active": false
-            },
-            {
-                "symbol": "SOL/USDT:USDT",
-                "timeframe": "1h",
-                "active": false
             }
         ]
     },
