@@ -150,7 +150,7 @@ def _generate_trades_excel(final_sim, capital):
         ('Trades gesamt', total),
         ('Win-Rate',      f"{wins / total * 100:.1f}%" if total else '—'),
         ('PnL',           f"{pnl_pct:+.1f}%"),
-        ('Endkapital',    f"{rows[-1]['Kapital']:.2f} USDT" if rows else '—'),
+        ('Endkapital',    f"{rows[-1]['Gesamtkapital']:.2f} USDT" if rows else '—'),
     ]:
         ws.cell(row=sr, column=1, value=label).font = Font(bold=True)
         ws.cell(row=sr, column=2, value=value)
