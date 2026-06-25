@@ -1,0 +1,47 @@
+{
+    "market": {
+        "symbol": "ARB/USDT:USDT",
+        "timeframe": "6h"
+    },
+    "strategy": {
+        "swingsLength": 16,
+        "ob_mitigation": "Close",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 28,
+        "use_pd_filter": true,
+        "use_liquidity_sweep_filter": true,
+        "liquidity_lookback": 25,
+        "min_fvg_size_pct": 0.1556,
+        "min_ob_quality": 0.5,
+        "max_ob_touches": 0,
+        "use_rejection_candle": true,
+        "use_mtf_filter": false,
+        "volume_ma_period": 20
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_reward_ratio": 1.68,
+        "min_leverage": 2,
+        "max_leverage": 17,
+        "atr_multiplier_sl": 1.106,
+        "min_sl_pct": 0.5,
+        "structure_sl_buffer_pct": 0.2,
+        "trailing_stop_activation_rr": 2.29,
+        "trailing_stop_callback_rate_pct": 0.55
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 14.92,
+        "train_pnl_pct": 8.24,
+        "test_wr": 42.86,
+        "test_trades": 7,
+        "test_dd_pct": 7.72,
+        "composite_score": 15.5874,
+        "optimized_at": "2026-06-24T21:35:15.260758Z"
+    }
+}
