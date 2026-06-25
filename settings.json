@@ -5,43 +5,26 @@
         "active_strategies": [
             {
                 "symbol": "ADA/USDT:USDT",
-                "timeframe": "30m",
+                "timeframe": "1h",
+                "use_macd_filter": false,
                 "active": true
             },
             {
                 "symbol": "XRP/USDT:USDT",
-                "timeframe": "30m",
-                "active": true
-            },
-            {
-                "symbol": "AVAX/USDT:USDT",
                 "timeframe": "1h",
-                "active": true
-            },
-            {
-                "symbol": "DOGE/USDT:USDT",
-                "timeframe": "6h",
-                "active": true
-            },
-            {
-                "symbol": "BNB/USDT:USDT",
-                "timeframe": "30m",
-                "active": true
-            },
-            {
-                "symbol": "LTC/USDT:USDT",
-                "timeframe": "1h",
+                "use_macd_filter": false,
                 "active": true
             },
             {
                 "symbol": "ARB/USDT:USDT",
-                "timeframe": "6h",
+                "timeframe": "30m",
+                "use_macd_filter": false,
                 "active": true
             }
         ]
     },
     "risk_settings": {
-        "risk_per_trade_pct": 1.0,
+        "risk_per_trade_pct": 4.0,
         "_note": "Wird automatisch von Mode 3 (Portfolio-Optimierung) aktualisiert."
     },
     "optimization_settings": {
@@ -64,7 +47,7 @@
             "max_drawdown_pct": 30
         },
         "send_telegram_on_completion": true,
-        "oos_reference_date": "2026-06-22",
+        "oos_reference_date": "2026-06-24",
         "_oos_note": "End-Datum fuer 70/30-Split. OOS-Start automatisch je Timeframe."
     }
 }
