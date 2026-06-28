@@ -125,7 +125,9 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0)
     min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0
     structure_sl_buffer_pct = risk_params.get('structure_sl_buffer_pct', 0.2) / 100.0
-    fee_pct = 0.05 / 100
+    fee_pct            = 0.05 / 100   # 0.05% pro Seite (Bitget)
+    slippage_entry_pct = 0.05 / 100   # 0.05% Entry (SMC-Limit-Orders, konservativ)
+    slippage_exit_pct  = 0.05 / 100   # 0.05% Exit  (Market-Order SL/TP)
 
     absolute_max_notional_value = 1000000
 
@@ -244,13 +246,15 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 notional_value = position['notional_value']
                 pnl_usd = notional_value * pnl_pct
                 total_fees = notional_value * fee_pct * 2
-                current_capital += (pnl_usd - total_fees)
+                total_slippage = notional_value * (slippage_entry_pct + slippage_exit_pct)
+                net_trade_cost = total_fees + total_slippage
+                current_capital += (pnl_usd - net_trade_cost)
                 if current_capital <= 0: current_capital = 0; break
-                if (pnl_usd - total_fees) > 0: wins_count += 1
+                if (pnl_usd - net_trade_cost) > 0: wins_count += 1
                 trades_count += 1
-                
+
                 # NEU: Trade für Visualisierung speichern
-                net_pnl_pct = pnl_pct * 100 - (fee_pct * 2 * 100)
+                net_pnl_pct = pnl_pct * 100 - (fee_pct * 2 * 100) - ((slippage_entry_pct + slippage_exit_pct) * 100)
                 trade_record = {
                     'entry_' + position['side']: {
                         'time': position['entry_time'].isoformat() if hasattr(position.get('entry_time'), 'isoformat') else str(position.get('entry_time')),
@@ -377,7 +381,8 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         pnl_pct = (last_price / position['entry_price'] - 1) if position['side'] == 'long' else (1 - last_price / position['entry_price'])
         pnl_usd = position['notional_value'] * pnl_pct
         total_fees = position['notional_value'] * fee_pct * 2
-        net_pnl = pnl_usd - total_fees
+        total_slippage = position['notional_value'] * (slippage_entry_pct + slippage_exit_pct)
+        net_pnl = pnl_usd - total_fees - total_slippage
         current_capital += net_pnl
         if current_capital <= 0:
             current_capital = 0
@@ -385,7 +390,7 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
             if net_pnl > 0:
                 wins_count += 1
         trades_count += 1
-        net_pnl_pct_close = pnl_pct * 100 - (fee_pct * 2 * 100)
+        net_pnl_pct_close = pnl_pct * 100 - (fee_pct * 2 * 100) - ((slippage_entry_pct + slippage_exit_pct) * 100)
         trades_list.append({
             'entry_' + position['side']: {
                 'time': position['entry_time'].isoformat() if hasattr(position.get('entry_time'), 'isoformat') else str(position.get('entry_time')),
