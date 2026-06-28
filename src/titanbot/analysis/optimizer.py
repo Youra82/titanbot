@@ -48,7 +48,7 @@ MIN_WIN_RATE_CONSTRAINT = 55.0
 MIN_PNL_CONSTRAINT = 0.0
 START_CAPITAL = 1000
 OPTIM_MODE = "strict"
-MIN_TRADES_PER_YEAR = 300   # Mindest-Trades/Jahr pro Strategie (wird proportional auf Datenlänge skaliert)
+MIN_TRADES_PER_YEAR = 120   # SMC-Setups sind selektiv; 300 erzwang schlechte Qualitaets-Setups
 
 def create_safe_filename(symbol, timeframe):
     return f"{symbol.replace('/', '').replace(':', '')}_{timeframe}"
