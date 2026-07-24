@@ -293,7 +293,7 @@ for f in sorted(configs):
         new_strats.append({'symbol': sym, 'timeframe': tf, 'active': True})
         print(f"  ✔ {sym} ({tf})")
 settings['live_trading_settings']['active_strategies'] = new_strats
-settings['live_trading_settings']['use_auto_optimizer_results'] = True
+settings['live_trading_settings']['use_auto_optimizer_results'] = False
 json.dump(settings, open(os.path.join(ROOT, 'settings.json'), 'w'), indent=4)
 print(f"\n✅ settings.json aktualisiert — {len(new_strats)} Strategie(n) aktiv.")
 PYEOF
