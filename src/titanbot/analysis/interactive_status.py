@@ -20,7 +20,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.utils.exchange import Exchange
-from titanbot.analysis.backtester import run_smc_backtest
+from titanbot.analysis.backtester import run_smc_backtest, FINE_TF_MAP
 
 def setup_logging():
     logger = logging.getLogger('interactive_status')
@@ -91,7 +91,7 @@ def load_config(filepath):
     with open(filepath, 'r') as f:
         return json.load(f)
 
-def run_backtest_for_chart(df, config, start_capital=1000):
+def run_backtest_for_chart(df, config, start_capital=1000, fine_data=None):
     """
     Führt einen Backtest durch und gibt Trades, Equity Curve, Stats und SMC-Strukturen zurück
     Nutzt den existierenden SMC Backtester - jetzt mit Trades, Equity-Curve und SMC-Strukturen!
@@ -111,7 +111,7 @@ def run_backtest_for_chart(df, config, start_capital=1000):
         original_level = logger_backtest.level
         logger_backtest.setLevel(logging.ERROR)
         
-        result = run_smc_backtest(df.copy(), strategy_params, risk_params, start_capital=start_capital, verbose=False)
+        result = run_smc_backtest(df.copy(), strategy_params, risk_params, start_capital=start_capital, verbose=False, fine_data=fine_data)
         
         logger_backtest.setLevel(original_level)
         
@@ -512,14 +512,24 @@ def main():
                 end_date_for_load = end_date
             
             df = exchange.fetch_historical_ohlcv(symbol, timeframe, start_date_for_load, end_date_for_load)
-            
+
             if df is None or len(df) == 0:
                 logger.warning(f"Keine Daten für {symbol} {timeframe}")
                 continue
-            
+
+            fine_df = None
+            fine_tf = FINE_TF_MAP.get(timeframe)
+            if fine_tf:
+                try:
+                    fine_df = exchange.fetch_historical_ohlcv(symbol, fine_tf, start_date_for_load, end_date_for_load)
+                    if fine_df is None or len(fine_df) == 0:
+                        fine_df = None
+                except Exception:
+                    fine_df = None
+
             # Backtest-Simulation durchführen
             logger.info("Führe SMC-Backtest-Simulation durch...")
-            trades, equity_df, stats, smc_structures = run_backtest_for_chart(df, config, start_capital)
+            trades, equity_df, stats, smc_structures = run_backtest_for_chart(df, config, start_capital, fine_data=fine_df)
             
             # Chart erstellen
             logger.info("Erstelle Chart mit Trade-Signalen, SMC-Strukturen und Equity Curve...")

@@ -45,7 +45,7 @@ def _scan_configs() -> list:
 
 
 def _build_strategies_data(config_files: list, start_date: str, end_date: str) -> dict:
-    from titanbot.analysis.backtester import load_data
+    from titanbot.analysis.backtester import load_data, FINE_TF_MAP
     from titanbot.strategy.smc_engine import SMCEngine, Bias
     from titanbot.utils.timeframe_utils import determine_htf
     strategies_data = {}
@@ -66,6 +66,20 @@ def _build_strategies_data(config_files: list, start_date: str, end_date: str) -
                 print(f'  {Y}Uebersprungen (keine Daten): {fname}{NC}')
                 continue
 
+            # Feinere Kerzen fuer SL/TP-Intrabar-Reihenfolgen-Aufloesung (oraclebot-Muster),
+            # einmalig geladen -- wird ueber alle Greedy-Simulationen dieser Strategie hinweg
+            # wiederverwendet. Best-effort: bleibt None bei Fehler -> SL-first-Fallback.
+            fine_data = None
+            fine_tf = FINE_TF_MAP.get(timeframe)
+            if fine_tf:
+                try:
+                    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                        fine_data = load_data(symbol, fine_tf, start_date, end_date)
+                    if fine_data is None or fine_data.empty:
+                        fine_data = None
+                except Exception:
+                    fine_data = None
+
             # Precompute MTF bias ONCE so the greedy optimizer (3520 runs)
             # never needs to call load_data for HTF data again.
             market_bias = Bias.NEUTRAL
@@ -82,6 +96,7 @@ def _build_strategies_data(config_files: list, start_date: str, end_date: str) -
                 'symbol':      symbol,
                 'timeframe':   timeframe,
                 'data':        data,
+                'fine_data':   fine_data,
                 'smc_params':  config.get('strategy', {}),
                 'risk_params': config.get('risk', {}),
                 'htf':         resolved_htf,

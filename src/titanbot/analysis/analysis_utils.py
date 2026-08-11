@@ -77,7 +77,7 @@ def _quiet():
 def run_backtest_for_config(cfg, start_date, end_date, start_capital, warmup_date=None, silent=True):
     """Run load_data + run_smc_backtest for one config. Returns (result, label) or None."""
     try:
-        from titanbot.analysis.backtester import load_data, run_smc_backtest
+        from titanbot.analysis.backtester import load_data, run_smc_backtest, FINE_TF_MAP
         market = cfg.get('market', {})
         symbol = market.get('symbol', '')
         tf     = market.get('timeframe', '')
@@ -92,12 +92,23 @@ def run_backtest_for_config(cfg, start_date, end_date, start_capital, warmup_dat
             data = load_data(symbol, tf, start_date, end_date)
         if data is None or data.empty:
             return None
+        fine_data = None
+        fine_tf = FINE_TF_MAP.get(tf)
+        if fine_tf:
+            try:
+                with (_quiet() if silent else contextlib.nullcontext()):
+                    fine_data = load_data(symbol, fine_tf, start_date, end_date)
+                if fine_data is None or fine_data.empty:
+                    fine_data = None
+            except Exception:
+                fine_data = None
         with (_quiet() if silent else contextlib.nullcontext()):
             result = run_smc_backtest(
                 data, smc_p, risk_p,
                 start_capital=start_capital,
                 verbose=False,
                 backtest_start_date=warmup_date,
+                fine_data=fine_data,
             )
         return result, label
     except Exception as e:

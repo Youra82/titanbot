@@ -33,6 +33,43 @@ _HTF_MAP = {
 }
 _PD_RESAMPLE = {'1h': '1h', '4h': '4h', '1d': '1D'}
 
+# Feinere Timeframe je Strategie-Timeframe fuer die Intrabar-Reihenfolgen-Aufloesung
+# (SL vs. TP in derselben Kerze -- oraclebot-Muster, siehe compute_barrier_labels()).
+# Verhaeltnis ~8-30:1, an verfuegbare Exchange-Granularitaeten angepasst.
+FINE_TF_MAP = {
+    '5m': '1m', '15m': '1m', '30m': '1m',
+    '1h': '5m', '2h': '5m',
+    '4h': '15m', '6h': '15m',
+    '1d': '1h',
+}
+
+
+def _resolve_ambiguous_exit(fine_slice, sl_price, tp_price, side):
+    """
+    Wenn eine Coarse-Kerze SOWOHL SL als auch TP beruehrt haette, per feineren
+    Kerzen (chronologisch) die tatsaechliche Reihenfolge auflösen, statt SL
+    blind zu bevorzugen (bisherige, unbelegte Konvention).
+
+    Rueckgabe: (exit_price, exit_reason) oder (None, None) wenn die Fein-Daten
+    keine Entscheidung liefern (z.B. keine Kerze beruehrt in Wahrheit etwas --
+    kann bei Gap-Kerzen passieren) -- Aufrufer faellt dann auf die alte
+    SL-first-Konvention zurueck.
+    """
+    if fine_slice is None or fine_slice.empty:
+        return None, None
+    for _, bar in fine_slice.iterrows():
+        if side == 'long':
+            if bar['low'] <= sl_price:
+                return sl_price, 'sl'
+            if bar['high'] >= tp_price:
+                return tp_price, 'tp'
+        else:
+            if bar['high'] >= sl_price:
+                return sl_price, 'sl'
+            if bar['low'] <= tp_price:
+                return tp_price, 'tp'
+    return None, None
+
 # --- load_data Funktion bleibt unverändert ---
 def load_data(symbol, timeframe, start_date_str, end_date_str):
     global secrets_cache
@@ -84,7 +121,7 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
     except Exception as e: print(f"FEHLER beim Daten-Download: {e}"); import traceback; traceback.print_exc(); return pd.DataFrame()
 
 
-def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=False, bar_index_offset=0, backtest_start_date=None):
+def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=False, bar_index_offset=0, backtest_start_date=None, fine_data=None):
     if data.empty or len(data) < 15:
         return {"total_pnl_pct": -100, "trades_count": 0, "win_rate": 0, "max_drawdown_pct": 1.0, "end_capital": start_capital}
 
@@ -197,6 +234,9 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     # genutzt aber erzeugen keine Trades (Equity bleibt unverändert).
     bt_start_ts = pd.Timestamp(backtest_start_date, tz='UTC') if backtest_start_date else None
 
+    # Kerzendauer fuer die Intrabar-Fein-Aufloesung (siehe _resolve_ambiguous_exit)
+    coarse_duration = data.index[1] - data.index[0] if len(data.index) >= 2 else None
+
     # --- Backtest Loop ---
     for i, (timestamp, current_candle) in enumerate(data.iterrows()):
         if current_capital <= 0: break
@@ -234,12 +274,30 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         closed_this_bar = False
         if position:
             exit_price = None
+            sl, tp = position['stop_loss'], position['take_profit']
             if position['side'] == 'long':
-                if current_candle['low'] <= position['stop_loss']: exit_price = position['stop_loss']
-                elif current_candle['high'] >= position['take_profit']: exit_price = position['take_profit']
-            elif position['side'] == 'short':
-                if current_candle['high'] >= position['stop_loss']: exit_price = position['stop_loss']
-                elif current_candle['low'] <= position['take_profit']: exit_price = position['take_profit']
+                sl_hit = current_candle['low'] <= sl
+                tp_hit = current_candle['high'] >= tp
+            else:
+                sl_hit = current_candle['high'] >= sl
+                tp_hit = current_candle['low'] <= tp
+
+            if sl_hit and tp_hit:
+                # Beide Level in derselben Kerze moeglich -- Reihenfolge unklar
+                # ohne feinere Daten. Per fine_data (falls vorhanden) real aufloesen
+                # statt SL blind zu bevorzugen (oraclebot-Muster).
+                exit_price = None
+                if fine_data is not None and coarse_duration is not None:
+                    fine_slice = fine_data.loc[
+                        (fine_data.index >= timestamp) & (fine_data.index < timestamp + coarse_duration)
+                    ]
+                    exit_price, _ = _resolve_ambiguous_exit(fine_slice, sl, tp, position['side'])
+                if exit_price is None:
+                    exit_price = sl  # Fallback: alte, konservative SL-first-Konvention
+            elif sl_hit:
+                exit_price = sl
+            elif tp_hit:
+                exit_price = tp
 
             if exit_price:
                 pnl_pct = (exit_price / position['entry_price'] - 1) if position['side'] == 'long' else (1 - exit_price / position['entry_price'])
