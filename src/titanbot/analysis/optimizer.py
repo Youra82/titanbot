@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore', category=UserWarning, module='keras')
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
-from titanbot.analysis.backtester import load_data, run_smc_backtest
+from titanbot.analysis.backtester import load_data, run_smc_backtest, FINE_TF_MAP
 from titanbot.analysis.evaluator import evaluate_dataset
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -30,6 +30,7 @@ import math
 import threading as _threading
 
 HISTORICAL_DATA = None
+FINE_DATA = None  # feinere Kerzen fuer SL/TP-Intrabar-Reihenfolgen-Aufloesung (oraclebot-Muster)
 TRAIN_DATA      = None   # 70% — Optimierung
 TEST_DATA       = None   # 30% — Out-of-Sample Validierung
 TRAIN_SPLIT_IDX = 0
@@ -117,7 +118,7 @@ def objective(trial):
     smc_params['_precomputed_smc'] = _get_smc_precomputed(
         _SMC_TRAIN_CACHE, _SMC_TRAIN_CACHE_LOCK, TRAIN_DATA, smc_params)
 
-    train_result = run_smc_backtest(TRAIN_DATA.copy(), smc_params, risk_params, START_CAPITAL, verbose=False)
+    train_result = run_smc_backtest(TRAIN_DATA.copy(), smc_params, risk_params, START_CAPITAL, verbose=False, fine_data=FINE_DATA)
     train_pnl    = train_result.get('total_pnl_pct', -1000)
     train_dd     = train_result.get('max_drawdown_pct', 1.0)
     train_trades = train_result.get('trades_count', 0)
@@ -131,7 +132,7 @@ def objective(trial):
 
     test_result  = run_smc_backtest(
         TEST_DATA.copy(), smc_params, risk_params, START_CAPITAL,
-        verbose=False, bar_index_offset=TRAIN_SPLIT_IDX)
+        verbose=False, bar_index_offset=TRAIN_SPLIT_IDX, fine_data=FINE_DATA)
     test_pnl     = test_result.get('total_pnl_pct', -1000)
     test_dd      = test_result.get('max_drawdown_pct', 1.0)
     test_trades  = test_result.get('trades_count', 0)
@@ -166,7 +167,7 @@ def objective(trial):
     return final_score
 
 def main():
-    global HISTORICAL_DATA, TRAIN_DATA, TEST_DATA, TRAIN_SPLIT_IDX, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE, MIN_TRADES_PER_YEAR
+    global HISTORICAL_DATA, FINE_DATA, TRAIN_DATA, TEST_DATA, TRAIN_SPLIT_IDX, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE, MIN_TRADES_PER_YEAR
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
     parser.add_argument('--symbols', required=False, type=str, default="")
     parser.add_argument('--timeframes', required=False, type=str, default="")
@@ -224,6 +225,23 @@ def main():
         else:
             pair_start_date = args.start_date
         HISTORICAL_DATA = load_data(symbol, timeframe, pair_start_date, args.end_date)
+
+        # Feinere Kerzen fuer SL/TP-Intrabar-Reihenfolgen-Aufloesung (oraclebot-Muster) --
+        # einmalig pro Symbol/Timeframe, deckt Train+Test gemeinsam ab (per Zeitstempel
+        # nachgeschlagen, keine separate Aufteilung noetig). Best-effort: schlaegt der
+        # Abruf fehl, faellt run_smc_backtest auf die alte SL-first-Konvention zurueck.
+        FINE_DATA = None
+        fine_tf = FINE_TF_MAP.get(timeframe)
+        if fine_tf:
+            try:
+                FINE_DATA = load_data(symbol, fine_tf, pair_start_date, args.end_date)
+                if FINE_DATA is not None and not FINE_DATA.empty:
+                    print(f"Fein-Daten geladen: {fine_tf} ({len(FINE_DATA)} Kerzen) fuer Intrabar-Aufloesung.")
+                else:
+                    FINE_DATA = None
+            except Exception as _e:
+                print(f"Warnung: Fein-Daten-Abruf ({fine_tf}) fehlgeschlagen ({_e}) -- SL-first-Fallback.")
+                FINE_DATA = None
 
         # Indikatoren einmalig vorberechnen — ATR/ADX/volume_ma sind trial-unabhängig
         # (adx_period=14 ist fix, volume_ma_period=20 ist fix)

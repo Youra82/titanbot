@@ -13,13 +13,19 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.strategy.smc_engine import SMCEngine, Bias
 from titanbot.strategy.trade_logic import get_titan_signal, get_zone_based_tp
-from titanbot.analysis.backtester import load_data # Importiere load_data für HTF-Daten
+from titanbot.analysis.backtester import load_data, _resolve_ambiguous_exit # Importiere load_data für HTF-Daten
 from titanbot.utils.timeframe_utils import determine_htf # NEU: Import für determine_htf
 
 def run_portfolio_simulation(start_capital, strategies_data, start_date, end_date):
     """
     Führt eine chronologische Portfolio-Simulation mit mehreren SMC-Strategien durch.
     Beinhaltet MTF-Bias-Check.
+
+    Intrabar-Aufloesung (SL vs. statischer TP in derselben Kerze, oraclebot-Muster):
+    nur fuer den Fall "noch nicht trailing" -- sobald Trailing aktiv ist, gibt es
+    nur noch EIN bewegliches Level (kein TP mehr relevant), daher keine Ambiguitaet
+    mehr aufzuloesen. Nutzt strat_data['fine_data'] falls vom Aufrufer mitgegeben
+    (optional, faellt sonst auf die alte SL-first-Konvention zurueck).
     """
     print("\n--- Starte Portfolio-Simulation (SMC)... ---")
 
@@ -176,6 +182,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
             current_candle = strat_data['data'].loc[ts]
             pos['last_known_price'] = current_candle['close']
             exit_price = None
+            was_trailing_before = pos['trailing_active']
 
             if pos['side'] == 'long':
                 if not pos['trailing_active'] and current_candle['high'] >= pos['activation_price']:
@@ -184,8 +191,8 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                     pos['peak_price'] = max(pos['peak_price'], current_candle['high'])
                     trailing_sl = pos['peak_price'] * (1 - pos['callback_rate'])
                     pos['stop_loss'] = max(pos['stop_loss'], trailing_sl)
-                if current_candle['low'] <= pos['stop_loss']: exit_price = pos['stop_loss']
-                elif not pos['trailing_active'] and current_candle['high'] >= pos['take_profit']: exit_price = pos['take_profit']
+                sl_hit = current_candle['low'] <= pos['stop_loss']
+                tp_hit = (not was_trailing_before) and current_candle['high'] >= pos['take_profit']
             else: # Short
                 if not pos['trailing_active'] and current_candle['low'] <= pos['activation_price']:
                     pos['trailing_active'] = True
@@ -193,8 +200,27 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                     pos['peak_price'] = min(pos['peak_price'], current_candle['low'])
                     trailing_sl = pos['peak_price'] * (1 + pos['callback_rate'])
                     pos['stop_loss'] = min(pos['stop_loss'], trailing_sl)
-                if current_candle['high'] >= pos['stop_loss']: exit_price = pos['stop_loss']
-                elif not pos['trailing_active'] and current_candle['low'] <= pos['take_profit']: exit_price = pos['take_profit']
+                sl_hit = current_candle['high'] >= pos['stop_loss']
+                tp_hit = (not was_trailing_before) and current_candle['low'] <= pos['take_profit']
+
+            if sl_hit and tp_hit:
+                # Nur ambig, solange diese Kerze noch nicht getrailt hat (sonst gibt
+                # es nur noch das eine bewegliche SL-Level, kein TP mehr im Spiel).
+                fine_data = strat_data.get('fine_data')
+                exit_price = None
+                if fine_data is not None:
+                    coarse_idx = strat_data['data'].index
+                    pos_i = coarse_idx.get_loc(ts)
+                    duration = (coarse_idx[pos_i + 1] - ts) if pos_i + 1 < len(coarse_idx) else None
+                    if duration is not None:
+                        fine_slice = fine_data.loc[(fine_data.index >= ts) & (fine_data.index < ts + duration)]
+                        exit_price, _ = _resolve_ambiguous_exit(fine_slice, pos['stop_loss'], pos['take_profit'], pos['side'])
+                if exit_price is None:
+                    exit_price = pos['stop_loss']  # Fallback: alte SL-first-Konvention
+            elif sl_hit:
+                exit_price = pos['stop_loss']
+            elif tp_hit:
+                exit_price = pos['take_profit']
 
             if exit_price:
                 pnl_pct = (exit_price / pos['entry_price'] - 1) if pos['side'] == 'long' else (1 - exit_price / pos['entry_price'])
