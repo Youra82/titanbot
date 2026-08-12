@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore', category=UserWarning, module='keras')
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
-from titanbot.analysis.backtester import load_data, run_smc_backtest, FINE_TF_MAP
+from titanbot.analysis.backtester import load_data, run_smc_backtest, FINE_TF_MAP, LazyFineData
 from titanbot.analysis.evaluator import evaluate_dataset
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -226,22 +226,8 @@ def main():
             pair_start_date = args.start_date
         HISTORICAL_DATA = load_data(symbol, timeframe, pair_start_date, args.end_date)
 
-        # Feinere Kerzen fuer SL/TP-Intrabar-Reihenfolgen-Aufloesung (oraclebot-Muster) --
-        # einmalig pro Symbol/Timeframe, deckt Train+Test gemeinsam ab (per Zeitstempel
-        # nachgeschlagen, keine separate Aufteilung noetig). Best-effort: schlaegt der
-        # Abruf fehl, faellt run_smc_backtest auf die alte SL-first-Konvention zurueck.
-        FINE_DATA = None
         fine_tf = FINE_TF_MAP.get(timeframe)
-        if fine_tf:
-            try:
-                FINE_DATA = load_data(symbol, fine_tf, pair_start_date, args.end_date)
-                if FINE_DATA is not None and not FINE_DATA.empty:
-                    print(f"Fein-Daten geladen: {fine_tf} ({len(FINE_DATA)} Kerzen) fuer Intrabar-Aufloesung.")
-                else:
-                    FINE_DATA = None
-            except Exception as _e:
-                print(f"Warnung: Fein-Daten-Abruf ({fine_tf}) fehlgeschlagen ({_e}) -- SL-first-Fallback.")
-                FINE_DATA = None
+        FINE_DATA = LazyFineData(symbol, fine_tf) if fine_tf else None
 
         # Indikatoren einmalig vorberechnen — ATR/ADX/volume_ma sind trial-unabhängig
         # (adx_period=14 ist fix, volume_ma_period=20 ist fix)
