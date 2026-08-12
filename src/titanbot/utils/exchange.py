@@ -102,7 +102,13 @@ class Exchange:
         all_ohlcv = []
         current_ts = start_ts
         retries = 0
-        limit = 1000
+        # WICHTIG: limit darf Bitgets tatsaechliches Server-Maximum (200 fuer diesen
+        # Endpoint) nicht ueberschreiten. Bei zu hohem limit liefert Bitget/ccxt still
+        # schweigend nur 200 Kerzen zurueck, verankert diese aber am FALSCHEN Ende des
+        # nominell angefragten (aber nicht lieferbaren) Fensters statt am angefragten
+        # "since" -- fuehrte bei schnellen Timeframes (1m/5m/15m) zu systematischen
+        # ~8-Tage-Luecken.
+        limit = 200
         timeframe_duration_ms = self.exchange.parse_timeframe(timeframe) * 1000 if self.exchange.parse_timeframe(timeframe) else 60000
 
         while current_ts < end_ts and retries < max_retries:

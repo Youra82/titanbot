@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore', category=UserWarning, module='keras')
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
-from titanbot.analysis.backtester import load_data, run_smc_backtest, FINE_TF_MAP
+from titanbot.analysis.backtester import load_data, run_smc_backtest, FINE_TF_MAP, LazyFineData
 from titanbot.analysis.portfolio_simulator import run_portfolio_simulation
 from titanbot.analysis.portfolio_optimizer import run_portfolio_optimizer
 from titanbot.utils.telegram import send_document
@@ -414,15 +414,8 @@ def run_single_analysis(start_date, end_date, start_capital, warmup_date=None, a
             smc_params['timeframe'] = timeframe
             smc_params['htf'] = config['market'].get('htf')
 
-            fine_data = None
             fine_tf = FINE_TF_MAP.get(timeframe)
-            if fine_tf:
-                try:
-                    fine_data = load_data(symbol, fine_tf, data_start, end_date)
-                    if fine_data is None or fine_data.empty:
-                        fine_data = None
-                except Exception:
-                    fine_data = None
+            fine_data = LazyFineData(symbol, fine_tf) if fine_tf else None
 
             result = run_smc_backtest(data.copy(), smc_params, risk_params, start_capital, verbose=False, backtest_start_date=start_date if warmup_date else None, fine_data=fine_data)
             all_results.append({

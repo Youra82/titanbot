@@ -20,7 +20,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.utils.exchange import Exchange
-from titanbot.analysis.backtester import run_smc_backtest, FINE_TF_MAP
+from titanbot.analysis.backtester import run_smc_backtest, FINE_TF_MAP, LazyFineData
 
 def setup_logging():
     logger = logging.getLogger('interactive_status')
@@ -517,15 +517,8 @@ def main():
                 logger.warning(f"Keine Daten für {symbol} {timeframe}")
                 continue
 
-            fine_df = None
             fine_tf = FINE_TF_MAP.get(timeframe)
-            if fine_tf:
-                try:
-                    fine_df = exchange.fetch_historical_ohlcv(symbol, fine_tf, start_date_for_load, end_date_for_load)
-                    if fine_df is None or len(fine_df) == 0:
-                        fine_df = None
-                except Exception:
-                    fine_df = None
+            fine_df = LazyFineData(symbol, fine_tf) if fine_tf else None
 
             # Backtest-Simulation durchführen
             logger.info("Führe SMC-Backtest-Simulation durch...")

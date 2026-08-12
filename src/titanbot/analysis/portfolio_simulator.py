@@ -13,7 +13,7 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.strategy.smc_engine import SMCEngine, Bias
 from titanbot.strategy.trade_logic import get_titan_signal, get_zone_based_tp
-from titanbot.analysis.backtester import load_data, _resolve_ambiguous_exit # Importiere load_data für HTF-Daten
+from titanbot.analysis.backtester import load_data, _resolve_ambiguous_exit, _get_fine_slice # Importiere load_data für HTF-Daten
 from titanbot.utils.timeframe_utils import determine_htf # NEU: Import für determine_htf
 
 def run_portfolio_simulation(start_capital, strategies_data, start_date, end_date):
@@ -213,7 +213,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                     pos_i = coarse_idx.get_loc(ts)
                     duration = (coarse_idx[pos_i + 1] - ts) if pos_i + 1 < len(coarse_idx) else None
                     if duration is not None:
-                        fine_slice = fine_data.loc[(fine_data.index >= ts) & (fine_data.index < ts + duration)]
+                        fine_slice = _get_fine_slice(fine_data, ts, ts + duration)
                         exit_price, _ = _resolve_ambiguous_exit(fine_slice, pos['stop_loss'], pos['take_profit'], pos['side'])
                 if exit_price is None:
                     exit_price = pos['stop_loss']  # Fallback: alte SL-first-Konvention
