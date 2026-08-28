@@ -128,6 +128,14 @@ def get_titan_signal(
 
     8. Volume filter (optional — use_volume_filter)
 
+    9. Momentum filter (optional — use_momentum_filter)
+       - MACD bullish/bearish cross within momentum_lookback bars
+       - RSI recovering from oversold (long) / reversing from overbought (short)
+       - Requires 'macd_recent_bull_cross'/'macd_recent_bear_cross'/
+         'rsi_recent_oversold_recovery'/'rsi_recent_overbought_reversal' columns
+         (see momentum_indicators.compute_momentum_columns) — off by default,
+         columns absent → filter is skipped safely.
+
     Returns: (side, entry_price, signal_context) or (None, None, None)
     """
     strategy_params = _get_strategy_params(params)
@@ -339,6 +347,21 @@ def get_titan_signal(
         if signal_side == 'buy' and market_bias == Bias.BEARISH:
             return None, None, None
         if signal_side == 'sell' and market_bias == Bias.BULLISH:
+            return None, None, None
+
+    # Momentum filter (MACD-Cross + RSI-Reversal) — off by default. Requires
+    # precomputed columns (momentum_indicators.compute_momentum_columns); if
+    # they're missing (filter not wired into this data path) the filter is
+    # skipped rather than silently blocking every signal.
+    use_momentum_filter = strategy_params.get('use_momentum_filter', False)
+    if use_momentum_filter and 'macd_recent_bull_cross' in current_candle.index:
+        if signal_side == 'buy':
+            momentum_ok = bool(current_candle.get('macd_recent_bull_cross', False)) and \
+                          bool(current_candle.get('rsi_recent_oversold_recovery', False))
+        else:
+            momentum_ok = bool(current_candle.get('macd_recent_bear_cross', False)) and \
+                          bool(current_candle.get('rsi_recent_overbought_reversal', False))
+        if not momentum_ok:
             return None, None, None
 
     return signal_side, signal_price, signal_context

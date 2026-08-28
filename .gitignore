@@ -22,3 +22,6 @@ data/cache/*.csv
 livebot/
 *.xls
 *.xlsx
+
+# API-Keys / Secrets — niemals committen
+secret.json

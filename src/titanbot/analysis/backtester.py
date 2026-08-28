@@ -214,6 +214,10 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         if 'volume_ma' not in data.columns or data['volume_ma'].isna().all():
             data['volume_ma'] = data['volume'].rolling(window=volume_ma_period).mean()
 
+        if smc_params.get('use_momentum_filter', False) and 'macd_recent_bull_cross' not in data.columns:
+            from titanbot.strategy.momentum_indicators import compute_momentum_columns
+            compute_momentum_columns(data, smc_params)
+
         data.dropna(subset=['atr', 'adx'], inplace=True)
 
         if data.empty:
