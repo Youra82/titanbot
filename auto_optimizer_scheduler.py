@@ -438,6 +438,30 @@ def main() -> int:
                 _write_trigger_log(f"AUTO-OPTIMIZER FINISH result=success elapsed_s={elapsed:.1f}")
                 print('Portfolio optimizer finished successfully; updated last-run timestamp.')
 
+                # Configs/settings.json zurueck nach Git syncen, damit das Repo nicht von der
+                # live laufenden VPS-Konfiguration abdriftet (push_configs.sh ist idempotent:
+                # ohne Aenderungen tut es nichts und gibt rc=0 zurueck).
+                push_script = os.path.join(ROOT, 'push_configs.sh')
+                if os.path.exists(push_script):
+                    try:
+                        push_result = subprocess.run(
+                            ['bash', push_script], cwd=ROOT,
+                            capture_output=True, text=True, timeout=120
+                        )
+                        push_ok = push_result.returncode == 0
+                        _write_trigger_log(
+                            f"AUTO-OPTIMIZER PUSH_CONFIGS result={'success' if push_ok else 'error'} "
+                            f"rc={push_result.returncode}"
+                        )
+                        if not push_ok:
+                            print(f'WARN: push_configs.sh fehlgeschlagen (rc={push_result.returncode}):\n'
+                                  f'{push_result.stdout}\n{push_result.stderr}')
+                    except Exception as _pe:
+                        _write_trigger_log(f"AUTO-OPTIMIZER PUSH_CONFIGS result=exception error={_pe}")
+                        print(f'WARN: push_configs.sh konnte nicht ausgefuehrt werden: {_pe}')
+                else:
+                    print('WARN: push_configs.sh nicht gefunden - Git-Sync uebersprungen.')
+
                 if notify:
                     dur_str = _format_duration(int(elapsed))
                     try:

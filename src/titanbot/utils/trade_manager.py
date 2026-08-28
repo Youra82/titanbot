@@ -341,7 +341,12 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
         
         # Volume MA (NEU für Volume-Filter)
         recent_data['volume_ma'] = recent_data['volume'].rolling(window=volume_ma_period).mean()
-        
+
+        # Momentum-Filter (MACD-Cross + RSI-Reversal) — nur berechnen wenn aktiv
+        if smc_params.get('use_momentum_filter', False):
+            from titanbot.strategy.momentum_indicators import compute_momentum_columns
+            compute_momentum_columns(recent_data, smc_params)
+
         recent_data.dropna(subset=['atr', 'adx'], inplace=True) # Zeilen ohne Indikatoren entfernen
 
         # Verwende die letzte GESCHLOSSENE Kerze für Signal-Berechnung (iloc[-2]).

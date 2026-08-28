@@ -150,10 +150,20 @@ def objective(trial):
     # log1p komprimiert extreme Ausreißer; DD im Nenner bestraft Risiko
     train_score = math.log1p(max(0, train_pnl)) / max(train_dd * 100, 1.0)
     test_score  = math.log1p(max(0, test_pnl))  / max(test_dd  * 100, 1.0)
-    # Trade-Dichte: wie viele Male über dem Minimum? Belohnt Setups die häufig traden
+    # Trade-Dichte: wie viele Male über dem Minimum? Belohnt Setups die häufig traden.
+    # FIXIERT (2026-08-28): trade_bonus/wr_bonus waren um ~Faktor 10-30 zu groß gegenüber
+    # test_score/train_score skaliert (typischer test_score-Bereich: 0.1-1.0, alter
+    # trade_bonus-Bereich: 20-27) -- die eigentliche Profitabilität wurde dadurch praktisch
+    # ignoriert. Konkreter Fund (AVAX/1h, 100 Trials): Trial mit 36.3% Test-PnL/5.5% DD/35
+    # Trades bekam wegen des alten trade_bonus einen NIEDRIGEREN Score als ein Trial mit nur
+    # 3.5% Test-PnL/11.8% DD/55 Trades -- die Config mit dem 10x schlechteren PnL wurde
+    # gespeichert. Koeffizienten um Faktor 10 gesenkt, damit Trade-Anzahl weiter als
+    # Tie-Breaker zwischen ähnlich profitablen Setups wirkt (die Mindest-Trade-Zahl selbst
+    # wird bereits hart über min_test_trades/min_train_trades erzwungen, s.o.), aber nicht
+    # mehr Profitabilität/Risiko dominiert.
     trade_ratio = test_trades / max(min_test_trades, 1)
-    trade_bonus = math.log1p(test_trades) * 6.0 + math.log1p(max(0, trade_ratio - 1.0)) * 3.0
-    wr_bonus    = max(0.0, (test_wr - 40.0) / 10.0)      # Bonus ab 40% Win-Rate
+    trade_bonus = math.log1p(test_trades) * 0.6 + math.log1p(max(0, trade_ratio - 1.0)) * 0.3
+    wr_bonus    = max(0.0, (test_wr - 40.0) / 100.0)     # Bonus ab 40% Win-Rate
 
     final_score = train_score * 0.30 + test_score * 0.70 + trade_bonus + wr_bonus
 
