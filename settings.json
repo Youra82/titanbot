@@ -4,21 +4,13 @@
         "use_auto_optimizer_results": false,
         "active_strategies": [
             {
-                "symbol": "ADA/USDT:USDT",
+                "symbol": "AVAX/USDT:USDT",
                 "timeframe": "1h",
-                "use_macd_filter": false,
                 "active": true
             },
             {
-                "symbol": "XRP/USDT:USDT",
-                "timeframe": "1h",
-                "use_macd_filter": false,
-                "active": true
-            },
-            {
-                "symbol": "ARB/USDT:USDT",
+                "symbol": "SOL/USDT:USDT",
                 "timeframe": "30m",
-                "use_macd_filter": false,
                 "active": true
             }
         ]
