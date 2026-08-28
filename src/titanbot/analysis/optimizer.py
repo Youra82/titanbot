@@ -462,7 +462,13 @@ def main():
 
         _trials_at_start[0] = len([t for t in study.trials if t.state != optuna.trial.TrialState.RUNNING])
         try:
-            study.optimize(objective, n_trials=N_TRIALS, n_jobs=args.jobs, callbacks=[_trial_callback], show_progress_bar=False)
+            # catch=(Exception,): eine einzelne fehlschlagende Trial (Race Condition o.ae.)
+            # markiert Optuna nur diese Trial als FAILED und macht mit den restlichen
+            # weiter, statt das komplette n_trials-Budget fuer dieses Paar wegzuwerfen.
+            # Ohne das killte 2026-08-28 ein einzelner Fehler (Trial 7 von 200) den
+            # gesamten restlichen Lauf fuer ADA/1h.
+            study.optimize(objective, n_trials=N_TRIALS, n_jobs=args.jobs, callbacks=[_trial_callback],
+                          show_progress_bar=False, catch=(Exception,))
         except Exception as e_opt:
             print(f"FEHLER während Optuna optimize: {e_opt}")
             # mark status file as error for visibility
