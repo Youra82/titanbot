@@ -54,6 +54,43 @@ MIN_TRADES_PER_YEAR = 300   # Default; wird immer per --min_trades_per_year CLI-
 def create_safe_filename(symbol, timeframe):
     return f"{symbol.replace('/', '').replace(':', '')}_{timeframe}"
 
+
+def _seed_from_previous_study(study, symbol, timeframe, storage_url):
+    """
+    Warm-Start: speist den besten (per rohem test_pnl) Trial einer frueheren,
+    kleineren Suche fuer dasselbe Paar als garantierten ersten Versuch in die
+    NEUE (ggf. groessere) Suche ein. Sonst kann eine Suchraum-Erweiterung
+    (z.B. neue Filter-Optionen) den alten Fund verpassen, weil das Trial-Budget
+    ueber einen groesseren Raum verteilt wird und die neue Studie bei null
+    anfaengt statt auf den alten Trials aufzubauen -- beobachtet 2026-08-28
+    bei ADA/30m (alter Fund +1.11%, neue Suche ohne Warm-Start: -25.35%).
+    """
+    for prev_suffix in ('_robust', '_v2'):
+        prev_name = f"smc_{create_safe_filename(symbol, timeframe)}{prev_suffix}_{OPTIM_MODE}"
+        try:
+            prev_study = optuna.load_study(study_name=prev_name, storage=storage_url)
+        except Exception:
+            continue
+        prev_trials = [t for t in prev_study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        if not prev_trials:
+            continue
+        best_prev = max(prev_trials, key=lambda t: t.user_attrs.get('test_pnl', -1e9))
+        seed_params = dict(best_prev.params)
+        # Parameter, die die alte (kleinere) Suche noch nicht kannte, mit den
+        # damals fest verdrahteten Werten auffuellen -- reproduziert den alten
+        # Fund 1:1 als Ausgangspunkt der neuen, groesseren Suche.
+        seed_params.setdefault('use_pd_filter', True)
+        seed_params.setdefault('use_liquidity_sweep_filter', True)
+        seed_params.setdefault('use_rejection_candle', True)
+        seed_params.setdefault('use_momentum_filter', False)
+        try:
+            study.enqueue_trial(seed_params, skip_if_exists=True)
+            print(f"  Warm-Start: bester Fund aus '{prev_name}' "
+                  f"(Test-PnL {best_prev.user_attrs.get('test_pnl')}%) eingespeist.")
+        except Exception as e:
+            print(f"  WARN: Warm-Start aus '{prev_name}' fehlgeschlagen: {e}")
+        return
+
 def _get_smc_precomputed(cache, cache_lock, data, smc_params):
     """SMC-Engine-Ergebnis aus Cache holen oder berechnen."""
     _cache_key = (smc_params['swingsLength'], smc_params['ob_mitigation'], smc_params['liquidity_lookback'])
@@ -309,6 +346,7 @@ def main():
         study_name = f"smc_{create_safe_filename(symbol, timeframe)}{CONFIG_SUFFIX}_{OPTIM_MODE}"
 
         study = optuna.create_study(storage=STORAGE_URL, study_name=study_name, direction="maximize", load_if_exists=True)
+        _seed_from_previous_study(study, symbol, timeframe, STORAGE_URL)
 
         # --- Progress reporting callback (writes progress log + status JSON) ---
         import time, pathlib
