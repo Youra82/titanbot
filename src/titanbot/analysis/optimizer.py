@@ -98,6 +98,14 @@ def objective(trial):
         'timeframe': CURRENT_TIMEFRAME,
         '_timeframe': CURRENT_TIMEFRAME,
     }
+    # Momentum-Filter (MACD-Cross + RSI-Reversal, siehe momentum_indicators.py) als
+    # durchsuchbare Option statt fixem An/Aus -- ein einzelner manueller Test mit
+    # lookback=3 war zu restriktiv (1-2 Trades/2 Monate), hier lässt Optuna den
+    # Lookback selbst finden statt raten.
+    use_momentum = trial.suggest_categorical('use_momentum_filter', [True, False])
+    smc_params['use_momentum_filter'] = use_momentum
+    if use_momentum:
+        smc_params['momentum_lookback'] = trial.suggest_int('momentum_lookback', 2, 20)
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
         'risk_per_trade_pct': 1.0,  # Fest für fairen Vergleich — wird in Mode 3 optimiert
@@ -147,23 +155,27 @@ def objective(trial):
             raise optuna.exceptions.TrialPruned()
 
     # ── Kombinierter Score ────────────────────────────────────────────────────
-    # log1p komprimiert extreme Ausreißer; DD im Nenner bestraft Risiko
-    train_score = math.log1p(max(0, train_pnl)) / max(train_dd * 100, 1.0)
-    test_score  = math.log1p(max(0, test_pnl))  / max(test_dd  * 100, 1.0)
-    # Trade-Dichte: wie viele Male über dem Minimum? Belohnt Setups die häufig traden.
-    # FIXIERT (2026-08-28): trade_bonus/wr_bonus waren um ~Faktor 10-30 zu groß gegenüber
-    # test_score/train_score skaliert (typischer test_score-Bereich: 0.1-1.0, alter
-    # trade_bonus-Bereich: 20-27) -- die eigentliche Profitabilität wurde dadurch praktisch
-    # ignoriert. Konkreter Fund (AVAX/1h, 100 Trials): Trial mit 36.3% Test-PnL/5.5% DD/35
-    # Trades bekam wegen des alten trade_bonus einen NIEDRIGEREN Score als ein Trial mit nur
-    # 3.5% Test-PnL/11.8% DD/55 Trades -- die Config mit dem 10x schlechteren PnL wurde
-    # gespeichert. Koeffizienten um Faktor 10 gesenkt, damit Trade-Anzahl weiter als
-    # Tie-Breaker zwischen ähnlich profitablen Setups wirkt (die Mindest-Trade-Zahl selbst
-    # wird bereits hart über min_test_trades/min_train_trades erzwungen, s.o.), aber nicht
-    # mehr Profitabilität/Risiko dominiert.
+    # FIXIERT (2026-08-28, zweite Runde): die erste Korrektur (Koeffizienten /10)
+    # reichte nicht. Grundproblem war struktureller: math.log1p(max(0, pnl)) gibt
+    # JEDEM verlustreichen Trial denselben Score von 0 -- ein Trial mit -2% und
+    # einer mit -28% sind fuer die Formel ununterscheidbar. Unter lauter Verlierern
+    # entschied dann ausschliesslich trade_bonus, welcher gewinnt -- und waehlte
+    # zuverlaessig den mit den meisten Trades, unabhaengig davon wie schlecht sein
+    # PnL war. Konkreter Fund (LINK/30m, 89 Trials): Trial #115 (-28.08% PnL, 29.4%
+    # DD, 98 Trades) bekam einen HOEHEREN Score als Trial #20 (+5.92% PnL, 12.9% DD,
+    # 66 Trades) -- die schlechteste von allen 89 Konfigurationen wurde gespeichert.
+    # Fix: signed_log erhaelt das Vorzeichen (Verluste werden proportional zu ihrer
+    # Groesse bestraft, nicht alle gleich auf 0 abgebildet); trade_bonus bleibt ein
+    # kleiner Tie-Breaker, kann aber keinen Vorzeichenwechsel mehr ueberstimmen.
+    def signed_log(x):
+        return math.copysign(math.log1p(abs(x)), x)
+
+    train_score = signed_log(train_pnl) / max(train_dd * 100, 1.0)
+    test_score  = signed_log(test_pnl)  / max(test_dd  * 100, 1.0)
+    # Trade-Dichte: kleiner Tie-Breaker zwischen ähnlich profitablen Setups.
     trade_ratio = test_trades / max(min_test_trades, 1)
-    trade_bonus = math.log1p(test_trades) * 0.6 + math.log1p(max(0, trade_ratio - 1.0)) * 0.3
-    wr_bonus    = max(0.0, (test_wr - 40.0) / 100.0)     # Bonus ab 40% Win-Rate
+    trade_bonus = math.log1p(test_trades) * 0.03 + math.log1p(max(0, trade_ratio - 1.0)) * 0.015
+    wr_bonus    = max(0.0, (test_wr - 40.0) / 200.0)     # winziger Bonus ab 40% Win-Rate
 
     final_score = train_score * 0.30 + test_score * 0.70 + trade_bonus + wr_bonus
 
@@ -437,6 +449,8 @@ def main():
             'max_ob_touches': best_params.get('max_ob_touches', 1),
             'use_rejection_candle': best_params.get('use_rejection_candle', True),
             'use_mtf_filter': best_params.get('use_mtf_filter', False),
+            'use_momentum_filter': best_params.get('use_momentum_filter', False),
+            'momentum_lookback': best_params.get('momentum_lookback', 3),
             'volume_ma_period': 20,
         }
 
