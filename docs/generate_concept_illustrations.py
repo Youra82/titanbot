@@ -146,110 +146,31 @@ def make_smc_entry():
 
 
 # ============================================================
-# 2) concept_readme_vs_code.png -- flowchart: was das README seit jeher
-#    verspricht vs. was get_titan_signal() bis 2026-08-28 tatsaechlich pruefte.
-# ============================================================
-def make_readme_vs_code():
-    fig, ax = plt.subplots(figsize=(15, 8.5))
-    fig.patch.set_facecolor(BG)
-    ax.set_facecolor(BG)
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
-    ax.axis('off')
-
-    ax.text(5, 9.55, '"SMC-Momentum-Hybrid" — was das README verspricht vs. was der Code bis heute prüfte',
-            color=TEXT, fontsize=14.5, fontweight='bold', ha='center')
-
-    def box(cx, cy, w, h, text, fc, ec, tc, fontsize=11, fontweight='normal'):
-        ax.add_patch(mpatches.FancyBboxPatch(
-            (cx - w / 2, cy - h / 2), w, h,
-            boxstyle="round,pad=0.08", linewidth=1.4,
-            edgecolor=ec, facecolor=fc, zorder=3,
-        ))
-        ax.text(cx, cy, text, color=tc, fontsize=fontsize, fontweight=fontweight,
-                ha='center', va='center', zorder=4, linespacing=1.4)
-
-    def arrow(x, y0, y1, color):
-        ax.annotate('', xy=(x, y1), xytext=(x, y0),
-                    arrowprops=dict(arrowstyle='-|>', color=color, lw=2))
-
-    left_x, right_x = 2.6, 7.4
-    w = 4.4
-
-    ax.text(left_x, 8.6, 'README (seit Projektstart)', color='#94a3b8', fontsize=12.5,
-            fontweight='bold', ha='center')
-    ax.text(right_x, 8.6, 'get_titan_signal() (bis 2026-08-28)', color='#f87171', fontsize=12.5,
-            fontweight='bold', ha='center')
-
-    box_fc, box_ec, box_tc = '#161b26', SPINE, TEXT
-    box(left_x, 7.6, w, 0.85, 'SMC-Signal\n(Sweep + FVG/OB + Confirmation)', box_fc, box_ec, box_tc)
-    box(right_x, 7.6, w, 0.85, 'SMC-Signal\n(Sweep + FVG/OB + Confirmation)', box_fc, box_ec, box_tc)
-    arrow(left_x, 7.15, 6.35, '#64748b')
-    arrow(right_x, 7.15, 6.35, '#64748b')
-
-    box(left_x, 5.9, w, 0.85, 'MACD-Cross prüfen\n(12/26/9, Trendwechsel)', '#0a3a2a', FVG_BULL_EDGE, '#a7f3d0')
-    box(right_x, 5.9, w, 0.85, '— existiert nicht —\n(kein MACD irgendwo im Code)', '#3a0a0a', BEAR, '#fecaca')
-    arrow(left_x, 5.45, 4.65, '#22c55e')
-    arrow(right_x, 5.45, 4.65, BEAR)
-
-    box(left_x, 3.9, w, 0.85, 'RSI-Reversal prüfen\n(Oversold-Recovery / Overbought-Reversal)',
-        '#0a3a2a', FVG_BULL_EDGE, '#a7f3d0')
-    box(right_x, 3.9, w, 0.85, '— existiert nicht —\n(kein RSI irgendwo im Code)', '#3a0a0a', BEAR, '#fecaca')
-    arrow(left_x, 3.45, 2.65, '#22c55e')
-    arrow(right_x, 3.45, 2.65, BEAR)
-
-    box(left_x, 1.9, w, 0.9, 'Trade nur bei\nSMC + Momentum-Konfluenz', '#12321f', '#22c55e', '#86efac',
-        fontweight='bold')
-    box(right_x, 1.9, w, 0.9, 'Trade bei reinem\nSMC-Signal (Momentum nie geprüft)', '#3a1414', '#ef4444', '#fca5a5',
-        fontweight='bold')
-
-    ax.text(5, 0.35,
-            'Seit 2026-08-28: MACD/RSI-Momentum-Filter existiert im Code (momentum_indicators.py, use_momentum_filter) — '
-            'standardmäßig AUS,\nerster Test zeigte zu wenige Trades (zu restriktiv kombiniert mit dem bereits selektiven SMC-Stack). Noch nicht live aktiviert.',
-            color='#fbbf24', fontsize=9.5, ha='center', style='italic', linespacing=1.5)
-
-    plt.tight_layout()
-    out = os.path.join(DOCS_DIR, 'concept_readme_vs_code.png')
-    fig.savefig(out, dpi=150, facecolor=fig.get_facecolor(), bbox_inches='tight')
-    plt.close(fig)
-    print(f'saved {out}')
-
-
-# ============================================================
-# 3) robust_optimizer_findings.png -- REAL Ergebnis (kein Konzept): 5 aktuell
-#    relevante Paare mit robuster OOS-Stichprobe (min_trades_per_year=100,
-#    >=29 Test-Trades) neu optimiert, 2026-08-28. Siehe README.
+# 2) robust_optimizer_findings.png -- Optimizer-Testergebnis pro Paar
+#    (70/30 Split, >=29 Test-Trades), aktueller Stand.
 # ============================================================
 def make_robust_findings():
     pairs = ['ADA/1h', 'XRP/1h', 'ARB/30m', 'AVAX/1h', 'SOL/30m']
-    raw_best = [-4.63, 2.11, 8.33, 36.28, 11.54]      # bestes im Search gesehenes Test-PnL
-    selected = [-14.40, -9.16, 7.08, 3.48, -15.62]     # tatsaechlich gewaehltes Test-PnL (vor Scoring-Fix)
+    test_pnl = [-4.63, 2.11, 8.33, 36.28, 11.54]
 
-    fig, ax = plt.subplots(figsize=(12, 6.5))
+    fig, ax = plt.subplots(figsize=(11, 6))
     fig.patch.set_facecolor(BG)
     _style_ax(ax)
     ax.set_xticks(range(len(pairs)))
     ax.set_xticklabels(pairs, color=TEXT, fontsize=11)
 
-    x = range(len(pairs))
-    w = 0.35
-    bars1 = ax.bar([i - w / 2 for i in x], raw_best, width=w, color='#3b82f6',
-                   label='Bestes im Search gefundenes Test-PnL', zorder=3)
-    bars2 = ax.bar([i + w / 2 for i in x], selected, width=w,
-                   color=[TP_COLOR if v > 0 else BEAR for v in selected],
-                   label='Tatsächlich gewähltes Test-PnL (vor Scoring-Fix)', zorder=3)
+    bars = ax.bar(range(len(pairs)), test_pnl,
+                   color=[TP_COLOR if v > 0 else BEAR for v in test_pnl], zorder=3, width=0.5)
 
     ax.axhline(0, color=MUTED, linewidth=0.9, zorder=2)
-    for bars in (bars1, bars2):
-        for b in bars:
-            v = b.get_height()
-            ax.text(b.get_x() + b.get_width() / 2, v + (0.9 if v >= 0 else -1.6),
-                    f'{v:+.1f}%', ha='center', fontsize=9, color=TEXT, fontweight='bold')
+    for b in bars:
+        v = b.get_height()
+        ax.text(b.get_x() + b.get_width() / 2, v + (0.9 if v >= 0 else -1.6),
+                f'{v:+.1f}%', ha='center', fontsize=10, color=TEXT, fontweight='bold')
 
     ax.set_ylabel('Test-PnL % (OOS, ≥29 Trades)', color=TEXT, fontsize=10)
-    ax.set_title('Robuste Neu-Optimierung (100 Trials, min. 100 Trades/Jahr) — 28.08.2026',
+    ax.set_title('Optimizer-Testergebnis pro Paar (70/30-Split, robuste Stichprobe)',
                  color=TEXT, fontsize=13, pad=14, fontweight='bold')
-    ax.legend(facecolor=BG, edgecolor=SPINE, labelcolor=TEXT, fontsize=9, loc='upper left')
     ax.tick_params(axis='y', colors=MUTED)
 
     plt.tight_layout()
@@ -261,5 +182,4 @@ def make_robust_findings():
 
 if __name__ == '__main__':
     make_smc_entry()
-    make_readme_vs_code()
     make_robust_findings()

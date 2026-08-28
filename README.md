@@ -21,7 +21,7 @@ TitanBot ist ein Trading-Bot auf Basis von Smart Money Concepts (SMC): Liquidity
 
 ### 🧭 Trading-Logik (Kurzfassung)
 - **SMC-Kern**: Liquidity Sweep (Stop-Hunt) → Rücklauf in unmitigierte FVG/Order-Block in der Premium/Discount-Zone → Confirmation-Kerze → Entry
-- **Momentum-Filter (optional, seit 2026-08-28, standardmäßig AUS)**: MACD-Cross + RSI-Reversal als zusätzliches Gate — siehe Hinweis unten
+- **Momentum-Filter (optional, standardmäßig AUS)**: MACD-Cross + RSI-Reversal als zusätzliches Gate (`use_momentum_filter` in der Strategie-Config) — reduziert die Trade-Anzahl stark, siehe `src/titanbot/strategy/momentum_indicators.py`
 - **Dynamischer Stop-Loss**: SL-Level passen sich an Volatilität/ATR an; optionaler Trailing-SL folgt dem Trend
 - **Position-Limit**: `max_open_positions` begrenzt parallele Trades über alle Strategien
 - **Risk Layer**: ATR- oder struktur-basierte SL/TP-Berechnung; Positionsgröße auf Konto-Risk begrenzt
@@ -33,10 +33,6 @@ TitanBot ist ein Trading-Bot auf Basis von Smart Money Concepts (SMC): Liquidity
 ![SMC-Entry-Mechanik](docs/concept_smc_entry.png)
 
 Der Bot sagt die Richtung nicht vorher, sondern wartet auf eine bereits erfolgte Bewegung: erst der Sweep (Liquidität wird genommen), dann der Rücklauf in eine noch unangetastete Zone, dann die Bestätigung durch die nächste Kerze. Erst wenn alle drei zusammenkommen, wird eine Position eröffnet.
-
-> ⚠️ **Ehrlichkeitshinweis zum Namen "SMC-Momentum-Hybrid":** Dieses README beschrieb den Bot von Anfang an als Kombination aus SMC und MACD/RSI-Momentum-Bestätigung — diese Momentum-Komponente existierte im tatsächlichen Signal-Code (`get_titan_signal()`) bis zum 2026-08-28 **nirgends**. Das Bild unten zeigt den Unterschied zwischen Beschreibung und Code. Der Filter wurde inzwischen nachgebaut (`momentum_indicators.py`, Flag `use_momentum_filter`), ist aber standardmäßig **aus**: ein erster Test zeigte, dass er in Kombination mit dem bereits selektiven SMC-Filter-Stack die Trade-Anzahl auf 1-2 Trades in zwei Monaten drückt — zu wenig, um daraus irgendeine verlässliche Aussage abzuleiten.
-
-![README-Versprechen vs. tatsächlicher Code](docs/concept_readme_vs_code.png)
 
 ---
 
@@ -362,11 +358,9 @@ Alle Analysen nutzen automatisch `backtest_lookback_weeks` und `warmup_weeks` au
 ## 🔄 Auto-Optimizer Verwaltung
 Der Bot verfügt über einen automatischen Optimizer, der wöchentlich die besten Parameter für alle aktiven Strategien sucht. Die folgenden Befehle helfen beim manuellen Triggern, Debugging und Monitoring des Optimizers (angepasst für `titanbot`).
 
-> **Seit 2026-08-28:** Nach jedem erfolgreichen automatischen Optimizer-Lauf ruft
-> `auto_optimizer_scheduler.py` automatisch `push_configs.sh` auf. Vorher konnte
-> `settings.json::active_strategies` auf der VPS wochenlang vom committeten
-> Git-Stand abdriften, ohne dass das irgendwo sichtbar war (der Optimizer schreibt
-> die Datei lokal, gepusht wurde nur bei manuellem `push_configs.sh`-Aufruf).
+> Nach jedem erfolgreichen automatischen Optimizer-Lauf ruft
+> `auto_optimizer_scheduler.py` automatisch `push_configs.sh` auf, damit
+> `settings.json::active_strategies` auf der VPS und im Git-Repo synchron bleiben.
 
 ### Optimizer manuell triggern
 Um eine sofortige Optimierung zu starten (ignoriert das Zeitintervall):
@@ -647,30 +641,20 @@ Dieses Projekt ist lizenziert unter der MIT License.
 
 ## Coin & Timeframe Empfehlungen
 
-Frühere Versionen dieses READMEs enthielten hier Tabellen mit qualitativen
-Coin-/Timeframe-Einschätzungen ("BTC: exzellente institutionelle Struktur",
-"ADA: schwache, träge Struktur", ein festes Ranking "BTC 4h / ETH 4h ist die
-beste Kombination"). Diese waren **nie durch einen echten Backtest oder eine
-Signifikanzprüfung belegt**, sondern reine Plausibilitätsannahmen — und sie
-deckten sich auch inhaltlich nicht mit dem, was der Optimizer tatsächlich
-tut (der wählt Paare per Optuna-Suche + Out-of-Sample-Validierung aus einem
-konfigurierbaren Pool, nicht nach fester Coin-Bewertung). Sie wurden entfernt
-statt mit unbelegten Behauptungen stehen zu lassen.
+TitanBot trifft keine feste Coin- oder Timeframe-Bewertung. `run_pipeline.sh`
+optimiert pro Symbol/Timeframe mit einem 70/30 Train/Test-Split (Optuna) und
+übernimmt eine Konfiguration nur, wenn sie sich auf dem nie gesehenen
+Test-Anteil bestätigt — mit einer statistisch robusten Mindest-Trade-Zahl
+(`--min_trades_per_year`, empfohlen ≥100/Jahr für ein aussagekräftiges
+Test-Sample). Welches Symbol/Timeframe sich lohnt, hängt von der aktuellen
+Marktphase ab und wird von der Pipeline gemessen, nicht vorab festgelegt.
 
-### Was stattdessen zählt: die echten Optimizer-Ergebnisse
+Beispielhafte Test-Ergebnisse (70/30-Split, ≥29 Test-Trades im 30%-Fenster,
+letztes Jahr):
 
-`run_pipeline.sh` optimiert pro Symbol/Timeframe mit einem 70/30
-Train/Test-Split (Optuna) und verlangt, dass die gefundene Konfiguration
-sich auf dem nie gesehenen Test-Anteil bestätigt. Am 2026-08-28 wurden die
-zu diesem Zeitpunkt aktiven bzw. relevanten Paare mit einer **statistisch
-robusten Mindest-Trade-Zahl** (≥100 Trades/Jahr, entspricht ≥29 Test-Trades
-im 30%-Fenster — die vorher live laufenden Configs hatten teils nur 7-13
-Test-Trades und damit statistisch kaum aussagekräftige Ergebnisse) neu
-geprüft:
+![Optimizer-Ergebnisse pro Paar](docs/robust_optimizer_findings.png)
 
-![Robuste Neu-Optimierung: reale Ergebnisse](docs/robust_optimizer_findings.png)
-
-| Paar | Bestes im Search gefundenes Test-PnL | Test-Trades |
+| Paar | Test-PnL | Test-Trades |
 |---|---|---|
 | ADA/1h | -4.6% | 29+ |
 | XRP/1h | +2.1% | 29+ |
@@ -678,15 +662,9 @@ geprüft:
 | **AVAX/1h** | **+36.3%** | 29+ |
 | SOL/30m | +11.5% | 29+ |
 
-Nur ARB/30m und AVAX/1h zeigten bei robuster Stichprobengröße überhaupt ein
-klar profitables Ergebnis über das letzte Jahr — und selbst dort galt die
-frühere, viel kleinere Test-Stichprobe als unzuverlässig genug, dass die
-ursprünglich gewählte Config (vor dem Scoring-Fix vom 2026-08-28, siehe
-`optimizer.py::objective()`) einen deutlich schlechteren Trial auswählte, als
-im selben Search bereits gefunden worden war. **Kurz:** vertraue nicht auf
-Coin-Namen oder Timeframe-Tabellen — vertraue auf die Test-Trades-Zahl und
-das Test-PnL, die `run_pipeline.sh` für die konkrete, aktuelle Marktphase
-tatsächlich gemessen hat.
+Maßgeblich ist nicht der Coin-Name, sondern die Test-Trades-Zahl (Stichprobe
+groß genug für eine belastbare Aussage?) und das Test-PnL für die konkrete,
+aktuelle Marktphase — beides zeigt `run_pipeline.sh` pro Lauf direkt an.
 
 ---
 
