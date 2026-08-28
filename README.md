@@ -7,7 +7,7 @@
 [![CCXT](https://img.shields.io/badge/CCXT-4.3.5-red?style=for-the-badge)](https://github.com/ccxt/ccxt)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
-**Ein leistungsstarker Trading-Bot mit SMC-Momentum-Hybrid, dynamischem Stop-Loss und intelligenter Multi-Position-Verwaltung**
+**Ein Trading-Bot auf Basis von Smart Money Concepts (SMC), mit dynamischem Stop-Loss und intelligenter Multi-Position-Verwaltung**
 
 [Features](#-features) • [Installation](#-installation) • [Konfiguration](#-konfiguration) • [Live-Trading](#-live-trading) • [Pipeline](#-interaktives-pipeline-script) • [Analyse](#-analyse-script-run_analysissh) • [Monitoring](#-monitoring--status) • [Wartung](#-wartung)
 
@@ -17,39 +17,26 @@
 
 ## 📊 Übersicht
 
-TitanBot ist ein hochentwickelter Trading-Bot mit Fokus auf Performance und Risikokontrolle. Das System kombiniert Smart Money Concepts (Liquidity Sweeps, Breaker-Blocks) mit Momentum-Indikatoren und verfügt über dynamische Stop-Loss-Mechanismen sowie intelligente Multi-Position-Verwaltung.
+TitanBot ist ein Trading-Bot auf Basis von Smart Money Concepts (SMC): Liquidity Sweeps, Order Blocks und Fair Value Gaps bilden den Signal-Kern, ergänzt um dynamische ATR-/Struktur-basierte Stop-Loss-Mechanismen und Multi-Position-Verwaltung.
 
 ### 🧭 Trading-Logik (Kurzfassung)
-- **SMC-Momentum-Hybrid**: Nutzt Liquidity Sweeps/Structure Breaks (SMC) kombiniert mit Momentum-Indikatoren (MACD/RSI)
+- **SMC-Kern**: Liquidity Sweep (Stop-Hunt) → Rücklauf in unmitigierte FVG/Order-Block in der Premium/Discount-Zone → Confirmation-Kerze → Entry
+- **Momentum-Filter (optional, seit 2026-08-28, standardmäßig AUS)**: MACD-Cross + RSI-Reversal als zusätzliches Gate — siehe Hinweis unten
 - **Dynamischer Stop-Loss**: SL-Level passen sich an Volatilität/ATR an; optionaler Trailing-SL folgt dem Trend
-- **Position-Limit**: `max_open_positions` begrenzt parallele Trades, priorisiert höchste Signal-Qualität
-- **Signal-Ranking**: Mehrere Signale werden ranked und best-performing Setups werden bevorzugt
-- **Risk Layer**: ATR-basierte SL/TP Berechnung; Positionsgröße auf Konto-Risk begrenzt
-- **Execution**: CCXT-Orders mit realistischer Fee/Slippage-Annahmen
+- **Position-Limit**: `max_open_positions` begrenzt parallele Trades über alle Strategien
+- **Risk Layer**: ATR- oder struktur-basierte SL/TP-Berechnung; Positionsgröße auf Konto-Risk begrenzt
+- **Execution**: CCXT-Orders mit realistischer Fee/Slippage-Annahme im Backtest
 - **Telegram-Notifications**: Real-time Updates für alle Position-State-Änderungen
 
-### 🔍 Strategie-Visualisierung
-```mermaid
-flowchart LR
-    A["OHLCV Marktdaten"]
-    B["SMC Map<br/>Liquidity | Breaker | MSB"]
-    C["Momentum Stack<br/>MACD | RSI | Vol"]
-    D["Signal-Ranking<br/>Quality Score"]
-    E["Position Check<br/>max_open_positions"]
-    F["Risk Engine<br/>ATR-SL/TP + Trail"]
-    G["Order Router (CCXT)"]
+### 🔍 SMC-Entry im Detail
 
-    A --> B
-    A --> C
-    B & C --> D --> E --> F --> G
-```
+![SMC-Entry-Mechanik](docs/concept_smc_entry.png)
 
-### 📈 Trade-Beispiel (Entry/SL/TP)
-- **Setup**: Liquidity Sweep unter Struktur-Low + Momentum-Reversal (MACD Cross Up, RSI aus Oversold)
-- **Entry**: Long nach Bestätigungskerze über Breaker-Block mit Signal-Quality-Score > Schwelle
-- **Initial SL**: Unter Sweep-Low oder ATR-basiert (1.5–2× ATR)
-- **TP**: 2–3× SL-Distanz oder nächstes markantes High/Imbalance-Fill
-- **Trailing**: Aktiv nach +1×SL Distanz; Trail unter das letzte Higher Low
+Der Bot sagt die Richtung nicht vorher, sondern wartet auf eine bereits erfolgte Bewegung: erst der Sweep (Liquidität wird genommen), dann der Rücklauf in eine noch unangetastete Zone, dann die Bestätigung durch die nächste Kerze. Erst wenn alle drei zusammenkommen, wird eine Position eröffnet.
+
+> ⚠️ **Ehrlichkeitshinweis zum Namen "SMC-Momentum-Hybrid":** Dieses README beschrieb den Bot von Anfang an als Kombination aus SMC und MACD/RSI-Momentum-Bestätigung — diese Momentum-Komponente existierte im tatsächlichen Signal-Code (`get_titan_signal()`) bis zum 2026-08-28 **nirgends**. Das Bild unten zeigt den Unterschied zwischen Beschreibung und Code. Der Filter wurde inzwischen nachgebaut (`momentum_indicators.py`, Flag `use_momentum_filter`), ist aber standardmäßig **aus**: ein erster Test zeigte, dass er in Kombination mit dem bereits selektiven SMC-Filter-Stack die Trade-Anzahl auf 1-2 Trades in zwei Monaten drückt — zu wenig, um daraus irgendeine verlässliche Aussage abzuleiten.
+
+![README-Versprechen vs. tatsächlicher Code](docs/concept_readme_vs_code.png)
 
 ---
 
@@ -375,6 +362,12 @@ Alle Analysen nutzen automatisch `backtest_lookback_weeks` und `warmup_weeks` au
 ## 🔄 Auto-Optimizer Verwaltung
 Der Bot verfügt über einen automatischen Optimizer, der wöchentlich die besten Parameter für alle aktiven Strategien sucht. Die folgenden Befehle helfen beim manuellen Triggern, Debugging und Monitoring des Optimizers (angepasst für `titanbot`).
 
+> **Seit 2026-08-28:** Nach jedem erfolgreichen automatischen Optimizer-Lauf ruft
+> `auto_optimizer_scheduler.py` automatisch `push_configs.sh` auf. Vorher konnte
+> `settings.json::active_strategies` auf der VPS wochenlang vom committeten
+> Git-Stand abdriften, ohne dass das irgendwo sichtbar war (der Optimizer schreibt
+> die Datei lokal, gepusht wurde nur bei manuellem `push_configs.sh`-Aufruf).
+
 ### Optimizer manuell triggern
 Um eine sofortige Optimierung zu starten (ignoriert das Zeitintervall):
 
@@ -654,55 +647,46 @@ Dieses Projekt ist lizenziert unter der MIT License.
 
 ## Coin & Timeframe Empfehlungen
 
-TitanBot kombiniert **Smart Money Concepts (SMC)** mit **MACD+RSI-Momentum** — Liquiditätssweeps und Breaker Blocks aus dem SMC-Framework werden nur dann getradet, wenn das Momentum (MACD-Cross + RSI-Reversal) bestätigt. Benötigt: Coins mit klarer institutioneller Marktstruktur UND ausgeprägten Momentum-Phasen.
+Frühere Versionen dieses READMEs enthielten hier Tabellen mit qualitativen
+Coin-/Timeframe-Einschätzungen ("BTC: exzellente institutionelle Struktur",
+"ADA: schwache, träge Struktur", ein festes Ranking "BTC 4h / ETH 4h ist die
+beste Kombination"). Diese waren **nie durch einen echten Backtest oder eine
+Signifikanzprüfung belegt**, sondern reine Plausibilitätsannahmen — und sie
+deckten sich auch inhaltlich nicht mit dem, was der Optimizer tatsächlich
+tut (der wählt Paare per Optuna-Suche + Out-of-Sample-Validierung aus einem
+konfigurierbaren Pool, nicht nach fester Coin-Bewertung). Sie wurden entfernt
+statt mit unbelegten Behauptungen stehen zu lassen.
 
-### Effektive Zeitspannen je Timeframe
+### Was stattdessen zählt: die echten Optimizer-Ergebnisse
 
-| TF | MACD(26) — Langfrist | RSI(14) | ATR(14) | SMC-Pivots(20) | Geeignet |
-|---|---|---|---|---|---|
-| 15m | 6.5h | 3.5h | 3.5h | 5h | ❌ |
-| 30m | 13h | 7h | 7h | 10h | ⚠️ |
-| **1h** | **26h** | **14h** | **14h** | **20h** | **✅✅** |
-| **2h** | **52h** | **28h** | **28h** | **40h** | **✅✅** |
-| **4h** | **104h** | **56h** | **56h** | **80h** | **✅✅** |
-| **6h** | **156h** | **84h** | **84h** | **120h** | **✅✅** |
-| 1d | 26d | 14d | 14d | 20d | ✅ |
+`run_pipeline.sh` optimiert pro Symbol/Timeframe mit einem 70/30
+Train/Test-Split (Optuna) und verlangt, dass die gefundene Konfiguration
+sich auf dem nie gesehenen Test-Anteil bestätigt. Am 2026-08-28 wurden die
+zu diesem Zeitpunkt aktiven bzw. relevanten Paare mit einer **statistisch
+robusten Mindest-Trade-Zahl** (≥100 Trades/Jahr, entspricht ≥29 Test-Trades
+im 30%-Fenster — die vorher live laufenden Configs hatten teils nur 7-13
+Test-Trades und damit statistisch kaum aussagekräftige Ergebnisse) neu
+geprüft:
 
-MACD (12, 26, 9): Die langsamste Komponente sind 26 Kerzen. Auf 15m entspricht das 6.5h — Momentum-Signale reagieren auf Stunden-Noise. Ab 1h (26h MACD-Spanne) werden SMC+Momentum-Signale strukturell konsistent. 4h/6h liefern die robustesten Kombinationen.
+![Robuste Neu-Optimierung: reale Ergebnisse](docs/robust_optimizer_findings.png)
 
-### Coin-Eignung
-
-| Coin | SMC-Struktur | MACD-Momentum | RSI-Klarheit | Bewertung |
-|---|---|---|---|---|
-| **BTC** | Exzellent — stärkste institutionelle Struktur | Klare MACD-Crosses an Key-Levels | RSI sehr valide | ✅✅ Beste Wahl |
-| **ETH** | Exzellent | Sehr gutes Momentum | Klares RSI-Signal | ✅✅ Sehr gut |
-| **SOL** | Sehr gut — explosive Sweeps | Starkes Momentum | Gutes RSI-Signal | ✅ Gut |
-| **BNB** | Gut — stabile SMC-Basis | Moderates Momentum | Gut | ✅ Gut |
-| **LINK** | Gut — explosive SMC-Moves | Starkes Momentum in Bullphasen | Gut | ✅ Gut |
-| **AVAX** | Gut — klare Liquidity-Sweeps | Gutes Momentum | Gut | ✅ Gut |
-| **ARB** | Mittel — ETH-korreliert | Mittel | Mittel | ⚠️ Mittel |
-| **XRP** | Mittel — Momentum oft schwach | Moderate MACD-Crosses | Mittel | ⚠️ Mittel |
-| **LTC** | Mittel — BTC-korreliert | Moderate Momentum-Phasen | Mittel | ⚠️ Mittel |
-| **ADA** | Schwach — träge Struktur | Schwaches Momentum | RSI meist neutral | ⚠️ Schwach |
-| **DOGE** | Schlecht | Unbrauchbares Momentum | RSI übersteuert | ❌ Schlecht |
-| **SHIB/PEPE** | Nicht vorhanden | Kein Momentum | Nicht anwendbar | ❌❌ Nicht geeignet |
-
-### Empfohlene Kombinationen (Ranking)
-
-| Rang | Kombination | Begründung |
+| Paar | Bestes im Search gefundenes Test-PnL | Test-Trades |
 |---|---|---|
-| 🥇 1 | **BTC 4h** | Stärkste SMC+Momentum-Kombination, MACD auf 4h sehr zuverlässig |
-| 🥇 1 | **ETH 4h** | Ähnlich BTC, exzellente SMC+MACD-Konfluenz |
-| 🥈 2 | **BTC 6h** | Noch robustere MACD-Signale, weniger Trades aber höhere Qualität |
-| 🥈 2 | **SOL 4h** | Explosive Liquiditätssweeps + starkes Momentum |
-| 🥉 3 | **LINK 4h** | Sehr gute SMC-Moves mit starkem Momentum in Bullphasen |
-| 4 | **BNB 4h** | Stabile, vorhersehbare SMC+Momentum-Muster |
-| 4 | **ETH 6h** | Sehr wenige, aber qualitativ hochwertige Signale |
-| ❌ | **15m / 30m** | MACD-Spanne zu kurz, SMC-Pivots instabil |
-| ❌ | **DOGE / SHIB** | Kein valides SMC-Framework, Momentum nicht messbar |
+| ADA/1h | -4.6% | 29+ |
+| XRP/1h | +2.1% | 29+ |
+| **ARB/30m** | **+8.3%** | 29+ |
+| **AVAX/1h** | **+36.3%** | 29+ |
+| SOL/30m | +11.5% | 29+ |
 
-> **Hinweis:** `max_open_positions: 3` schützt vor Overtrading. In Bullphasen ist BTC 4h + ETH 4h die empfohlene Kombination für zwei simultane Positionen.
-
+Nur ARB/30m und AVAX/1h zeigten bei robuster Stichprobengröße überhaupt ein
+klar profitables Ergebnis über das letzte Jahr — und selbst dort galt die
+frühere, viel kleinere Test-Stichprobe als unzuverlässig genug, dass die
+ursprünglich gewählte Config (vor dem Scoring-Fix vom 2026-08-28, siehe
+`optimizer.py::objective()`) einen deutlich schlechteren Trial auswählte, als
+im selben Search bereits gefunden worden war. **Kurz:** vertraue nicht auf
+Coin-Namen oder Timeframe-Tabellen — vertraue auf die Test-Trades-Zahl und
+das Test-PnL, die `run_pipeline.sh` für die konkrete, aktuelle Marktphase
+tatsächlich gemessen hat.
 
 ---
 
