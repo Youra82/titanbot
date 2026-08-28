@@ -92,8 +92,23 @@ def _seed_from_previous_study(study, symbol, timeframe, storage_url):
         return
 
 def _get_smc_precomputed(cache, cache_lock, data, smc_params):
-    """SMC-Engine-Ergebnis aus Cache holen oder berechnen."""
-    _cache_key = (smc_params['swingsLength'], smc_params['ob_mitigation'], smc_params['liquidity_lookback'])
+    """
+    SMC-Engine-Ergebnis aus Cache holen oder berechnen.
+
+    WICHTIG: der Cache-Key MUSS das Datenset identifizieren (id(data), len(data)),
+    nicht nur die SMC-Parameter. TRAIN_DATA/TEST_DATA sind modul-globale Objekte,
+    die der main()-Loop pro Symbol/Timeframe neu zuweist; bei n_jobs>1 laufen
+    Trials als Threads parallel. Ohne Datenset-Fingerprint im Key kann ein noch
+    laufender Thread aus Paar N (z.B. wenn study.optimize() zurueckkehrt, bevor
+    wirklich alle Worker-Threads fertig sind) einen Cache-Eintrag fuer Paar N+1
+    unter demselben (swingsLength, ob_mitigation, liquidity_lookback)-Key
+    ueberschreiben -- fuehrte am 2026-08-28 bei mehreren Paaren (u.a. XRP/6h) zu
+    "Length of values (X) does not match length of index (Y)"-Abstuerzen, weil
+    SMC-Ergebnisse eines KOMPLETT ANDEREN Paares mit anderer Kerzenzahl
+    zurueckgegeben wurden.
+    """
+    _cache_key = (id(data), len(data),
+                  smc_params['swingsLength'], smc_params['ob_mitigation'], smc_params['liquidity_lookback'])
     with cache_lock:
         _precomputed = cache.get(_cache_key)
     if _precomputed is None:
