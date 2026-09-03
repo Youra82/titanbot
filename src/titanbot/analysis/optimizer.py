@@ -150,6 +150,13 @@ def objective(trial):
         'max_ob_touches': trial.suggest_int('max_ob_touches', 0, 2),
         'use_rejection_candle': trial.suggest_categorical('use_rejection_candle', [True, False]),
         'use_mtf_filter': trial.suggest_categorical('use_mtf_filter', [True, False]),
+        # Zwei weitere trade_logic.py-Filter, die bislang NIE durchsucht wurden (fix auf
+        # True): use_entry_confirmation verlangt SELBST bei use_rejection_candle=False
+        # noch eine in Trade-Richtung gefaerbte Kerze; use_swing_ob steuert ob grosse
+        # Swing-Level-OBs (zusaetzlich zu den kleineren Internal-OBs) als Einstiegszonen
+        # zaehlen. Beide koennen die Trade-Frequenz pro Paar unnoetig einschraenken.
+        'use_entry_confirmation': trial.suggest_categorical('use_entry_confirmation', [True, False]),
+        'use_swing_ob': trial.suggest_categorical('use_swing_ob', [True, False]),
         'symbol': CURRENT_SYMBOL,
         'timeframe': CURRENT_TIMEFRAME,
         '_timeframe': CURRENT_TIMEFRAME,
@@ -555,6 +562,8 @@ def main():
             'max_ob_touches': best_params.get('max_ob_touches', 1),
             'use_rejection_candle': best_params.get('use_rejection_candle', True),
             'use_mtf_filter': best_params.get('use_mtf_filter', False),
+            'use_entry_confirmation': best_params.get('use_entry_confirmation', True),
+            'use_swing_ob': best_params.get('use_swing_ob', True),
             'use_momentum_filter': best_params.get('use_momentum_filter', False),
             'momentum_lookback': best_params.get('momentum_lookback', 3),
             'volume_ma_period': 20,
