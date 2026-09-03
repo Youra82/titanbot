@@ -1,21 +1,21 @@
 {
     "market": {
-        "symbol": "DOGE/USDT:USDT",
+        "symbol": "ETH/USDT:USDT",
         "timeframe": "1h"
     },
     "strategy": {
-        "swingsLength": 17,
+        "swingsLength": 41,
         "ob_mitigation": "High/Low",
         "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 25,
+        "adx_threshold": 23,
         "use_pd_filter": true,
         "use_liquidity_sweep_filter": false,
-        "liquidity_lookback": 25,
-        "min_fvg_size_pct": 0.1334,
-        "min_ob_quality": 0.311,
+        "liquidity_lookback": 10,
+        "min_fvg_size_pct": 0.1509,
+        "min_ob_quality": 0.2,
         "max_ob_touches": 0,
-        "use_rejection_candle": true,
+        "use_rejection_candle": false,
         "use_mtf_filter": false,
         "use_momentum_filter": false,
         "momentum_lookback": 3,
@@ -23,14 +23,14 @@
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_reward_ratio": 3.74,
+        "risk_reward_ratio": 2.98,
         "min_leverage": 4,
-        "max_leverage": 9,
-        "atr_multiplier_sl": 2.69,
+        "max_leverage": 30,
+        "atr_multiplier_sl": 0.922,
         "min_sl_pct": 0.5,
         "structure_sl_buffer_pct": 0.2,
-        "trailing_stop_activation_rr": 1.98,
-        "trailing_stop_callback_rate_pct": 0.57
+        "trailing_stop_activation_rr": 1.26,
+        "trailing_stop_callback_rate_pct": 2.13
     },
     "behavior": {
         "use_longs": true,
@@ -38,12 +38,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 31.87,
-        "train_pnl_pct": -17.29,
-        "test_wr": 38.1,
-        "test_trades": 42,
-        "test_dd_pct": 8.1,
-        "composite_score": 0.3928,
-        "optimized_at": "2026-09-02T13:10:46.919420Z"
+        "test_pnl_pct": 25.53,
+        "train_pnl_pct": -16.44,
+        "test_wr": 47.06,
+        "test_trades": 34,
+        "test_dd_pct": 5.49,
+        "composite_score": 0.5343,
+        "optimized_at": "2026-09-01T22:29:14.148052Z"
     }
 }

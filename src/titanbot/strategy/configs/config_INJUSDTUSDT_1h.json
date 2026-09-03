@@ -1,0 +1,49 @@
+{
+    "market": {
+        "symbol": "INJ/USDT:USDT",
+        "timeframe": "1h"
+    },
+    "strategy": {
+        "swingsLength": 32,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 21,
+        "use_pd_filter": false,
+        "use_liquidity_sweep_filter": false,
+        "liquidity_lookback": 15,
+        "min_fvg_size_pct": 0.1031,
+        "min_ob_quality": 0.431,
+        "max_ob_touches": 1,
+        "use_rejection_candle": false,
+        "use_mtf_filter": true,
+        "use_momentum_filter": false,
+        "momentum_lookback": 3,
+        "volume_ma_period": 20
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_reward_ratio": 2.23,
+        "min_leverage": 2,
+        "max_leverage": 22,
+        "atr_multiplier_sl": 1.493,
+        "min_sl_pct": 0.5,
+        "structure_sl_buffer_pct": 0.2,
+        "trailing_stop_activation_rr": 1.31,
+        "trailing_stop_callback_rate_pct": 2.38
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 10.21,
+        "train_pnl_pct": 22.22,
+        "test_wr": 39.51,
+        "test_trades": 81,
+        "test_dd_pct": 15.64,
+        "composite_score": 0.3195,
+        "optimized_at": "2026-09-02T17:39:11.073612Z"
+    }
+}
