@@ -108,6 +108,9 @@ def main():
     rows = []
     for lw in LOOKBACK_VALUES:
         all_pnls, all_wrs, all_dds, all_trades, window_count = [], [], [], [], 0
+        total_windows = 0   # alle Fenster, die ueberhaupt versucht wurden
+        empty_windows = 0   # Fenster mit 0 Trades (kein Signal im ganzen Fenster)
+        thin_windows  = 0   # Fenster mit >0 aber < min_trades (zu duenn fuer die Aussage)
 
         bar = tqdm(configs, desc=f"  {lw}w", unit="cfg", leave=False,
                    bar_format="{desc}: {n_fmt}/{total_fmt} [{bar:25}] {elapsed}")
@@ -125,55 +128,71 @@ def main():
                 windows = [(start_date, end_date, warmup_date)]
 
             for (start_date, end_date, warmup_date) in windows:
+                total_windows += 1
                 ret = run_backtest_for_config(cfg, start_date, end_date,
                                               start_capital, warmup_date, silent=True)
                 if ret is None:
                     continue
                 result, _ = ret
-                if result.get('trades_count', 0) < args.min_trades:
+                trades_this_window = result.get('trades_count', 0)
+                if trades_this_window == 0:
+                    empty_windows += 1
+                    continue
+                if trades_this_window < args.min_trades:
+                    thin_windows += 1
                     continue
                 all_pnls.append(result.get('total_pnl_pct', 0))
                 all_wrs.append(result.get('win_rate', 0))
                 all_dds.append(result.get('max_drawdown_pct', 0) * 100)
-                all_trades.append(result.get('trades_count', 0))
+                all_trades.append(trades_this_window)
                 window_count += 1
 
         if not all_pnls:
-            print(f"  {YELLOW}Keine Ergebnisse für {lw}W.{NC}")
-            rows.append({'lw': lw, 'avg_pnl': None, 'avg_wr': None,
-                         'avg_dd': None, 'configs': 0, 'windows': 0})
+            print(f"  {YELLOW}Keine Ergebnisse für {lw}W "
+                  f"({empty_windows} leer, {thin_windows} zu duenn, von {total_windows} Fenstern).{NC}")
+            rows.append({'lw': lw, 'avg_pnl': None, 'avg_wr': None, 'avg_dd': None,
+                         'configs': 0, 'windows': 0, 'total_windows': total_windows,
+                         'empty_windows': empty_windows, 'thin_windows': thin_windows,
+                         'total_trades': 0})
             continue
 
         avg_pnl = sum(all_pnls) / len(all_pnls)
         avg_wr  = sum(all_wrs)  / len(all_wrs)
         avg_dd  = sum(all_dds)  / len(all_dds)
         avg_tc  = sum(all_trades) / len(all_trades)
+        total_tc = sum(all_trades)
         rows.append({'lw': lw, 'avg_pnl': avg_pnl, 'avg_wr': avg_wr, 'avg_dd': avg_dd,
-                     'avg_trades': avg_tc, 'configs': len(configs), 'windows': window_count})
+                     'avg_trades': avg_tc, 'configs': len(configs), 'windows': window_count,
+                     'total_windows': total_windows, 'empty_windows': empty_windows,
+                     'thin_windows': thin_windows, 'total_trades': total_tc})
         colour = GREEN if avg_pnl > 0 else RED
         print(f"  {lw}W — PnL: {colour}{avg_pnl:+.2f}%{NC}  "
               f"WR: {avg_wr:.1f}%  DD: {avg_dd:.1f}%  "
-              f"Trades/Fenster: {avg_tc:.1f}  ({window_count} Fenster)")
+              f"Trades/Fenster: {avg_tc:.1f} (Σ{total_tc})  "
+              f"({window_count} Fenster gewertet, {empty_windows} leer, {thin_windows} zu dünn, "
+              f"{total_windows} gesamt)")
 
     # Summary
-    print(f"\n{CYAN}{'='*70}{NC}")
-    print(f"{'Lookback':>10}{'Fenster':>10}{'Avg PnL%':>12}{'Avg WR%':>10}{'Avg DD%':>10}{'Avg Trades':>12}")
-    print(f"{'-'*70}")
+    print(f"\n{CYAN}{'='*90}{NC}")
+    print(f"{'Lookback':>10}{'Fenster':>10}{'Leer':>7}{'Dünn':>7}{'Avg PnL%':>12}{'Avg WR%':>10}{'Avg DD%':>10}{'Avg Trades':>12}{'Σ Trades':>10}")
+    print(f"{'-'*90}")
     best_row   = None
     best_score = float('-inf')
     for r in rows:
         if r['avg_pnl'] is None:
-            print(f"{r['lw']:>8}w {'N/A':>10} {'N/A':>12} {'N/A':>10} {'N/A':>10} {'N/A':>12}")
+            print(f"{r['lw']:>8}w {0:>10} {r.get('empty_windows', 0):>7} {r.get('thin_windows', 0):>7} "
+                  f"{'N/A':>12} {'N/A':>10} {'N/A':>10} {'N/A':>12} {0:>10}")
             continue
         score = r['avg_pnl'] - r['avg_dd'] + r['avg_wr'] * 0.1
         if score > best_score:
             best_score = score
             best_row = r
         colour = GREEN if r['avg_pnl'] > 0 else RED
-        print(f"{r['lw']:>8}w {r['windows']:>10} {colour}{r['avg_pnl']:>+11.2f}%{NC} "
-              f"{r['avg_wr']:>9.1f}% {r['avg_dd']:>9.1f}% {r['avg_trades']:>11.1f}")
+        print(f"{r['lw']:>8}w {r['windows']:>10} {r.get('empty_windows', 0):>7} {r.get('thin_windows', 0):>7} "
+              f"{colour}{r['avg_pnl']:>+11.2f}%{NC} "
+              f"{r['avg_wr']:>9.1f}% {r['avg_dd']:>9.1f}% {r['avg_trades']:>11.1f} {r.get('total_trades', 0):>10}")
 
-    print(f"{CYAN}{'='*70}{NC}")
+    print(f"{CYAN}{'='*90}{NC}")
 
     if best_row:
         print(f"\n{GREEN}Empfehlung: backtest_lookback_weeks = {best_row['lw']}{NC}")
