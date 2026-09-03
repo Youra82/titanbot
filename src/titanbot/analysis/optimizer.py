@@ -500,6 +500,18 @@ def main():
         ranked_by_train = sorted(valid_trials, key=lambda t: t.value, reverse=True)
         best_trial = None
         for t in ranked_by_train:
+            # Erst muss der Trial selbst auf dem Trainingsfenster profitabel sein --
+            # sonst kann ein beim Training eigentlich verlustreicher Trial durch reines
+            # Durchprobieren vieler Kandidaten "gerettet" werden, weil er zufaellig auf
+            # dem Test-Fenster gut aussieht (Rest-Leckage: 200 Kandidaten nacheinander
+            # gegen das Test-Fenster zu pruefen ist selbst eine Form von Data-Snooping,
+            # auch wenn keiner davon direkt fuer Test optimiert wurde). Konkret
+            # beobachtet: SOL/2h waehlte sonst train=-14.9% / test=+20.1% -- ein Trial,
+            # der beim Training Geld verliert, ist kein belastbarer Fund, egal wie gut
+            # er zufaellig auf dem Testfenster abschneidet.
+            t_train_pnl = t.user_attrs.get('train_pnl', -1e9)
+            if t_train_pnl <= 0:
+                continue
             t_test_trades = t.user_attrs.get('test_trades', 0)
             t_min_test    = t.user_attrs.get('min_test_trades', 1)
             t_test_pnl    = t.user_attrs.get('test_pnl', -1e9)
