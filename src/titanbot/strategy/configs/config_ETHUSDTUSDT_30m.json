@@ -1,0 +1,49 @@
+{
+    "market": {
+        "symbol": "ETH/USDT:USDT",
+        "timeframe": "30m"
+    },
+    "strategy": {
+        "swingsLength": 45,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 22,
+        "use_pd_filter": true,
+        "use_liquidity_sweep_filter": false,
+        "liquidity_lookback": 15,
+        "min_fvg_size_pct": 0.1331,
+        "min_ob_quality": 0.229,
+        "max_ob_touches": 1,
+        "use_rejection_candle": false,
+        "use_mtf_filter": false,
+        "use_momentum_filter": true,
+        "momentum_lookback": 14,
+        "volume_ma_period": 20
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_reward_ratio": 1.93,
+        "min_leverage": 2,
+        "max_leverage": 29,
+        "atr_multiplier_sl": 0.993,
+        "min_sl_pct": 0.5,
+        "structure_sl_buffer_pct": 0.2,
+        "trailing_stop_activation_rr": 1.75,
+        "trailing_stop_callback_rate_pct": 2.18
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 14.07,
+        "train_pnl_pct": -16.63,
+        "test_wr": 57.69,
+        "test_trades": 26,
+        "test_dd_pct": 5.19,
+        "composite_score": 0.5228,
+        "optimized_at": "2026-09-01T23:10:26.076578Z"
+    }
+}

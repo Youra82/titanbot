@@ -1,0 +1,49 @@
+{
+    "market": {
+        "symbol": "SOL/USDT:USDT",
+        "timeframe": "1h"
+    },
+    "strategy": {
+        "swingsLength": 34,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 27,
+        "use_pd_filter": false,
+        "use_liquidity_sweep_filter": true,
+        "liquidity_lookback": 25,
+        "min_fvg_size_pct": 0.1355,
+        "min_ob_quality": 0.307,
+        "max_ob_touches": 2,
+        "use_rejection_candle": false,
+        "use_mtf_filter": false,
+        "use_momentum_filter": false,
+        "momentum_lookback": 3,
+        "volume_ma_period": 20
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_reward_ratio": 1.91,
+        "min_leverage": 6,
+        "max_leverage": 10,
+        "atr_multiplier_sl": 2.371,
+        "min_sl_pct": 0.5,
+        "structure_sl_buffer_pct": 0.2,
+        "trailing_stop_activation_rr": 1.51,
+        "trailing_stop_callback_rate_pct": 1.41
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 4.49,
+        "train_pnl_pct": 6.9,
+        "test_wr": 45.45,
+        "test_trades": 22,
+        "test_dd_pct": 5.11,
+        "composite_score": 0.407,
+        "optimized_at": "2026-09-02T07:33:31.805471Z"
+    }
+}

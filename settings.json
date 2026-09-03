@@ -28,7 +28,7 @@
             }
         },
         "start_capital": 20,
-        "backtest_lookback_weeks": 2,
+        "backtest_lookback_weeks": 1,
         "warmup_weeks": 4,
         "_candidate_strategies_note": "Fester Pool fuer run_pipeline.sh: bei Coin/TF-Prompts einfach Enter druecken, dann werden diese Paare (aus den bestehenden Configs extrahiert) genommen statt nur der aktuell aktiven Strategien.",
         "candidate_strategies": [
