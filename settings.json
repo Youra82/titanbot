@@ -4,8 +4,8 @@
         "use_auto_optimizer_results": false,
         "active_strategies": [
             {
-                "symbol": "AAVE/USDT:USDT",
-                "timeframe": "1h",
+                "symbol": "BTC/USDT:USDT",
+                "timeframe": "2h",
                 "active": true
             }
         ]
@@ -121,7 +121,7 @@
             "max_drawdown_pct": 30
         },
         "send_telegram_on_completion": true,
-        "oos_reference_date": "2026-09-01",
+        "oos_reference_date": "2026-09-03",
         "_oos_note": "End-Datum fuer 70/30-Split. OOS-Start automatisch je Timeframe."
     }
 }
