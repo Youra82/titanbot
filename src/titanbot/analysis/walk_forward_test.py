@@ -31,7 +31,7 @@ from titanbot.analysis.analysis_utils import (
 )
 
 
-LOOKBACK_VALUES = [1, 2, 3, 4, 6, 8]
+LOOKBACK_VALUES = [1, 2, 3, 4, 6, 8, 26]
 
 _TF_LOOKBACK_DAYS = {
     '5m': 60, '15m': 60, '30m': 365, '1h': 365,
