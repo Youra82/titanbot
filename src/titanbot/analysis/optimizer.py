@@ -178,7 +178,7 @@ def objective(trial):
     min_train_trades = max(2, int(MIN_TRADES_PER_YEAR * train_days / 365))
     min_test_trades  = max(1, int(MIN_TRADES_PER_YEAR * test_days  / 365))
 
-    # ── STUFE 1: TRAIN-Backtest (70% der Daten) — leichtes Pruning ──────────
+    # ── STUFE 1: TRAIN-Backtest (70% der Daten) — bestimmt AUSSCHLIESSLICH den Score ──
     smc_params['_precomputed_smc'] = _get_smc_precomputed(
         _SMC_TRAIN_CACHE, _SMC_TRAIN_CACHE_LOCK, TRAIN_DATA, smc_params)
 
@@ -186,11 +186,28 @@ def objective(trial):
     train_pnl    = train_result.get('total_pnl_pct', -1000)
     train_dd     = train_result.get('max_drawdown_pct', 1.0)
     train_trades = train_result.get('trades_count', 0)
+    train_wr     = train_result.get('win_rate', 0)
 
     if train_trades < min_train_trades or train_dd > MAX_DRAWDOWN_CONSTRAINT:
         raise optuna.exceptions.TrialPruned()
 
-    # ── STUFE 2: TEST-Backtest (30% der Daten) — strenges Pruning ───────────
+    # ── STUFE 2: TEST-Backtest (30% der Daten) — NUR fuer Reporting/User-Attrs ──
+    # FIXIERT (2026-08-28, dritte Runde): Das Test-Set floss bis eben mit 70% Gewicht
+    # direkt in final_score ein -- also in genau das, was Optuna ueber 200-350 Trials
+    # hinweg aktiv MAXIMIERT. Damit war das "unsichtbare" Test-Fenster nie wirklich
+    # blind: die Bayes'sche Suche lernte over Trials hinweg, welche Parameter dort gut
+    # abschneiden, und steuerte gezielt dorthin -- Overfitting auf das OOS-Fenster durch
+    # wiederholtes Feedback, nur indirekt statt per Kurvenanpassung. Beweis aus echten
+    # VPS-Configs: ADA/30m train_pnl=-14.1% / test_pnl=+30.3%, ETH/1h train_pnl=-16.4% /
+    # test_pnl=+25.5% -- die Suche opferte Trainings-Performance zugunsten von Mustern,
+    # die nur im Testfenster funktionierten. Ein rollierender Walk-Forward (143-157
+    # Fenster, von der Suche nie gesehen) zeigte danach durchgehend negatives PnL.
+    # Fix: Test-Metriken werden weiterhin berechnet und als user_attr gespeichert, aber
+    # beeinflussen weder Pruning noch final_score. Sie werden AUSSCHLIESSLICH einmalig
+    # NACH Abschluss der Suche verwendet, um unter den (rein per Training gerankten)
+    # Trials das erste zu waehlen, das sich auch auf dem nie gesehenen Test-Fenster
+    # bestaetigt (siehe main(), Trial-Auswahl) -- echtes Trainieren-dann-Validieren
+    # statt Trainieren-waehrend-des-Validierens.
     smc_params['_precomputed_smc'] = _get_smc_precomputed(
         _SMC_TEST_CACHE, _SMC_TEST_CACHE_LOCK, TEST_DATA, smc_params)
 
@@ -202,45 +219,28 @@ def objective(trial):
     test_trades  = test_result.get('trades_count', 0)
     test_wr      = test_result.get('win_rate', 0)
 
-    if test_trades < min_test_trades or test_dd > MAX_DRAWDOWN_CONSTRAINT:
-        raise optuna.exceptions.TrialPruned()
-    # strict: pnl>0 + win_rate + min_pnl zwingend
-    # best_profit: pnl>0 wird nicht erzwungen — Composite Score bestraft negative PnL indirekt
-    if OPTIM_MODE == "strict":
-        if test_pnl <= 0 or test_wr < MIN_WIN_RATE_CONSTRAINT or test_pnl < MIN_PNL_CONSTRAINT:
-            raise optuna.exceptions.TrialPruned()
-
-    # ── Kombinierter Score ────────────────────────────────────────────────────
-    # FIXIERT (2026-08-28, zweite Runde): die erste Korrektur (Koeffizienten /10)
-    # reichte nicht. Grundproblem war struktureller: math.log1p(max(0, pnl)) gibt
-    # JEDEM verlustreichen Trial denselben Score von 0 -- ein Trial mit -2% und
-    # einer mit -28% sind fuer die Formel ununterscheidbar. Unter lauter Verlierern
-    # entschied dann ausschliesslich trade_bonus, welcher gewinnt -- und waehlte
-    # zuverlaessig den mit den meisten Trades, unabhaengig davon wie schlecht sein
-    # PnL war. Konkreter Fund (LINK/30m, 89 Trials): Trial #115 (-28.08% PnL, 29.4%
-    # DD, 98 Trades) bekam einen HOEHEREN Score als Trial #20 (+5.92% PnL, 12.9% DD,
-    # 66 Trades) -- die schlechteste von allen 89 Konfigurationen wurde gespeichert.
-    # Fix: signed_log erhaelt das Vorzeichen (Verluste werden proportional zu ihrer
-    # Groesse bestraft, nicht alle gleich auf 0 abgebildet); trade_bonus bleibt ein
-    # kleiner Tie-Breaker, kann aber keinen Vorzeichenwechsel mehr ueberstimmen.
+    # ── Score — AUSSCHLIESSLICH aus Train-Metriken, kein Test-Leakage in die Suche ──
     def signed_log(x):
         return math.copysign(math.log1p(abs(x)), x)
 
     train_score = signed_log(train_pnl) / max(train_dd * 100, 1.0)
-    test_score  = signed_log(test_pnl)  / max(test_dd  * 100, 1.0)
-    # Trade-Dichte: kleiner Tie-Breaker zwischen ähnlich profitablen Setups.
-    trade_ratio = test_trades / max(min_test_trades, 1)
-    trade_bonus = math.log1p(test_trades) * 0.03 + math.log1p(max(0, trade_ratio - 1.0)) * 0.015
-    wr_bonus    = max(0.0, (test_wr - 40.0) / 200.0)     # winziger Bonus ab 40% Win-Rate
+    # Trade-Dichte: kleiner Tie-Breaker zwischen ähnlich profitablen Setups (Train-seitig).
+    trade_ratio = train_trades / max(min_train_trades, 1)
+    trade_bonus = math.log1p(train_trades) * 0.03 + math.log1p(max(0, trade_ratio - 1.0)) * 0.015
+    wr_bonus    = max(0.0, (train_wr - 40.0) / 200.0)    # winziger Bonus ab 40% Win-Rate
 
-    final_score = train_score * 0.30 + test_score * 0.70 + trade_bonus + wr_bonus
+    final_score = train_score + trade_bonus + wr_bonus
 
-    # User-Attribute für Config-Export und Fortschrittsanzeige
+    # User-Attribute für Config-Export, finale Trial-Auswahl (main()) und Fortschrittsanzeige.
+    # min_test_trades/min_train_trades mitspeichern, damit main() nach der Suche pruefen
+    # kann ob ein Trial genug Test-Trades fuer eine belastbare Aussage hat.
     trial.set_user_attr('test_pnl',    round(test_pnl,    2))
     trial.set_user_attr('train_pnl',   round(train_pnl,   2))
     trial.set_user_attr('test_wr',     round(test_wr,     2))
     trial.set_user_attr('test_trades', test_trades)
     trial.set_user_attr('test_dd_pct', round(test_dd * 100, 2))
+    trial.set_user_attr('train_trades', train_trades)
+    trial.set_user_attr('min_test_trades', min_test_trades)
 
     return final_score
 
@@ -491,7 +491,38 @@ def main():
             run_tasks_summary.append({'symbol': symbol, 'timeframe': timeframe, 'status': 'no_valid_trials'})
             continue
 
-        best_trial = max(valid_trials, key=lambda t: t.value)
+        # Trainieren-dann-validieren statt Trainieren-waehrend-des-Validierens: Trials
+        # werden REIN nach Train-Score gerankt (t.value enthaelt seit dem Fix kein
+        # Test-Signal mehr), dann wird das ERSTE gewaehlt, das sich auch auf dem nie
+        # gesehenen Test-Fenster bestaetigt. Das Test-Fenster beeinflusst also nur noch
+        # EINMALIG die finale Auswahl unter den (train-blind gefundenen) Kandidaten,
+        # nicht mehr die Suche selbst.
+        ranked_by_train = sorted(valid_trials, key=lambda t: t.value, reverse=True)
+        best_trial = None
+        for t in ranked_by_train:
+            t_test_trades = t.user_attrs.get('test_trades', 0)
+            t_min_test    = t.user_attrs.get('min_test_trades', 1)
+            t_test_pnl    = t.user_attrs.get('test_pnl', -1e9)
+            t_test_wr     = t.user_attrs.get('test_wr', 0)
+            t_test_dd_pct = t.user_attrs.get('test_dd_pct', 1000.0)
+            if t_test_trades < t_min_test:
+                continue  # zu wenige Test-Trades fuer eine belastbare Aussage
+            if t_test_dd_pct > MAX_DRAWDOWN_CONSTRAINT * 100:
+                continue
+            if t_test_pnl <= 0:
+                continue
+            if OPTIM_MODE == "strict" and (t_test_wr < MIN_WIN_RATE_CONSTRAINT or t_test_pnl < MIN_PNL_CONSTRAINT):
+                continue
+            best_trial = t
+            break
+
+        if best_trial is None:
+            print(f"\n❌ Kein Trial (von {len(valid_trials)} trainierten) bestätigte sich auf dem "
+                  f"nie gesehenen Test-Fenster für {symbol} ({timeframe}).")
+            run_tasks_summary.append({'symbol': symbol, 'timeframe': timeframe,
+                                      'status': 'no_test_confirmation', 'n_trained': len(valid_trials)})
+            continue
+
         best_params = best_trial.params
 
         config_dir = os.path.join(PROJECT_ROOT, 'src', 'titanbot', 'strategy', 'configs')
