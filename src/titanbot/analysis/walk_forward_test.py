@@ -106,11 +106,15 @@ def main():
         print(f"  Kein oos_reference_date in settings.json — verwende altes Verhalten.\n")
 
     rows = []
+    per_lw_per_config = {}  # {lw: {label: {'pnls': [...], 'trades': [...]}}}
     for lw in LOOKBACK_VALUES:
         all_pnls, all_wrs, all_dds, all_trades, window_count = [], [], [], [], 0
         total_windows = 0   # alle Fenster, die ueberhaupt versucht wurden
         empty_windows = 0   # Fenster mit 0 Trades (kein Signal im ganzen Fenster)
         thin_windows  = 0   # Fenster mit >0 aber < min_trades (zu duenn fuer die Aussage)
+        per_config = {}     # label -> {'pnls': [...], 'trades': [...]} -- deckt auf, ob ein
+                             # gepoolter Durchschnitt einzelne Gewinner hinter mehreren
+                             # Verlierern versteckt (siehe titanbot-Session 2026-09-03/04).
 
         bar = tqdm(configs, desc=f"  {lw}w", unit="cfg", leave=False,
                    bar_format="{desc}: {n_fmt}/{total_fmt} [{bar:25}] {elapsed}")
@@ -118,6 +122,7 @@ def main():
         for cfg in bar:
             sym = cfg.get('market', {}).get('symbol', '?')
             tf  = cfg.get('market', {}).get('timeframe', '?')
+            label = f"{sym.split('/')[0]}/{tf}"
             bar.set_postfix_str(f"{sym} {tf}", refresh=True)
 
             if oos_ref_str:
@@ -141,11 +146,17 @@ def main():
                 if trades_this_window < args.min_trades:
                     thin_windows += 1
                     continue
-                all_pnls.append(result.get('total_pnl_pct', 0))
+                pnl_this_window = result.get('total_pnl_pct', 0)
+                all_pnls.append(pnl_this_window)
                 all_wrs.append(result.get('win_rate', 0))
                 all_dds.append(result.get('max_drawdown_pct', 0) * 100)
                 all_trades.append(trades_this_window)
                 window_count += 1
+                per_config.setdefault(label, {'pnls': [], 'trades': []})
+                per_config[label]['pnls'].append(pnl_this_window)
+                per_config[label]['trades'].append(trades_this_window)
+
+        per_lw_per_config[lw] = per_config
 
         if not all_pnls:
             print(f"  {YELLOW}Keine Ergebnisse für {lw}W "
@@ -198,6 +209,22 @@ def main():
         print(f"\n{GREEN}Empfehlung: backtest_lookback_weeks = {best_row['lw']}{NC}")
         print(f"  Score (PnL - DD + WR×0.1): {best_score:.2f}")
         print(f"  Avg PnL: {best_row['avg_pnl']:+.2f}%  |  Avg WR: {best_row['avg_wr']:.1f}%  |  Avg DD: {best_row['avg_dd']:.1f}%")
+
+        # Pro-Paar-Aufschlüsselung fuer die empfohlene Lookback-Laenge: der gepoolte
+        # Durchschnitt kann einzelne Gewinner hinter mehreren Verlierern verstecken
+        # (oder umgekehrt) -- ohne diese Aufschluesselung nicht erkennbar.
+        per_config = per_lw_per_config.get(best_row['lw'], {})
+        if per_config:
+            print(f"\n{CYAN}  Pro-Paar-Aufschlüsselung ({best_row['lw']}W):{NC}")
+            print(f"  {'Paar':<14}{'Fenster':>9}{'Avg PnL%':>12}{'Σ Trades':>10}")
+            per_config_rows = []
+            for label, d in per_config.items():
+                n = len(d['pnls'])
+                avg = sum(d['pnls']) / n if n else 0.0
+                per_config_rows.append((label, n, avg, sum(d['trades'])))
+            for label, n, avg, tot_tr in sorted(per_config_rows, key=lambda x: -x[2]):
+                colour = GREEN if avg > 0 else RED
+                print(f"  {label:<14}{n:>9}  {colour}{avg:>+9.2f}%{NC}{tot_tr:>10}")
 
         if not args.no_save:
             try:
