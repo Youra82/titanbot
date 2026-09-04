@@ -4,33 +4,35 @@
         "timeframe": "2h"
     },
     "strategy": {
-        "swingsLength": 44,
+        "swingsLength": 42,
         "ob_mitigation": "High/Low",
-        "use_adx_filter": true,
+        "use_adx_filter": false,
         "adx_period": 14,
-        "adx_threshold": 22,
+        "adx_threshold": 30,
         "use_pd_filter": false,
         "use_liquidity_sweep_filter": false,
-        "liquidity_lookback": 10,
-        "min_fvg_size_pct": 0.1155,
-        "min_ob_quality": 0.217,
-        "max_ob_touches": 2,
-        "use_rejection_candle": false,
+        "liquidity_lookback": 25,
+        "min_fvg_size_pct": 0.0503,
+        "min_ob_quality": 0.352,
+        "max_ob_touches": 0,
+        "use_rejection_candle": true,
         "use_mtf_filter": false,
+        "use_entry_confirmation": true,
+        "use_swing_ob": true,
         "use_momentum_filter": false,
         "momentum_lookback": 3,
         "volume_ma_period": 20
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_reward_ratio": 1.51,
-        "min_leverage": 2,
-        "max_leverage": 26,
-        "atr_multiplier_sl": 2.652,
+        "risk_reward_ratio": 3.08,
+        "min_leverage": 6,
+        "max_leverage": 27,
+        "atr_multiplier_sl": 2.456,
         "min_sl_pct": 0.5,
         "structure_sl_buffer_pct": 0.2,
-        "trailing_stop_activation_rr": 1.95,
-        "trailing_stop_callback_rate_pct": 2.5
+        "trailing_stop_activation_rr": 1.4,
+        "trailing_stop_callback_rate_pct": 2.47
     },
     "behavior": {
         "use_longs": true,
@@ -38,12 +40,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 8.78,
-        "train_pnl_pct": 22.57,
-        "test_wr": 49.32,
-        "test_trades": 73,
-        "test_dd_pct": 13.3,
-        "composite_score": 0.3535,
-        "optimized_at": "2026-09-02T01:23:55.919964Z"
+        "test_pnl_pct": 1.15,
+        "train_pnl_pct": 33.18,
+        "test_wr": 29.63,
+        "test_trades": 81,
+        "test_dd_pct": 15.66,
+        "composite_score": 0.3193,
+        "optimized_at": "2026-09-03T17:53:19.513255Z"
     }
 }
