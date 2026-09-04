@@ -81,7 +81,7 @@ def extract_avg_win_loss(result, start_capital):
 def main():
     parser = argparse.ArgumentParser(description='Kelly-Criterion Positionsgrößen-Analyse')
     parser.add_argument('--capital',    type=float, default=None,  help='Start-Kapital in USDT')
-    parser.add_argument('--risk',       type=float, default=None,  help='Risiko pro Trade % (override)')
+    parser.add_argument('--risk',       type=float, default=None,  help='Risiko pro Trade %% (override)')
     parser.add_argument('--half-kelly', action='store_true',       help='Half-Kelly als Empfehlung verwenden')
     parser.add_argument('--no-telegram', action='store_true',      help='Kein Telegram-Report')
     args = parser.parse_args()

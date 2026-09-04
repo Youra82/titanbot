@@ -5,7 +5,16 @@ import json
 import pandas as pd
 from datetime import date
 import logging
-import argparse 
+import argparse
+
+# Ohne dies stuerzt jedes print() mit Unicode-Sonderzeichen auf Windows-
+# Konsolen ab (cp1252 kennt viele Zeichen nicht) -- betrifft nicht die
+# VPS-Produktion (UTF-8-Locale unter Linux).
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 # Logging etc. bleibt gleich
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
@@ -641,7 +650,7 @@ def run_shared_mode(is_auto: bool, start_date, end_date, start_capital, target_m
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default='1', type=str, help="Analyse-Modus (1=Einzel, 2=Manuell, 3=Auto, 4=Interaktiv)")
-    parser.add_argument('--target_max_drawdown', default=30.0, type=float, help="Ziel Max Drawdown % (nur fÃ¼r Modus 3)")
+    parser.add_argument('--target_max_drawdown', default=30.0, type=float, help="Ziel Max Drawdown %% (nur fuer Modus 3)")
     parser.add_argument('--start_date', default='2023-01-01', type=str, help="Startdatum JJJJ-MM-TT")
     parser.add_argument('--end_date', default=None, type=str, help="Enddatum JJJJ-MM-TT (Standard: Heute)")
     parser.add_argument('--start_capital', default=1000, type=int, help="Startkapital in USDT")

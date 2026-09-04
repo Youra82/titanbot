@@ -3,6 +3,14 @@
 import os, sys, json, optuna
 from datetime import datetime, timezone
 
+# Ohne dies stuerzt jedes print() mit z.B. '→' auf Windows-Konsolen ab (cp1252
+# kennt viele Unicode-Zeichen nicht) -- betrifft nicht die VPS-Produktion.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))

@@ -9,6 +9,14 @@ import logging
 import warnings
 from datetime import datetime, timezone, timedelta
 
+# Ohne dies stuerzt jedes print() mit z.B. '→' auf Windows-Konsolen ab (cp1252
+# kennt viele Unicode-Zeichen nicht) -- betrifft nicht die VPS-Produktion.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 logging.getLogger('absl').setLevel(logging.ERROR)
@@ -83,6 +91,8 @@ def _seed_from_previous_study(study, symbol, timeframe, storage_url):
         seed_params.setdefault('use_liquidity_sweep_filter', True)
         seed_params.setdefault('use_rejection_candle', True)
         seed_params.setdefault('use_momentum_filter', False)
+        seed_params.setdefault('momentum_require_both', True)
+        seed_params.setdefault('use_trailing_stop', False)
         try:
             study.enqueue_trial(seed_params, skip_if_exists=True)
             print(f"  Warm-Start: bester Fund aus '{prev_name}' "
@@ -157,6 +167,11 @@ def objective(trial):
         # zaehlen. Beide koennen die Trade-Frequenz pro Paar unnoetig einschraenken.
         'use_entry_confirmation': trial.suggest_categorical('use_entry_confirmation', [True, False]),
         'use_swing_ob': trial.suggest_categorical('use_swing_ob', [True, False]),
+        # Zonenbasiertes TP (naechstes ungesweeptes Liquiditaetslevel statt festem
+        # R:R-Vielfachen) -- existierte im Code nur fuer ein Nebenwerkzeug, nie im
+        # eigentlichen Optimierungs-/Live-Pfad. Authentischerer SMC-Exit-Ansatz
+        # ("Preis zielt auf die naechste Liquiditaet"), noch nie getestet.
+        'use_zone_based_tp': trial.suggest_categorical('use_zone_based_tp', [True, False]),
         'symbol': CURRENT_SYMBOL,
         'timeframe': CURRENT_TIMEFRAME,
         '_timeframe': CURRENT_TIMEFRAME,
@@ -165,19 +180,36 @@ def objective(trial):
     # durchsuchbare Option statt fixem An/Aus -- ein einzelner manueller Test mit
     # lookback=3 war zu restriktiv (1-2 Trades/2 Monate), hier lässt Optuna den
     # Lookback selbst finden statt raten.
+    # momentum_require_both: A/B-Test (2026-09-04) zeigte, dass die AND-Kombi
+    # (MACD-Cross UND RSI-Reversal im selben Fenster) das Signal auf 1-60
+    # Trades/9 Monate ausduennt -- die "Verbesserung" dort war ein Sample-Size-
+    # Artefakt, kein echter Edge. Die OR-Variante (lookback=3) hatte dagegen
+    # echte Handelsmenge (65-205 Trades/Paar) UND eine reale portfolioweite
+    # Verbesserung (-2.08%→-0.99% Mittel, 5/7 Paare besser). Jetzt durchsuchbar
+    # statt hart auf AND fixiert.
     use_momentum = trial.suggest_categorical('use_momentum_filter', [True, False])
     smc_params['use_momentum_filter'] = use_momentum
     if use_momentum:
         smc_params['momentum_lookback'] = trial.suggest_int('momentum_lookback', 2, 20)
+        smc_params['momentum_require_both'] = trial.suggest_categorical('momentum_require_both', [True, False])
     risk_params = {
         'risk_reward_ratio': trial.suggest_float('risk_reward_ratio', 1.5, 4.0),
         'risk_per_trade_pct': 1.0,  # Fest für fairen Vergleich — wird in Mode 3 optimiert
         'min_leverage': trial.suggest_int('min_leverage', 2, 8),
         'max_leverage': trial.suggest_int('max_leverage', 8, 30),
         'atr_multiplier_sl': trial.suggest_float('atr_multiplier_sl', 0.5, 3.0),
-        'trailing_stop_activation_rr': trial.suggest_float('trailing_stop_activation_rr', 1.0, 3.5),
-        'trailing_stop_callback_rate_pct': trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5),
     }
+    # Trailing-Stop (dnabot-Prinzip: Gewinner ueber das feste TP hinaus laufen
+    # lassen statt am R:R-Ziel zu deckeln) -- 'trailing_stop_activation_rr' und
+    # 'trailing_stop_callback_rate_pct' wurden bisher gesucht, aber NIRGENDS
+    # verwendet (weder Backtest noch Live) -- reines Rauschen im Suchraum.
+    # Jetzt echt im Backtester implementiert (siehe backtester.py) und hier
+    # als An/Aus-Flag durchsuchbar, analog zum Momentum-Filter-Muster.
+    use_trailing = trial.suggest_categorical('use_trailing_stop', [True, False])
+    risk_params['use_trailing_stop'] = use_trailing
+    if use_trailing:
+        risk_params['trailing_stop_activation_rr'] = trial.suggest_float('trailing_stop_activation_rr', 0.5, 3.5)
+        risk_params['trailing_stop_callback_rate_pct'] = trial.suggest_float('trailing_stop_callback_rate_pct', 0.5, 2.5)
 
     # Proportionale Mindest-Trades: MIN_TRADES_PER_YEAR skaliert auf die tatsächliche Datenlänge
     train_days = max(1, (TRAIN_DATA.index[-1] - TRAIN_DATA.index[0]).days)
@@ -270,6 +302,10 @@ def main():
     parser.add_argument('--config_suffix', type=str, default="")
     parser.add_argument('--min_trades_per_year', type=int, default=300,
                         help='Mindest-Trades pro Jahr pro Strategie (proportional auf Datenlänge skaliert)')
+    parser.add_argument('--results_file', type=str, default=None,
+                        help='Pfad fuer die Run-Summary (Default: artifacts/results/last_optimizer_run.json). '
+                             'Fuer Screening-/Testlaeufe auf einen eigenen Pfad umleiten, damit die echte '
+                             'Produktions-Summary nicht ueberschrieben wird.')
     args = parser.parse_args()
 
     CONFIG_SUFFIX = args.config_suffix
@@ -564,8 +600,10 @@ def main():
             'use_mtf_filter': best_params.get('use_mtf_filter', False),
             'use_entry_confirmation': best_params.get('use_entry_confirmation', True),
             'use_swing_ob': best_params.get('use_swing_ob', True),
+            'use_zone_based_tp': best_params.get('use_zone_based_tp', False),
             'use_momentum_filter': best_params.get('use_momentum_filter', False),
             'momentum_lookback': best_params.get('momentum_lookback', 3),
+            'momentum_require_both': best_params.get('momentum_require_both', True),
             'volume_ma_period': 20,
         }
 
@@ -577,8 +615,9 @@ def main():
             'atr_multiplier_sl': round(best_params['atr_multiplier_sl'], 3),
             'min_sl_pct': 0.5,
             'structure_sl_buffer_pct': 0.2,
-            'trailing_stop_activation_rr': round(best_params['trailing_stop_activation_rr'], 2),
-            'trailing_stop_callback_rate_pct': round(best_params['trailing_stop_callback_rate_pct'], 2),
+            'use_trailing_stop': best_params.get('use_trailing_stop', False),
+            'trailing_stop_activation_rr': round(best_params.get('trailing_stop_activation_rr', 1.5), 2),
+            'trailing_stop_callback_rate_pct': round(best_params.get('trailing_stop_callback_rate_pct', 1.0), 2),
         }
         behavior_config = {"use_longs": True, "use_shorts": True}
         
@@ -683,9 +722,13 @@ def main():
 
     # --- Schreibe Run‑Summary in artifacts/results/last_optimizer_run.json (kurz und maschinenlesbar) ---
     try:
-        results_dir = os.path.join(PROJECT_ROOT, 'artifacts', 'results')
-        os.makedirs(results_dir, exist_ok=True)
-        summary_path = os.path.join(results_dir, 'last_optimizer_run.json')
+        if args.results_file:
+            summary_path = args.results_file
+            os.makedirs(os.path.dirname(summary_path) or '.', exist_ok=True)
+        else:
+            results_dir = os.path.join(PROJECT_ROOT, 'artifacts', 'results')
+            os.makedirs(results_dir, exist_ok=True)
+            summary_path = os.path.join(results_dir, 'last_optimizer_run.json')
         run_end_ts = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         summary = {
             'start_time': run_start_ts,

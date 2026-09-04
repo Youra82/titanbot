@@ -9,6 +9,16 @@ import contextlib
 import io
 from datetime import datetime, timedelta, timezone
 
+# Ohne dies stuerzt jedes print() mit z.B. '→' auf Windows-Konsolen ab
+# (Default-Codec cp1252 kennt viele Unicode-Zeichen nicht) -- betrifft nicht
+# die VPS-Produktion (UTF-8-Locale unter Linux), aber jede lokale Windows-
+# Ausfuehrung ohne explizit gesetztes PYTHONIOENCODING=utf-8.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 # Agg-Backend MUSS vor jedem pyplot-Import gesetzt werden
 import matplotlib
 matplotlib.use('Agg')

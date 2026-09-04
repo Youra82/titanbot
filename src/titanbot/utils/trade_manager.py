@@ -14,7 +14,7 @@ from sklearn.preprocessing import StandardScaler # BLEIBT ZUR KOMPATIBILITÄT
 import math
 
 from titanbot.strategy.smc_engine import SMCEngine, Bias # NEU: Import SMC Engine
-from titanbot.strategy.trade_logic import get_titan_signal
+from titanbot.strategy.trade_logic import get_titan_signal, get_zone_based_tp
 from titanbot.utils.exchange import Exchange
 from titanbot.utils.telegram import send_message, send_photo
 
@@ -543,6 +543,16 @@ def check_and_open_new_position(exchange, model, scaler, params, telegram_config
             tp_price = entry_price - sl_distance * rr
             pos_side = 'sell'
             tsl_side = 'buy'
+
+        # Zonenbasiertes TP (naechstes ungesweeptes Liquiditaetslevel statt festem
+        # R:R) -- identisch zum Backtester-Pfad (backtester.py), damit Live und
+        # Backtest dieselbe Logik nutzen. current_bar_index = Position von
+        # current_candle innerhalb des von der SMC-Engine verarbeiteten Fensters.
+        if smc_params.get('use_zone_based_tp', False):
+            current_bar_index = len(recent_data) - 2
+            tp_price = get_zone_based_tp(
+                signal_side, entry_price, sl_distance, rr, smc_results_full, current_bar_index
+            )
 
         # Kontraktgröße berechnen
         sl_distance_pct_equivalent = sl_distance / entry_price

@@ -8,6 +8,14 @@ import ta # Import für ATR/ADX hinzugefügt
 import math # Import für math.ceil
 import json
 
+# Ohne dies stuerzt jedes print() mit z.B. '→' auf Windows-Konsolen ab (cp1252
+# kennt viele Unicode-Zeichen nicht) -- betrifft nicht die VPS-Produktion.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
@@ -182,45 +190,78 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
             current_candle = strat_data['data'].loc[ts]
             pos['last_known_price'] = current_candle['close']
             exit_price = None
-            was_trailing_before = pos['trailing_active']
 
-            if pos['side'] == 'long':
-                if not pos['trailing_active'] and current_candle['high'] >= pos['activation_price']:
-                    pos['trailing_active'] = True
-                if pos['trailing_active']:
-                    pos['peak_price'] = max(pos['peak_price'], current_candle['high'])
-                    trailing_sl = pos['peak_price'] * (1 - pos['callback_rate'])
-                    pos['stop_loss'] = max(pos['stop_loss'], trailing_sl)
-                sl_hit = current_candle['low'] <= pos['stop_loss']
-                tp_hit = (not was_trailing_before) and current_candle['high'] >= pos['take_profit']
-            else: # Short
-                if not pos['trailing_active'] and current_candle['low'] <= pos['activation_price']:
-                    pos['trailing_active'] = True
-                if pos['trailing_active']:
-                    pos['peak_price'] = min(pos['peak_price'], current_candle['low'])
-                    trailing_sl = pos['peak_price'] * (1 + pos['callback_rate'])
-                    pos['stop_loss'] = min(pos['stop_loss'], trailing_sl)
-                sl_hit = current_candle['high'] >= pos['stop_loss']
-                tp_hit = (not was_trailing_before) and current_candle['low'] <= pos['take_profit']
-
-            if sl_hit and tp_hit:
-                # Nur ambig, solange diese Kerze noch nicht getrailt hat (sonst gibt
-                # es nur noch das eine bewegliche SL-Level, kein TP mehr im Spiel).
+            if pos.get('use_trailing_stop', False):
+                # Trailing-SL aendert sich kontinuierlich waehrend der Kerze -- eine
+                # einzelne Coarse-Kerze wuerde implizit "High kommt immer vor Low"
+                # annehmen (Peak mit Kerzen-High setzen, SL verschaerfen, DANACH das
+                # Low DERSELBEN Kerze dagegen pruefen), eine optimistische, unbelegte
+                # Verzerrung -- identischer Bug wie in backtester.py, dort per A/B-Test
+                # bestaetigt (PnL stieg monoton je enger der Callback) und dort per
+                # Fein-Daten-Zerlegung gefixt (2026-09-04). Gleicher Fix hier.
                 fine_data = strat_data.get('fine_data')
-                exit_price = None
+                sub_bars = None
                 if fine_data is not None:
                     coarse_idx = strat_data['data'].index
                     pos_i = coarse_idx.get_loc(ts)
                     duration = (coarse_idx[pos_i + 1] - ts) if pos_i + 1 < len(coarse_idx) else None
                     if duration is not None:
                         fine_slice = _get_fine_slice(fine_data, ts, ts + duration)
-                        exit_price, _ = _resolve_ambiguous_exit(fine_slice, pos['stop_loss'], pos['take_profit'], pos['side'])
-                if exit_price is None:
-                    exit_price = pos['stop_loss']  # Fallback: alte SL-first-Konvention
-            elif sl_hit:
-                exit_price = pos['stop_loss']
-            elif tp_hit:
-                exit_price = pos['take_profit']
+                        if fine_slice is not None and not fine_slice.empty:
+                            sub_bars = list(zip(fine_slice['high'].tolist(), fine_slice['low'].tolist()))
+                if not sub_bars:
+                    sub_bars = [(current_candle['high'], current_candle['low'])]
+
+                for bar_high, bar_low in sub_bars:
+                    if pos['side'] == 'long':
+                        if not pos['trailing_active'] and bar_high >= pos['activation_price']:
+                            pos['trailing_active'] = True
+                        if pos['trailing_active']:
+                            pos['peak_price'] = max(pos['peak_price'], bar_high)
+                            trailing_sl = pos['peak_price'] * (1 - pos['callback_rate'])
+                            pos['stop_loss'] = max(pos['stop_loss'], trailing_sl)
+                        sl_hit = bar_low <= pos['stop_loss']
+                        tp_hit = (not pos['trailing_active']) and bar_high >= pos['take_profit']
+                    else:
+                        if not pos['trailing_active'] and bar_low <= pos['activation_price']:
+                            pos['trailing_active'] = True
+                        if pos['trailing_active']:
+                            pos['peak_price'] = min(pos['peak_price'], bar_low)
+                            trailing_sl = pos['peak_price'] * (1 + pos['callback_rate'])
+                            pos['stop_loss'] = min(pos['stop_loss'], trailing_sl)
+                        sl_hit = bar_high >= pos['stop_loss']
+                        tp_hit = (not pos['trailing_active']) and bar_low <= pos['take_profit']
+
+                    if sl_hit:
+                        exit_price = pos['stop_loss']
+                        break
+                    if tp_hit:
+                        exit_price = pos['take_profit']
+                        break
+            else:
+                if pos['side'] == 'long':
+                    sl_hit = current_candle['low'] <= pos['stop_loss']
+                    tp_hit = current_candle['high'] >= pos['take_profit']
+                else:
+                    sl_hit = current_candle['high'] >= pos['stop_loss']
+                    tp_hit = current_candle['low'] <= pos['take_profit']
+
+                if sl_hit and tp_hit:
+                    fine_data = strat_data.get('fine_data')
+                    exit_price = None
+                    if fine_data is not None:
+                        coarse_idx = strat_data['data'].index
+                        pos_i = coarse_idx.get_loc(ts)
+                        duration = (coarse_idx[pos_i + 1] - ts) if pos_i + 1 < len(coarse_idx) else None
+                        if duration is not None:
+                            fine_slice = _get_fine_slice(fine_data, ts, ts + duration)
+                            exit_price, _ = _resolve_ambiguous_exit(fine_slice, pos['stop_loss'], pos['take_profit'], pos['side'])
+                    if exit_price is None:
+                        exit_price = pos['stop_loss']  # Fallback: alte SL-first-Konvention
+                elif sl_hit:
+                    exit_price = pos['stop_loss']
+                elif tp_hit:
+                    exit_price = pos['take_profit']
 
             if exit_price:
                 pnl_pct = (exit_price / pos['entry_price'] - 1) if pos['side'] == 'long' else (1 - exit_price / pos['entry_price'])
@@ -279,6 +320,15 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                         max_leverage = risk_params.get('max_leverage', 20)
                         min_leverage = risk_params.get('min_leverage', 3)
                         sl_buffer_atr_mult = risk_params.get('sl_buffer_atr_mult', 0.2)
+                        # use_trailing_stop/use_zone_based_tp wurden hier bisher NICHT
+                        # geprueft -- Trailing lief IMMER (mit generischen Default-
+                        # Werten statt den je Config gesuchten), Zonen-TP wurde IMMER
+                        # versucht, unabhaengig davon was der Optimizer fuer diese
+                        # Config tatsaechlich validiert hat. Portfolio-Auswahl basierte
+                        # damit auf einer anderen Exit-Mechanik als der, mit der jede
+                        # Einzel-Config optimiert/bestaetigt wurde. Gefixt 2026-09-04.
+                        use_trailing_stop = risk_params.get('use_trailing_stop', False)
+                        use_zone_based_tp = smc_params.get('use_zone_based_tp', False)
                         activation_rr = risk_params.get('trailing_stop_activation_rr', 2.0)
                         callback_rate = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100
 
@@ -327,8 +377,13 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                         if current_total_margin + margin_used > equity * 1.0001:  # 0.01% Toleranz
                             continue
 
-                        bar_idx = strat['data'].index.get_loc(ts)
-                        take_profit = get_zone_based_tp(side, entry_price, sl_distance, risk_reward_ratio, smc_results_by_strategy.get(key, {}), bar_idx)
+                        take_profit = (
+                            entry_price + sl_distance * risk_reward_ratio if side == 'buy'
+                            else entry_price - sl_distance * risk_reward_ratio
+                        )
+                        if use_zone_based_tp:
+                            bar_idx = strat['data'].index.get_loc(ts)
+                            take_profit = get_zone_based_tp(side, entry_price, sl_distance, risk_reward_ratio, smc_results_by_strategy.get(key, {}), bar_idx)
                         activation_price = entry_price + sl_distance * activation_rr if side == 'buy' else entry_price - sl_distance * activation_rr
 
                         open_positions[key] = {
@@ -336,6 +391,7 @@ def run_portfolio_simulation(start_capital, strategies_data, start_date, end_dat
                             'entry_price': entry_price,
                             'stop_loss': stop_loss,
                             'take_profit': take_profit,
+                            'use_trailing_stop': use_trailing_stop,
                             'notional_value': final_notional_value,
                             'margin_used': margin_used,
                             'trailing_active': False,

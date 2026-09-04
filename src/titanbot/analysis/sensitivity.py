@@ -69,7 +69,7 @@ def avg_pnl_for_param(configs, section, param, factor, start_date, end_date,
 def main():
     parser = argparse.ArgumentParser(description='Sensitivitätsanalyse (Tornado-Chart)')
     parser.add_argument('--capital',     type=float, default=None, help='Start-Kapital in USDT')
-    parser.add_argument('--risk',        type=float, default=None, help='Risiko pro Trade % (override)')
+    parser.add_argument('--risk',        type=float, default=None, help='Risiko pro Trade %% (override)')
     parser.add_argument('--no-telegram', action='store_true',      help='Kein Telegram-Report')
     args = parser.parse_args()
 
