@@ -38,6 +38,9 @@ class OrderBlock:
     quality: float = 0.5          # Composite quality score 0.0-1.0
     bar_index: int = 0            # Formation bar index (for look-ahead-free backtesting)
     mitigated_bar: int = -1       # Bar index when mitigated (-1 = still active)
+    _in_zone: bool = False        # Internal: was price inside the zone on the previous bar
+                                   # (touch_count must only increment on a fresh outside→inside
+                                   # transition, not once per bar spent inside -- see _deleteOrderBlocks)
 
 @dataclass
 class FVG:
@@ -271,7 +274,16 @@ class SMCEngine:
     # ==================== OB MITIGATION ====================
 
     def _deleteOrderBlocks(self, index: int):
-        """Mitigate OBs when price closes through them. Track touch count."""
+        """Mitigate OBs when price closes through them. Track touch count.
+
+        touch_count must count DISTINCT retests (price leaves the zone, then
+        comes back), not bars-spent-inside-the-zone. Without the outside→inside
+        transition check below, a single continuous visit spanning 2+ candles
+        (very common -- e.g. chop while a confirmation candle forms) would
+        increment touch_count once per bar, exhausting the default
+        max_ob_touches=1 gate in trade_logic.py before the first genuine retest
+        even finished, silently rejecting otherwise-valid signals.
+        """
         c_high = self.highs[index]
         c_low = self.lows[index]
         c_close = self.closes[index]
@@ -289,11 +301,13 @@ class SMCEngine:
                 ob.mitigated = True
                 ob.mitigated_bar = index
             else:
-                # Price entered zone without mitigation → increment touch count
-                if ob.bias == Bias.BULLISH and c_low <= ob.barHigh and c_close >= ob.barLow:
+                if ob.bias == Bias.BULLISH:
+                    in_zone_now = c_low <= ob.barHigh and c_close >= ob.barLow
+                else:
+                    in_zone_now = c_high >= ob.barLow and c_close <= ob.barHigh
+                if in_zone_now and not ob._in_zone:
                     ob.touch_count += 1
-                elif ob.bias == Bias.BEARISH and c_high >= ob.barLow and c_close <= ob.barHigh:
-                    ob.touch_count += 1
+                ob._in_zone = in_zone_now
 
     # ==================== FVG ====================
 

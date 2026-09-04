@@ -13,7 +13,12 @@ logs/
 
 # CSV-Daten
 data/cache/*.csv
+data/cache_fine/*.csv
+data/cache/.optimization_status.json
 *.csv
+
+# Laufzeit-Artefakte (Optimizer-/Screener-Zustand, kein Quellcode)
+artifacts/results/*.json
 
 # Claude Code local settings
 .claude/

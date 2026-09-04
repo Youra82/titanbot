@@ -9,12 +9,20 @@ from tqdm import tqdm
 import ta
 import math
 
+# Ohne dies stuerzt jedes print() mit z.B. '→' auf Windows-Konsolen ab (cp1252
+# kennt viele Unicode-Zeichen nicht) -- betrifft nicht die VPS-Produktion.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from titanbot.utils.exchange import Exchange
 from titanbot.strategy.smc_engine import SMCEngine, Bias
-from titanbot.strategy.trade_logic import get_titan_signal
+from titanbot.strategy.trade_logic import get_titan_signal, get_zone_based_tp
 
 secrets_cache = None
 
@@ -95,9 +103,34 @@ class LazyFineData:
             self._exchange = None
         return self._exchange
 
+    def _cache_path(self, day):
+        symbol_filename = self.symbol.replace('/', '-').replace(':', '-')
+        cache_dir = os.path.join(PROJECT_ROOT, 'data', 'cache_fine')
+        os.makedirs(cache_dir, exist_ok=True)
+        return os.path.join(cache_dir, f"{symbol_filename}_{self.fine_tf}_{day.strftime('%Y-%m-%d')}.csv")
+
     def _ensure_day(self, day):
         if day in self._days:
             return
+        # Disk-Cache pro Tag/Symbol/Fein-TF -- ohne diesen fetcht jede NEUE
+        # LazyFineData-Instanz (z.B. jeder Optimizer-Trial, jedes Walk-Forward-
+        # Fenster) dieselben Tage per Live-Netzwerk-Call neu, da der In-Memory-
+        # Cache (self._days) nicht ueber Instanzen hinweg lebt. Ohne Disk-Cache
+        # macht der Trailing-Stop (der JEDEN Balken einer offenen Position per
+        # Fein-Daten aufloest statt nur bei seltenen SL/TP-Ambiguitaeten) das
+        # Backtesting praktisch unbenutzbar (beobachtet: 2.5h ohne Ergebnis
+        # fuer eine einzelne Grid-Suche, danach abgebrochen).
+        cache_file = self._cache_path(day)
+        if os.path.exists(cache_file):
+            try:
+                cached = pd.read_csv(cache_file, index_col='timestamp', parse_dates=True)
+                self._days[day] = cached if not cached.empty else None
+                return
+            except Exception:
+                try:
+                    os.remove(cache_file)
+                except OSError:
+                    pass
         exchange = self._get_exchange()
         if exchange is None or not exchange.markets:
             self._days[day] = None
@@ -107,6 +140,11 @@ class LazyFineData:
             next_day_str = (day + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
             df = exchange.fetch_historical_ohlcv(self.symbol, self.fine_tf, day_str, next_day_str)
             self._days[day] = df if df is not None and not df.empty else None
+            if df is not None and not df.empty:
+                try:
+                    df.to_csv(cache_file)
+                except Exception:
+                    pass
         except Exception:
             self._days[day] = None
 
@@ -235,6 +273,29 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
     atr_multiplier_sl = risk_params.get('atr_multiplier_sl', 2.0)
     min_sl_pct = risk_params.get('min_sl_pct', 0.5) / 100.0
     structure_sl_buffer_pct = risk_params.get('structure_sl_buffer_pct', 0.2) / 100.0
+    # Zonenbasiertes TP (naechstes ungesweeptes Liquiditaetslevel statt festem R:R-
+    # Vielfachen) -- existierte als get_zone_based_tp() nur im separaten
+    # portfolio_simulator.py, nie im eigentlichen Optimizer/Backtester/Live-Pfad.
+    # SMC-Theorie sagt eigentlich "Preis zielt auf die naechste Liquiditaet", nicht
+    # "Preis laeuft X-mal die SL-Distanz" -- authentischerer Exit-Ansatz, noch nie
+    # getestet. Fallback auf R:R wenn kein Level gefunden wird (siehe Funktion).
+    use_zone_based_tp = smc_params.get('use_zone_based_tp', False)
+    # Trailing-Stop: existierte bisher nur als tote Optuna-Suchparameter
+    # (trailing_stop_activation_rr / trailing_stop_callback_rate_pct) -- weder
+    # im Backtester noch im Live-Bot je tatsaechlich implementiert. dnabots
+    # eigener Durchbruch kam aus genau diesem Mechanismus (Gewinner laufen
+    # lassen statt festem TP), hier zum ersten Mal ehrlich getestet.
+    use_trailing_stop = risk_params.get('use_trailing_stop', False)
+    trailing_activation_rr = risk_params.get('trailing_stop_activation_rr', 1.0)
+    trailing_callback_pct = risk_params.get('trailing_stop_callback_rate_pct', 1.0) / 100.0
+    # ATR-basierter Callback (Chandelier-Exit-Stil) statt fixem Prozentsatz --
+    # die Einstiegs-SL selbst ist schon ATR-basiert (atr_multiplier_sl), ein
+    # fixer %-Callback passt sich aber NICHT an Volatilitaet pro Paar/Regime
+    # an. Vermutung: das erklaert, warum ein fester Callback nur fuer manche
+    # Paare (implizit passende Volatilitaet) funktioniert hat, andere aber
+    # verschlechterte. Noch nicht validiert -- erster Test.
+    trailing_use_atr = risk_params.get('trailing_stop_use_atr', False)
+    trailing_atr_mult = risk_params.get('trailing_stop_atr_mult', 2.0)
     fee_pct            = 0.05 / 100   # 0.05% pro Seite (Bitget)
     slippage_entry_pct = 0.05 / 100   # 0.05% Entry (SMC-Limit-Orders, konservativ)
     slippage_exit_pct  = 0.05 / 100   # 0.05% Exit  (Market-Order SL/TP)
@@ -347,28 +408,87 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
         closed_this_bar = False
         if position:
             exit_price = None
-            sl, tp = position['stop_loss'], position['take_profit']
-            if position['side'] == 'long':
-                sl_hit = current_candle['low'] <= sl
-                tp_hit = current_candle['high'] >= tp
-            else:
-                sl_hit = current_candle['high'] >= sl
-                tp_hit = current_candle['low'] <= tp
 
-            if sl_hit and tp_hit:
-                # Beide Level in derselben Kerze moeglich -- Reihenfolge unklar
-                # ohne feinere Daten. Per fine_data (falls vorhanden) real aufloesen
-                # statt SL blind zu bevorzugen (oraclebot-Muster).
-                exit_price = None
+            if use_trailing_stop:
+                # Trailing-SL aendert sich kontinuierlich waehrend der Kerze --
+                # eine einzelne Coarse-Kerze (nur O/H/L/C) wuerde implizit
+                # annehmen "High kommt immer vor Low" (Peak mit Kerzen-High
+                # setzen, SL verschaerfen, DANACH das Low DERSELBEN Kerze
+                # dagegen pruefen) -- eine optimistische, unbelegte
+                # Verzerrung. Bestaetigt per A/B-Test: PnL stieg monoton, je
+                # enger der Callback (0.5%→0.25%→0.1%: -0.39%→+0.19%→+0.90%),
+                # das klassische Fingerprint von Free-Lookahead statt echtem
+                # Edge. Fix: Kerze bei verfuegbaren Fein-Daten (5m/15m)
+                # chronologisch in Sub-Bars zerlegen und Peak/SL/Exit dort
+                # sequentiell fortschreiben -- reduziert das Ambiguitaets-
+                # Fenster von Stunden auf Minuten. Ohne Fein-Daten bleibt nur
+                # die alte Coarse-Annahme als Fallback (wie beim SL/TP-
+                # Ambiguitaetsfall unten).
+                sub_bars = None
                 if fine_data is not None and coarse_duration is not None:
                     fine_slice = _get_fine_slice(fine_data, timestamp, timestamp + coarse_duration)
-                    exit_price, _ = _resolve_ambiguous_exit(fine_slice, sl, tp, position['side'])
-                if exit_price is None:
-                    exit_price = sl  # Fallback: alte, konservative SL-first-Konvention
-            elif sl_hit:
-                exit_price = sl
-            elif tp_hit:
-                exit_price = tp
+                    if fine_slice is not None and not fine_slice.empty:
+                        sub_bars = list(zip(fine_slice['high'].tolist(), fine_slice['low'].tolist()))
+                if not sub_bars:
+                    sub_bars = [(current_candle['high'], current_candle['low'])]
+
+                sl_dist = position['sl_distance']
+                current_atr = current_candle.get('atr')
+                use_atr_cb = trailing_use_atr and current_atr is not None and not pd.isna(current_atr) and current_atr > 0
+                cb_distance = (trailing_atr_mult * current_atr) if use_atr_cb else None
+                for bar_high, bar_low in sub_bars:
+                    if position['side'] == 'long':
+                        position['trailing_peak'] = max(position['trailing_peak'], bar_high)
+                        if not position['trailing_active'] and position['trailing_peak'] >= position['entry_price'] + sl_dist * trailing_activation_rr:
+                            position['trailing_active'] = True
+                        if position['trailing_active']:
+                            new_sl = (position['trailing_peak'] - cb_distance) if use_atr_cb else (position['trailing_peak'] * (1 - trailing_callback_pct))
+                            if new_sl > position['stop_loss']:
+                                position['stop_loss'] = new_sl
+                        sl = position['stop_loss']
+                        sl_hit = bar_low <= sl
+                        tp_hit = (not position['trailing_active']) and bar_high >= position['take_profit']
+                    else:
+                        position['trailing_peak'] = min(position['trailing_peak'], bar_low)
+                        if not position['trailing_active'] and position['trailing_peak'] <= position['entry_price'] - sl_dist * trailing_activation_rr:
+                            position['trailing_active'] = True
+                        if position['trailing_active']:
+                            new_sl = (position['trailing_peak'] + cb_distance) if use_atr_cb else (position['trailing_peak'] * (1 + trailing_callback_pct))
+                            if new_sl < position['stop_loss']:
+                                position['stop_loss'] = new_sl
+                        sl = position['stop_loss']
+                        sl_hit = bar_high >= sl
+                        tp_hit = (not position['trailing_active']) and bar_low <= position['take_profit']
+
+                    if sl_hit:
+                        exit_price = sl
+                        break
+                    if tp_hit:
+                        exit_price = position['take_profit']
+                        break
+            else:
+                sl, tp = position['stop_loss'], position['take_profit']
+                if position['side'] == 'long':
+                    sl_hit = current_candle['low'] <= sl
+                    tp_hit = current_candle['high'] >= tp
+                else:
+                    sl_hit = current_candle['high'] >= sl
+                    tp_hit = current_candle['low'] <= tp
+
+                if sl_hit and tp_hit:
+                    # Beide Level in derselben Kerze moeglich -- Reihenfolge unklar
+                    # ohne feinere Daten. Per fine_data (falls vorhanden) real aufloesen
+                    # statt SL blind zu bevorzugen (oraclebot-Muster).
+                    exit_price = None
+                    if fine_data is not None and coarse_duration is not None:
+                        fine_slice = _get_fine_slice(fine_data, timestamp, timestamp + coarse_duration)
+                        exit_price, _ = _resolve_ambiguous_exit(fine_slice, sl, tp, position['side'])
+                    if exit_price is None:
+                        exit_price = sl  # Fallback: alte, konservative SL-first-Konvention
+                elif sl_hit:
+                    exit_price = sl
+                elif tp_hit:
+                    exit_price = tp
 
             if exit_price:
                 pnl_pct = (exit_price / position['entry_price'] - 1) if position['side'] == 'long' else (1 - exit_price / position['entry_price'])
@@ -470,13 +590,18 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                 sl_distance = max(sl_distance, entry_price * 0.001)
                 if sl_distance <= 0: continue
 
-                # --- TP: Einfaches R:R (wie Live-Bot) ---
+                # --- TP: R:R-Vielfaches, oder zonenbasiert (naechstes Liquiditaetslevel) ---
                 if side == 'buy':
                     stop_loss   = entry_price - sl_distance
                     take_profit = entry_price + sl_distance * risk_reward_ratio
                 else:
                     stop_loss   = entry_price + sl_distance
                     take_profit = entry_price - sl_distance * risk_reward_ratio
+
+                if use_zone_based_tp:
+                    take_profit = get_zone_based_tp(
+                        side, entry_price, sl_distance, risk_reward_ratio, smc_results, i
+                    )
 
                 # --- Variabler Hebel: Risk-basiertes Position Sizing ---
                 risk_amount_usd = current_capital * risk_per_trade_pct
@@ -500,7 +625,10 @@ def run_smc_backtest(data, smc_params, risk_params, start_capital=1000, verbose=
                     'entry_price': entry_price, 'stop_loss': stop_loss,
                     'take_profit': take_profit, 'margin_used': margin_used,
                     'notional_value': final_notional_value,
-                    'entry_time': timestamp
+                    'entry_time': timestamp,
+                    'sl_distance': sl_distance,
+                    'trailing_active': False,
+                    'trailing_peak': entry_price,
                 }
 
     # --- Offene Position am Backtest-Ende schließen (letzter bekannter Schlusskurs) ---

@@ -73,7 +73,7 @@ def simulate_fee(equity_curve, trades_count, start_capital, base_fee_pct, new_fe
 def main():
     parser = argparse.ArgumentParser(description='Fee-Impact Analyse für titanbot SMC')
     parser.add_argument('--capital', type=float, default=None, help='Start-Kapital in USDT')
-    parser.add_argument('--risk',    type=float, default=None, help='Risiko pro Trade % (override)')
+    parser.add_argument('--risk',    type=float, default=None, help='Risiko pro Trade %% (override)')
     parser.add_argument('--no-telegram', action='store_true', help='Kein Telegram-Report')
     args = parser.parse_args()
 

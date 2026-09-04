@@ -9,7 +9,7 @@
 
 **Ein Trading-Bot auf Basis von Smart Money Concepts (SMC), mit dynamischem Stop-Loss und intelligenter Multi-Position-Verwaltung**
 
-[Features](#-features) • [Installation](#-installation) • [Konfiguration](#-konfiguration) • [Live-Trading](#-live-trading) • [Pipeline](#-interaktives-pipeline-script) • [Analyse](#-analyse-script-run_analysissh) • [Monitoring](#-monitoring--status) • [Wartung](#-wartung)
+[Features](#-features) • [Installation](#-installation) • [Konfiguration](#-konfiguration) • [Live-Trading](#-live-trading) • [Pipeline](#-interaktives-pipeline-script) • [Screening](#-coin-screening-screen_candidatespy) • [Analyse](#-analyse-script-run_analysissh) • [Monitoring](#-monitoring--status) • [Wartung](#-wartung)
 
 </div>
 
@@ -265,6 +265,57 @@ artifacts/optimal_configs/
 }
 ```
 
+
+## 🔍 Coin-Screening: `screen_candidates.py`
+
+`run_pipeline.sh` optimiert gründlich (150-350 Optuna-Trials), aber genau
+deshalb ist es zu teuer, um es auf hunderte Coins gleichzeitig loszulassen.
+`screen_candidates.py` schließt diese Lücke: ein schneller, breiter Vorab-Scan
+über die liquidesten Bitget-USDT-Perpetuals, der den ECHTEN Optimierungs-/
+Bewertungscode nutzt (inkl. Leak-freiem 70/30-Scoring, Trailing-Stop, etc.),
+nur mit stark reduzierten Trials und kürzerem Zeitraum — Minuten/Coin statt
+Stunden.
+
+### Verwendung
+
+```bash
+# Standardlauf: Top 100 liquideste Coins, 40 Trials/Kombination, alle Timeframes
+.venv/bin/python3 screen_candidates.py
+
+# Kleinerer/schnellerer Scan (z.B. wenn nur 1 Stunde Zeit ist)
+.venv/bin/python3 screen_candidates.py --top-n 30 --trials 40 --jobs 6 --timeframes "30m 1h 2h"
+
+# Unterbrochenen Lauf fortsetzen (überspringt bereits gescreente Coins laut CSV)
+.venv/bin/python3 screen_candidates.py --resume
+```
+
+**Parameter**:
+- `--top-n` — Anzahl liquidester Symbole nach 24h-Volumen (Standard: 100)
+- `--trials` — Optuna-Trials pro Symbol/Timeframe-Kombination (Standard: 40 — bewusst grob, nur zur Vorselektion)
+- `--timeframes` — getestete Timeframes, Leerzeichen-getrennt (Standard: alle 5 — weniger = mehr Coins im gleichen Zeitbudget)
+- `--jobs` — Optuna-interne Parallelität pro Symbol-Lauf (Standard: 2)
+- `--lookback-weeks` — Backtest-Zeitraum in Wochen, intern 70/30 gesplittet (Standard: 12)
+- `--resume` — bereits gescreente Symbole laut CSV überspringen
+
+**Isolation von der Produktion**: läuft komplett getrennt von `run_pipeline.sh`
+— nutzt `--config_suffix "_screen"` (landet nie im Config-Glob von
+`run_portfolio_optimizer.py`) und eine eigene `--results_file`
+(überschreibt nicht die echte `artifacts/results/last_optimizer_run.json`).
+Generierte `*_screen.json`-Configs werden nach jedem Coin wieder gelöscht —
+das Ergebnis steht bereits in der CSV.
+
+**Ergebnis**: `artifacts/results/screen_candidates.csv`, nach jedem Coin
+inkrementell geschrieben (ein Abbruch verliert nichts) — Spalten `symbol`,
+`timeframe`, `confirmed`, `test_pnl`, `train_pnl`, `test_trades`, `status`.
+Am Ende druckt das Script eine nach Test-PnL sortierte Rangliste der
+bestätigten Kandidaten für die volle Pipeline.
+
+> ⚠️ Ein Screening-Treffer ist eine erste Vorselektion, kein Beweis — jeder
+> vielversprechende Kandidat sollte danach durch die volle Pipeline
+> (`run_pipeline.sh`) und einen echten Walk-Forward-Test
+> (`run_analysis.sh` → 1) laufen, bevor er live geht.
+
+---
 
 ## 📈 Analyse-Script: `run_analysis.sh`
 

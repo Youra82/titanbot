@@ -69,7 +69,7 @@ def main():
                         choices=list(PARAM_RANGES.keys()),
                         help='Parameter zum Testen: rr | atr_sl | smc_window')
     parser.add_argument('--capital',     type=float, default=None, help='Start-Kapital in USDT')
-    parser.add_argument('--risk',        type=float, default=None, help='Risiko pro Trade % (override)')
+    parser.add_argument('--risk',        type=float, default=None, help='Risiko pro Trade %% (override)')
     parser.add_argument('--no-telegram', action='store_true',      help='Kein Telegram-Report')
     args = parser.parse_args()
 

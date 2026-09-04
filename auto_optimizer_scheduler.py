@@ -24,6 +24,14 @@ import subprocess
 import sys
 from datetime import datetime, date, time as dtime, timedelta, timezone
 
+# Ohne dies stuerzt jedes print() mit z.B. '→' auf Windows-Konsolen ab (cp1252
+# kennt viele Unicode-Zeichen nicht) -- betrifft nicht die VPS-Produktion.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 # HTTP helper for Telegram notifications
 try:
     import requests

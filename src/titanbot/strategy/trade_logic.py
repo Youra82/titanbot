@@ -19,6 +19,13 @@ def get_zone_based_tp(
     - Short → nächstes ungesweeptes SSL unterhalb des Entry (Liquidität als Ziel)
     - Long  → nächstes ungesweeptes BSL oberhalb des Entry
     Fallback: R:R-basiertes TP wenn kein Level gefunden.
+
+    WICHTIG (Look-Ahead-frei): `lvl.swept`/`lvl.sweep_bar` werden von der SMC-Engine
+    einmalig fuer den GESAMTEN uebergebenen Datensatz gesetzt, nicht "bis Bar i".
+    Ein Level, das ERST NACH current_bar_index gesweept wird, ist zum Zeitpunkt des
+    Trades noch echte, unangetastete Liquiditaet -- die reine `lvl.swept`-Pruefung
+    wuerde es faelschlich ausschliessen, weil sie in die Zukunft schaut. Richtig ist:
+    ausschliessen nur wenn der Sweep BIS current_bar_index bereits passiert ist.
     """
     liquidity_levels = smc_results.get('liquidity_levels', [])
     target_bias = 'ssl' if side == 'sell' else 'bsl'
@@ -29,7 +36,7 @@ def get_zone_based_tp(
 
     candidates = []
     for lvl in liquidity_levels:
-        if lvl.swept:
+        if lvl.swept and lvl.sweep_bar <= current_bar_index:
             continue
         if lvl.bar_index >= current_bar_index:
             continue
@@ -196,14 +203,16 @@ def get_titan_signal(
 
     min_fvg_size = params.get('strategy', params).get('min_fvg_size_pct', 0.05) / 100.0
 
-    # ==================== LONG SETUP ====================
-    # Gate 1: P/D zone — must be in discount (price below midpoint of range)
-    long_pd_ok = (not use_pd_filter) or (pd_pct <= 0.5)
-    # Gate 2: SSL liquidity sweep — stops below were taken, reversal up expected
-    long_sweep_ok = (not use_liquidity_sweep_filter) or recent_ssl_sweep
-
-    if long_pd_ok and long_sweep_ok:
-        # Priority 1: FVG long (tighter zone, cleaner entry)
+    # ==================== STRUCTURE-CHECK HELPERS ====================
+    # Diagnostic (2026-09-04, 7-pair sweep): with FVG checked first and a
+    # `break` on first match, OB-based signals made up 0.0%-5.0% of all raw
+    # signals across every tested pair -- FVGs form so much more often that
+    # the OB branch almost never gets reached. That makes min_ob_quality/
+    # max_ob_touches/use_swing_ob near-inert as Optuna search dimensions.
+    # entry_priority makes the FVG-vs-OB check order itself searchable, to
+    # test whether giving OB first shot (rarely explored) surfaces a
+    # different, cleaner signal set FVG's high raw volume is drowning out.
+    def _try_fvg_long():
         for fvg in unmitigated_fvgs:
             if fvg.bias != Bias.BULLISH:
                 continue
@@ -216,9 +225,7 @@ def get_titan_signal(
                     )
                     if not candle_ok:
                         continue
-                signal_side = "buy"
-                signal_price = current_candle['close']
-                signal_context = {
+                return {
                     'type': 'fvg',
                     'level_low': fvg.bottom,
                     'level_high': fvg.top,
@@ -228,36 +235,102 @@ def get_titan_signal(
                     'pd_pct': pd_pct,
                     'ssl_swept': recent_ssl_sweep,
                 }
-                break
+        return None
 
-        # Priority 2: OB long
-        if not signal_side:
-            for ob in all_obs:
-                if ob.bias != Bias.BULLISH:
+    def _try_ob_long():
+        for ob in all_obs:
+            if ob.bias != Bias.BULLISH:
+                continue
+            if current_candle['low'] <= ob.barHigh and current_candle['close'] >= ob.barLow:
+                if not _ob_quality_ok(ob, min_ob_quality, max_ob_touches):
                     continue
-                if current_candle['low'] <= ob.barHigh and current_candle['close'] >= ob.barLow:
-                    if not _ob_quality_ok(ob, min_ob_quality, max_ob_touches):
+                if use_entry_confirmation:
+                    candle_ok = is_bullish_candle or (
+                        use_rejection_candle and _is_rejection_candle(current_candle, 'buy')
+                    )
+                    if not candle_ok:
                         continue
-                    if use_entry_confirmation:
-                        candle_ok = is_bullish_candle or (
-                            use_rejection_candle and _is_rejection_candle(current_candle, 'buy')
-                        )
-                        if not candle_ok:
-                            continue
-                    signal_side = "buy"
-                    signal_price = current_candle['close']
-                    signal_context = {
-                        'type': 'order_block',
-                        'level_low': ob.barLow,
-                        'level_high': ob.barHigh,
-                        'bias': 'bullish',
-                        'ob_quality': ob.quality,
-                        'ob_touches': ob.touch_count,
-                        'pd_zone': pd_zone,
-                        'pd_pct': pd_pct,
-                        'ssl_swept': recent_ssl_sweep,
-                    }
-                    break
+                return {
+                    'type': 'order_block',
+                    'level_low': ob.barLow,
+                    'level_high': ob.barHigh,
+                    'bias': 'bullish',
+                    'ob_quality': ob.quality,
+                    'ob_touches': ob.touch_count,
+                    'pd_zone': pd_zone,
+                    'pd_pct': pd_pct,
+                    'ssl_swept': recent_ssl_sweep,
+                }
+        return None
+
+    def _try_fvg_short():
+        for fvg in unmitigated_fvgs:
+            if fvg.bias != Bias.BEARISH:
+                continue
+            if fvg.size_pct < min_fvg_size:
+                continue
+            if current_candle['high'] >= fvg.bottom and current_candle['close'] <= fvg.top:
+                if use_entry_confirmation:
+                    candle_ok = is_bearish_candle or (
+                        use_rejection_candle and _is_rejection_candle(current_candle, 'sell')
+                    )
+                    if not candle_ok:
+                        continue
+                return {
+                    'type': 'fvg',
+                    'level_low': fvg.bottom,
+                    'level_high': fvg.top,
+                    'bias': 'bearish',
+                    'fvg_size_pct': fvg.size_pct,
+                    'pd_zone': pd_zone,
+                    'pd_pct': pd_pct,
+                    'bsl_swept': recent_bsl_sweep,
+                }
+        return None
+
+    def _try_ob_short():
+        for ob in all_obs:
+            if ob.bias != Bias.BEARISH:
+                continue
+            if current_candle['high'] >= ob.barLow and current_candle['close'] <= ob.barHigh:
+                if not _ob_quality_ok(ob, min_ob_quality, max_ob_touches):
+                    continue
+                if use_entry_confirmation:
+                    candle_ok = is_bearish_candle or (
+                        use_rejection_candle and _is_rejection_candle(current_candle, 'sell')
+                    )
+                    if not candle_ok:
+                        continue
+                return {
+                    'type': 'order_block',
+                    'level_low': ob.barLow,
+                    'level_high': ob.barHigh,
+                    'bias': 'bearish',
+                    'ob_quality': ob.quality,
+                    'ob_touches': ob.touch_count,
+                    'pd_zone': pd_zone,
+                    'pd_pct': pd_pct,
+                    'bsl_swept': recent_bsl_sweep,
+                }
+        return None
+
+    entry_priority = strategy_params.get('entry_priority', 'fvg_first')
+    long_checks = (_try_fvg_long, _try_ob_long) if entry_priority == 'fvg_first' else (_try_ob_long, _try_fvg_long)
+    short_checks = (_try_fvg_short, _try_ob_short) if entry_priority == 'fvg_first' else (_try_ob_short, _try_fvg_short)
+
+    # ==================== LONG SETUP ====================
+    # Gate 1: P/D zone — must be in discount (price below midpoint of range)
+    long_pd_ok = (not use_pd_filter) or (pd_pct <= 0.5)
+    # Gate 2: SSL liquidity sweep — stops below were taken, reversal up expected
+    long_sweep_ok = (not use_liquidity_sweep_filter) or recent_ssl_sweep
+
+    if long_pd_ok and long_sweep_ok:
+        for check in long_checks:
+            signal_context = check()
+            if signal_context:
+                signal_side = "buy"
+                signal_price = current_candle['close']
+                break
 
     # ==================== SHORT SETUP ====================
     if not signal_side:
@@ -267,61 +340,12 @@ def get_titan_signal(
         short_sweep_ok = (not use_liquidity_sweep_filter) or recent_bsl_sweep
 
         if short_pd_ok and short_sweep_ok:
-            # Priority 1: FVG short
-            for fvg in unmitigated_fvgs:
-                if fvg.bias != Bias.BEARISH:
-                    continue
-                if fvg.size_pct < min_fvg_size:
-                    continue
-                if current_candle['high'] >= fvg.bottom and current_candle['close'] <= fvg.top:
-                    if use_entry_confirmation:
-                        candle_ok = is_bearish_candle or (
-                            use_rejection_candle and _is_rejection_candle(current_candle, 'sell')
-                        )
-                        if not candle_ok:
-                            continue
+            for check in short_checks:
+                signal_context = check()
+                if signal_context:
                     signal_side = "sell"
                     signal_price = current_candle['close']
-                    signal_context = {
-                        'type': 'fvg',
-                        'level_low': fvg.bottom,
-                        'level_high': fvg.top,
-                        'bias': 'bearish',
-                        'fvg_size_pct': fvg.size_pct,
-                        'pd_zone': pd_zone,
-                        'pd_pct': pd_pct,
-                        'bsl_swept': recent_bsl_sweep,
-                    }
                     break
-
-            # Priority 2: OB short
-            if not signal_side:
-                for ob in all_obs:
-                    if ob.bias != Bias.BEARISH:
-                        continue
-                    if current_candle['high'] >= ob.barLow and current_candle['close'] <= ob.barHigh:
-                        if not _ob_quality_ok(ob, min_ob_quality, max_ob_touches):
-                            continue
-                        if use_entry_confirmation:
-                            candle_ok = is_bearish_candle or (
-                                use_rejection_candle and _is_rejection_candle(current_candle, 'sell')
-                            )
-                            if not candle_ok:
-                                continue
-                        signal_side = "sell"
-                        signal_price = current_candle['close']
-                        signal_context = {
-                            'type': 'order_block',
-                            'level_low': ob.barLow,
-                            'level_high': ob.barHigh,
-                            'bias': 'bearish',
-                            'ob_quality': ob.quality,
-                            'ob_touches': ob.touch_count,
-                            'pd_zone': pd_zone,
-                            'pd_pct': pd_pct,
-                            'bsl_swept': recent_bsl_sweep,
-                        }
-                        break
 
     if not signal_side:
         return None, None, None
@@ -353,14 +377,22 @@ def get_titan_signal(
     # precomputed columns (momentum_indicators.compute_momentum_columns); if
     # they're missing (filter not wired into this data path) the filter is
     # skipped rather than silently blocking every signal.
+    # momentum_require_both: True (Default) = beide Bedingungen im selben
+    # Lookback-Fenster noetig (streng -- ein frueherer manueller Test mit
+    # lookback=3 kam so nur auf 1-2 Trades/2 Monate). False = eine der beiden
+    # reicht (lockerer) -- als Suchparameter, um zu pruefen ob die AND-
+    # Kombination selbst das Signal ausduennt statt Momentum an sich nutzlos
+    # zu sein.
     use_momentum_filter = strategy_params.get('use_momentum_filter', False)
     if use_momentum_filter and 'macd_recent_bull_cross' in current_candle.index:
+        momentum_require_both = strategy_params.get('momentum_require_both', True)
         if signal_side == 'buy':
-            momentum_ok = bool(current_candle.get('macd_recent_bull_cross', False)) and \
-                          bool(current_candle.get('rsi_recent_oversold_recovery', False))
+            macd_ok = bool(current_candle.get('macd_recent_bull_cross', False))
+            rsi_ok  = bool(current_candle.get('rsi_recent_oversold_recovery', False))
         else:
-            momentum_ok = bool(current_candle.get('macd_recent_bear_cross', False)) and \
-                          bool(current_candle.get('rsi_recent_overbought_reversal', False))
+            macd_ok = bool(current_candle.get('macd_recent_bear_cross', False))
+            rsi_ok  = bool(current_candle.get('rsi_recent_overbought_reversal', False))
+        momentum_ok = (macd_ok and rsi_ok) if momentum_require_both else (macd_ok or rsi_ok)
         if not momentum_ok:
             return None, None, None
 

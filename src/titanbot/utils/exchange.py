@@ -95,6 +95,17 @@ class Exchange:
             end_dt = pd.to_datetime(end_date_str + 'T23:59:59Z', utc=True)
             start_ts = int(start_dt.timestamp() * 1000)
             end_ts = int(end_dt.timestamp() * 1000)
+            # end_date_str == heute -> end_ts (23:59:59 UTC heute) liegt IMMER in der
+            # Zukunft relativ zur Server-Zeit, bis der Tag vorbei ist. Bitget lehnt
+            # solche Requests mit 40017 "Parameter verification failed startTime ||
+            # endTime" ab -- reproduzierbar bestaetigt 2026-09-04. Ohne Clamp verbrennt
+            # das bei JEDEM Aufruf mit end_date=heute 3 Retries a 5s+, bevor der
+            # Rueckgabewert trotzdem nur die bis "jetzt" verfuegbaren Kerzen enthaelt.
+            # Klemmt end_ts auf "jetzt" -- liefert exakt dieselben Kerzen, nur ohne die
+            # nutzlosen Fehlversuche.
+            now_ts = int(datetime.now(timezone.utc).timestamp() * 1000)
+            if end_ts > now_ts:
+                end_ts = now_ts
         except ValueError as e:
             logger.error(f"FEHLER: Ungültiges Datumsformat: {e}")
             return pd.DataFrame()

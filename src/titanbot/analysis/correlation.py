@@ -65,7 +65,7 @@ def pearson_correlation(a, b):
 
 def main():
     parser = argparse.ArgumentParser(description='Korrelationsanalyse der Config-Equity-Kurven')
-    parser.add_argument('--risk',        type=float, default=None, help='Risiko pro Trade % (override)')
+    parser.add_argument('--risk',        type=float, default=None, help='Risiko pro Trade %% (override)')
     parser.add_argument('--no-telegram', action='store_true',      help='Kein Telegram-Report')
     parser.add_argument('--top-pairs',   type=int,   default=5,    help='Top N unkorrelierteste Paare (default: 5)')
     args = parser.parse_args()
