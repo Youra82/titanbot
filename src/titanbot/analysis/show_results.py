@@ -1,4 +1,4 @@
-# /root/titanbot/src/titanbot/analysis/show_results.py (Version fÃ¼r TitanBot SMC mit MaxDD - FEHLERFREI)
+# /root/titanbot/src/titanbot/analysis/show_results.py (Version für TitanBot SMC mit MaxDD - FEHLERFREI)
 import os
 import sys
 import json
@@ -52,18 +52,18 @@ def _generate_trades_excel(final_sim, capital):
         from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
         from openpyxl.utils import get_column_letter
     except ImportError:
-        print(f"  {YELLOW}openpyxl nicht installiert â Excel Ã¼bersprungen. (pip install openpyxl){NC}")
+        print(f"  {YELLOW}openpyxl nicht installiert — Excel übersprungen. (pip install openpyxl){NC}")
         return
 
     trade_history = final_sim.get('trade_history', [])
     if not trade_history:
-        print(f"  {YELLOW}Keine Trades â Excel Ã¼bersprungen.{NC}")
+        print(f"  {YELLOW}Keine Trades — Excel übersprungen.{NC}")
         return
 
     equity = capital
     rows   = []
     def _strip_tz(dt):
-        """Entfernt Timezone-Info fÃ¼r Excel-KompatibilitÃ¤t."""
+        """Entfernt Timezone-Info für Excel-Kompatibilität."""
         if hasattr(dt, 'tzinfo') and dt.tzinfo is not None:
             return dt.replace(tzinfo=None)
         return dt
@@ -397,7 +397,7 @@ def run_single_analysis(start_date, end_date, start_capital, warmup_date=None, a
     all_results = []
     config_files = sorted([f for f in os.listdir(configs_dir) if f.startswith('config_') and f.endswith('.json')])
     if not config_files:
-        print("\nKeine gÃ¼ltigen Konfigurationen zum Analysieren gefunden."); return
+        print("\nKeine gültigen Konfigurationen zum Analysieren gefunden."); return
     data_start = warmup_date or start_date
     warmup_info = f" | SMC-Warmup ab {warmup_date}" if warmup_date else ""
     print(f"Backtest-Zeitraum: {start_date} bis {end_date} | Startkapital: {start_capital} USDT{warmup_info}")
@@ -412,12 +412,12 @@ def run_single_analysis(start_date, end_date, start_capital, warmup_date=None, a
             print(f"\nAnalysiere: {filename}...")
             data = load_data(symbol, timeframe, data_start, end_date)
             if data.empty:
-                print(f"--> WARNUNG: Keine Daten fÃ¼r {strategy_name}. Ãberspringe."); continue
+                print(f"--> WARNUNG: Keine Daten für {strategy_name}. Überspringe."); continue
             
             smc_params = config.get('strategy', {})
             risk_params = config.get('risk', {})
             
-            # KORREKTUR: FÃ¼ge Symbol, Timeframe und HTF zu smc_params hinzu, 
+            # KORREKTUR: Füge Symbol, Timeframe und HTF zu smc_params hinzu, 
             # damit backtester.py die MTF-Logik anwenden kann.
             smc_params['symbol'] = symbol
             smc_params['timeframe'] = timeframe
@@ -442,12 +442,12 @@ def run_single_analysis(start_date, end_date, start_capital, warmup_date=None, a
             print(f"--> FEHLER bei {filename}: {e}")
             continue
     if not all_results:
-        print("\nKeine gÃ¼ltigen Ergebnisse zum Anzeigen gefunden."); return
+        print("\nKeine gültigen Ergebnisse zum Anzeigen gefunden."); return
     results_df = pd.DataFrame(all_results)
     results_df = results_df.sort_values(by="PnL %", ascending=False)
     pd.set_option('display.width', 1000); pd.set_option('display.max_columns', None)
     print("\n\n=========================================================================================");
-    print(f"Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Zusammenfassung aller Einzelstrategien");
+    print(f"            Zusammenfassung aller Einzelstrategien");
     print("=========================================================================================")
     pd.set_option('display.float_format', '{:.2f}'.format)
     display_cols = ["Strategie", "Trades", "Win Rate %", "PnL %", "Max DD %", "Endkapital"]
@@ -725,7 +725,7 @@ if __name__ == "__main__":
         print("--------------------------------------------------")
 
         if args.mode == '2':
-            # KORREKTUR: Explizite Benennung der Argumente fÃ¼r den run_shared_mode Aufruf (behebt TypeError)
+            # KORREKTUR: Explizite Benennung der Argumente für den run_shared_mode Aufruf (behebt TypeError)
             run_shared_mode(
                 is_auto=False, 
                 start_date=start_date, 
@@ -734,7 +734,7 @@ if __name__ == "__main__":
                 target_max_dd=999.0
             )
         elif args.mode == '3':
-            # KORREKTUR: Explizite Benennung der Argumente fÃ¼r den run_shared_mode Aufruf (behebt TypeError)
+            # KORREKTUR: Explizite Benennung der Argumente für den run_shared_mode Aufruf (behebt TypeError)
             run_shared_mode(
                 is_auto=True, 
                 start_date=start_date, 
