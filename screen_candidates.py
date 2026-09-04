@@ -44,6 +44,7 @@ import os
 import subprocess
 import sys
 import time
+import pandas as pd
 from datetime import date, timedelta
 
 # Ohne dies stuerzt jedes print() mit Unicode-Sonderzeichen auf Windows-
@@ -74,11 +75,21 @@ def _log(msg: str):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+_exchange_singleton = None
+
+
+def get_exchange():
+    global _exchange_singleton
+    if _exchange_singleton is None:
+        with open(os.path.join(PROJECT_ROOT, 'secret.json')) as f:
+            secrets = json.load(f)
+        _exchange_singleton = Exchange(secrets['titanbot'][0])
+    return _exchange_singleton
+
+
 def fetch_top_symbols(top_n: int) -> list:
     """Holt die liquidesten top_n aktiven USDT-M-Perpetuals nach 24h-Quote-Volumen."""
-    with open(os.path.join(PROJECT_ROOT, 'secret.json')) as f:
-        secrets = json.load(f)
-    ex = Exchange(secrets['titanbot'][0])
+    ex = get_exchange()
     tickers = ex.exchange.fetch_tickers(params={'productType': 'USDT-FUTURES'})
     active_symbols = {
         m['symbol'] for m in ex.markets.values()
@@ -94,6 +105,29 @@ def fetch_top_symbols(top_n: int) -> list:
     top = [sym for sym, _ in rows[:top_n]]
     _log(f"Top {len(top)} von {len(rows)} aktiven USDT-Perpetuals nach 24h-Volumen ausgewaehlt.")
     return top
+
+
+def has_min_history(symbol: str, required_start_date: str, tolerance_days: int = 5) -> bool:
+    """Billiger Vorab-Check: existieren beim geforderten Startdatum ueberhaupt
+    schon Kerzen? Verhindert, dass frisch gelistete Coins mit z.B. nur 3-4
+    Wochen Historie ueberhaupt erst gescreent werden -- die rutschen sonst mit
+    winzigen Trade-Zahlen (3-27 Trades) als "bestaetigt" durch, weil ein
+    einzelner 70/30-Split bei so wenig Daten durch Zufall passen kann
+    (beobachtet 2026-09-04: USELESS/SNDK/KORU/SOXL in den Top-Ergebnissen,
+    alle mit < 30 Trades ueber ein Jahr Lookback). Ein einzelner
+    fetch_ohlcv-Call mit since=Startdatum reicht -- kein voller Download noetig.
+    """
+    ex = get_exchange()
+    try:
+        start_dt = pd.to_datetime(required_start_date + 'T00:00:00Z', utc=True)
+        since_ts = int(start_dt.timestamp() * 1000)
+        candles = ex.exchange.fetch_ohlcv(symbol, '1d', since=since_ts, limit=3)
+        if not candles:
+            return False
+        earliest = pd.to_datetime(candles[0][0], unit='ms', utc=True)
+        return (earliest - start_dt).days <= tolerance_days
+    except Exception:
+        return False
 
 
 def load_already_screened(resume: bool) -> set:
@@ -158,7 +192,7 @@ def screen_symbol(symbol: str, trials: int, start_date: str, end_date: str, jobs
         '--min_pnl', '-99999',
         '--mode', 'best_profit',
         '--config_suffix', '_screen',
-        '--min_trades_per_year', '20',
+        '--min_trades_per_year', '100',
         '--results_file', SCREEN_RESULTS_FILE,
     ]
     os.makedirs(LOG_DIR, exist_ok=True)
@@ -215,10 +249,18 @@ def print_ranking(top=25):
             return float('-inf')
 
     confirmed_rows = [r for r in rows if r.get('confirmed') == 'True']
+    # Zusaetzlich zum erhoehten --min_trades_per_year (100) noch eine harte
+    # Mindest-Trade-Zahl fuer die Rangliste -- ein einzelner 70/30-Split kann
+    # bei sehr wenigen Trades durch Zufall positiv ausfallen (siehe
+    # USELESS/SNDK/KORU/SOXL-Funde 2026-09-04, alle < 30 Trades).
+    MIN_DISPLAY_TRADES = 15
+    thin_rows = [r for r in confirmed_rows if _f(r.get('test_trades')) < MIN_DISPLAY_TRADES]
+    confirmed_rows = [r for r in confirmed_rows if _f(r.get('test_trades')) >= MIN_DISPLAY_TRADES]
     confirmed_rows.sort(key=lambda r: _f(r.get('test_pnl')), reverse=True)
 
     print(f"\n{'='*80}")
-    print(f"  Screening-Ergebnis: {len(rows)} Kombinationen getestet, {len(confirmed_rows)} bestaetigt")
+    print(f"  Screening-Ergebnis: {len(rows)} Kombinationen getestet, {len(confirmed_rows) + len(thin_rows)} bestaetigt "
+          f"({len(thin_rows)} davon mit < {MIN_DISPLAY_TRADES} Trades ausgeblendet)")
     print(f"{'='*80}")
     print(f"  {'Symbol':<14}{'TF':<6}{'Test-PnL%':<12}{'Train-PnL%':<12}{'Trades':<8}")
     for r in confirmed_rows[:top]:
@@ -254,6 +296,11 @@ def main():
     t_start = time.time()
     for i, symbol in enumerate(todo, 1):
         t0 = time.time()
+        if not has_min_history(symbol, start_date):
+            append_rows([(symbol, tf, False, '', '', '', 'zu wenig Historie (frisch gelistet)') for tf in timeframes])
+            _log(f"[{i}/{len(todo)}] {symbol}: uebersprungen -- weniger Historie als der Screening-Zeitraum "
+                 f"({start_date} -> {end_date}) verlangt.")
+            continue
         rows = screen_symbol(symbol, args.trials, start_date, end_date, args.jobs, timeframes)
         append_rows(rows)
         n_conf = sum(1 for r in rows if r[2])
