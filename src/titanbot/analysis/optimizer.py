@@ -58,6 +58,7 @@ MIN_PNL_CONSTRAINT = 0.0
 START_CAPITAL = 1000
 OPTIM_MODE = "strict"
 MIN_TRADES_PER_YEAR = 300   # Default; wird immer per --min_trades_per_year CLI-Arg ueberschrieben
+K_FOLDS = 3                 # Default; wird immer per --k_folds CLI-Arg ueberschrieben
 
 def create_safe_filename(symbol, timeframe):
     return f"{symbol.replace('/', '').replace(':', '')}_{timeframe}"
@@ -230,6 +231,35 @@ def objective(trial):
     if train_trades < min_train_trades or train_dd > MAX_DRAWDOWN_CONSTRAINT:
         raise optuna.exceptions.TrialPruned()
 
+    # ── K-Fold-Robustheit (wie ltbbot): TRAIN_DATA in K_FOLDS gleich grosse,
+    # chronologische Teilfenster splitten, jedes EINZELN backtesten -- der
+    # Score nutzt danach das SCHLECHTESTE Fenster statt der Gesamt-Train-PnL.
+    # Eine gute Gesamt-PnL kann sonst allein aus einem einzelnen guten
+    # Abschnitt stammen; bei jungen/duenn-historischen Coins zerfaellt die
+    # ohnehin kurze Historie durch K_FOLDS in noch kleinere, statistisch
+    # instabile Fenster und wird so besonders hart bestraft -- genau der Fund
+    # aus screen_candidates.py (2026-09-04): USELESS/SNDK/KORU wurden mit
+    # < 30 Trades ueber einen einzelnen 70/30-Split "bestaetigt". Eigene
+    # SMC-Berechnung pro Fold noetig (NICHT den TRAIN-weiten
+    # _precomputed_smc-Cache wiederverwenden -- die Bar-Indizes passen sonst
+    # nicht zur kuerzeren Fold-Slice).
+    if K_FOLDS > 1:
+        fold_smc_params = {k: v for k, v in smc_params.items() if k != '_precomputed_smc'}
+        fold_size = len(TRAIN_DATA) // K_FOLDS
+        fold_pnls = []
+        for k in range(K_FOLDS):
+            f_start = k * fold_size
+            f_end = (k + 1) * fold_size if k < K_FOLDS - 1 else len(TRAIN_DATA)
+            fold_data = TRAIN_DATA.iloc[f_start:f_end]
+            fold_result = run_smc_backtest(
+                fold_data.copy(), fold_smc_params, risk_params, START_CAPITAL,
+                verbose=False, fine_data=FINE_DATA)
+            fold_pnls.append(fold_result.get('total_pnl_pct', -1000))
+        trial.set_user_attr('fold_pnls', [round(p, 2) for p in fold_pnls])
+        robust_train_pnl = min(fold_pnls)
+    else:
+        robust_train_pnl = train_pnl
+
     # ── STUFE 2: TEST-Backtest (30% der Daten) — NUR fuer Reporting/User-Attrs ──
     # FIXIERT (2026-08-28, dritte Runde): Das Test-Set floss bis eben mit 70% Gewicht
     # direkt in final_score ein -- also in genau das, was Optuna ueber 200-350 Trials
@@ -262,7 +292,7 @@ def objective(trial):
     def signed_log(x):
         return math.copysign(math.log1p(abs(x)), x)
 
-    train_score = signed_log(train_pnl) / max(train_dd * 100, 1.0)
+    train_score = signed_log(robust_train_pnl) / max(train_dd * 100, 1.0)
     # Trade-Dichte: kleiner Tie-Breaker zwischen ähnlich profitablen Setups (Train-seitig).
     trade_ratio = train_trades / max(min_train_trades, 1)
     trade_bonus = math.log1p(train_trades) * 0.03 + math.log1p(max(0, trade_ratio - 1.0)) * 0.015
@@ -275,6 +305,7 @@ def objective(trial):
     # kann ob ein Trial genug Test-Trades fuer eine belastbare Aussage hat.
     trial.set_user_attr('test_pnl',    round(test_pnl,    2))
     trial.set_user_attr('train_pnl',   round(train_pnl,   2))
+    trial.set_user_attr('robust_train_pnl', round(robust_train_pnl, 2))
     trial.set_user_attr('test_wr',     round(test_wr,     2))
     trial.set_user_attr('test_trades', test_trades)
     trial.set_user_attr('test_dd_pct', round(test_dd * 100, 2))
@@ -284,7 +315,7 @@ def objective(trial):
     return final_score
 
 def main():
-    global HISTORICAL_DATA, FINE_DATA, TRAIN_DATA, TEST_DATA, TRAIN_SPLIT_IDX, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE, MIN_TRADES_PER_YEAR
+    global HISTORICAL_DATA, FINE_DATA, TRAIN_DATA, TEST_DATA, TRAIN_SPLIT_IDX, CURRENT_SYMBOL, CURRENT_TIMEFRAME, CONFIG_SUFFIX, MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT, START_CAPITAL, OPTIM_MODE, MIN_TRADES_PER_YEAR, K_FOLDS
     parser = argparse.ArgumentParser(description="Parameter-Optimierung für TitanBot (SMC)")
     parser.add_argument('--symbols', required=False, type=str, default="")
     parser.add_argument('--timeframes', required=False, type=str, default="")
@@ -306,11 +337,19 @@ def main():
                         help='Pfad fuer die Run-Summary (Default: artifacts/results/last_optimizer_run.json). '
                              'Fuer Screening-/Testlaeufe auf einen eigenen Pfad umleiten, damit die echte '
                              'Produktions-Summary nicht ueberschrieben wird.')
+    parser.add_argument('--k_folds', type=int, default=3,
+                        help='TRAIN-Daten in K gleich grosse, chronologische Teilfenster splitten; der Score '
+                             'nutzt das SCHLECHTESTE Teilfenster statt der Gesamt-Train-PnL (wie ltbbot). '
+                             'Verhindert dass eine gute Gesamt-PnL nur aus einem einzelnen guten Abschnitt '
+                             'stammt -- trifft junge/duenne Coins besonders hart, da ihre kurze Historie in '
+                             'noch kleinere, statistisch instabile Fenster zerfaellt. 1 = deaktiviert (altes '
+                             'Verhalten).')
     args = parser.parse_args()
 
     CONFIG_SUFFIX = args.config_suffix
     MAX_DRAWDOWN_CONSTRAINT, MIN_WIN_RATE_CONSTRAINT, MIN_PNL_CONSTRAINT = args.max_drawdown / 100.0, args.min_win_rate, args.min_pnl
     START_CAPITAL, N_TRIALS, OPTIM_MODE = args.start_capital, args.trials, args.mode
+    K_FOLDS = max(1, args.k_folds)
     MIN_TRADES_PER_YEAR = args.min_trades_per_year
 
     if args.pairs:
@@ -384,6 +423,8 @@ def main():
             _min_tr = max(2, int(MIN_TRADES_PER_YEAR * _train_days / 365))
             _min_te = max(1, int(MIN_TRADES_PER_YEAR * _test_days  / 365))
             print(f"Mindest-Trades: Train >={_min_tr} ({_train_days}d @ {MIN_TRADES_PER_YEAR}/Jahr), Test >={_min_te} ({_test_days}d)")
+            if K_FOLDS > 1:
+                print(f"K-Fold-Robustheit: Train in {K_FOLDS} Teilfenster gesplittet, Score nutzt das schlechteste ({_train_days // K_FOLDS}d je Fenster)")
 
         if HISTORICAL_DATA.empty:
             print("Keine Daten geladen. Überspringe.")
@@ -552,7 +593,13 @@ def main():
             # beobachtet: SOL/2h waehlte sonst train=-14.9% / test=+20.1% -- ein Trial,
             # der beim Training Geld verliert, ist kein belastbarer Fund, egal wie gut
             # er zufaellig auf dem Testfenster abschneidet.
-            t_train_pnl = t.user_attrs.get('train_pnl', -1e9)
+            # robust_train_pnl (schlechtestes K-Fold-Teilfenster) statt der rohen
+            # Gesamt-Train-PnL -- sonst kann ein Trial mit nur knapp positiver
+            # Gesamt-PnL aber katastrophalem Einzel-Fenster (z.B. SNDK/1h Trial 0:
+            # train_pnl=+0.48%, robust=-11.43%) trotzdem durchrutschen, wenn sein
+            # Test-Fenster zufaellig gut aussieht -- exakt dieselbe Rest-Leckage wie
+            # beim SOL/2h-Fund oben, nur dass train_pnl selbst sie nicht mehr faengt.
+            t_train_pnl = t.user_attrs.get('robust_train_pnl', t.user_attrs.get('train_pnl', -1e9))
             if t_train_pnl <= 0:
                 continue
             t_test_trades = t.user_attrs.get('test_trades', 0)
