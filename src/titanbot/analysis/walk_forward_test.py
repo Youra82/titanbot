@@ -205,7 +205,22 @@ def main():
 
     print(f"{CYAN}{'='*90}{NC}")
 
-    if best_row:
+    # Der Score (PnL - DD + WR*0.1) waehlt reinen argmax OHNE Profitabilitaets-
+    # Gate -- wenn JEDE getestete Lookback-Laenge negatives PnL zeigt, "gewinnt"
+    # trotzdem die am wenigsten schlechte, ohne jede Warnung, und wird still in
+    # settings.json geschrieben. auto_optimizer_scheduler.py liest genau diesen
+    # Wert, um die Backtest-Fensterlaenge fuer die woechentliche ECHTE Live-
+    # Strategie-Auswahl zu bestimmen -- ein rein rauschgetriebenes "bestes von
+    # lauter Verlierern" (z.B. 1W mit nur ~5 Trades/Fenster) wuerde dort
+    # kuenftig als Grundlage fuer echtes Kapital verwendet. Gefixt 2026-09-07:
+    # nur speichern/empfehlen wenn best_row auch tatsaechlich profitabel ist.
+    if best_row and best_row['avg_pnl'] <= 0:
+        print(f"\n{RED}⚠ KEINE Empfehlung: Selbst die beste getestete Lookback-Laenge "
+              f"({best_row['lw']}W) zeigt negatives PnL ({best_row['avg_pnl']:+.2f}%).{NC}")
+        print(f"{RED}  Das Portfolio ist auf keinem der getesteten Fenster (1-26W) profitabel -- "
+              f"das Problem liegt vermutlich an der Strategie-/Paar-Auswahl selbst, nicht am "
+              f"Lookback. settings.json wird NICHT geaendert.{NC}")
+    elif best_row:
         print(f"\n{GREEN}Empfehlung: backtest_lookback_weeks = {best_row['lw']}{NC}")
         print(f"  Score (PnL - DD + WR×0.1): {best_score:.2f}")
         print(f"  Avg PnL: {best_row['avg_pnl']:+.2f}%  |  Avg WR: {best_row['avg_wr']:.1f}%  |  Avg DD: {best_row['avg_dd']:.1f}%")
@@ -278,7 +293,8 @@ def main():
             style_axes(*axes)
             plt.tight_layout(rect=[0, 0, 1, 0.95])
 
-            caption = (f"titanbot Walk-Forward Rolling | Empfehlung: {best_lw}W | "
+            caption_label = "Empfehlung" if best_row['avg_pnl'] > 0 else "Bestes (aber unprofitables!) von"
+            caption = (f"titanbot Walk-Forward Rolling | {caption_label}: {best_lw}W | "
                        f"Avg PnL {best_row['avg_pnl']:+.1f}% | "
                        f"WR {best_row['avg_wr']:.1f}% | DD {best_row['avg_dd']:.1f}%")
             save_send(fig, 'walk_forward', caption=caption, no_telegram=args.no_telegram)
