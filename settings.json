@@ -4,8 +4,18 @@
         "use_auto_optimizer_results": false,
         "active_strategies": [
             {
-                "symbol": "BTC/USDT:USDT",
-                "timeframe": "2h",
+                "symbol": "LINK/USDT:USDT",
+                "timeframe": "15m",
+                "active": true
+            },
+            {
+                "symbol": "DOT/USDT:USDT",
+                "timeframe": "30m",
+                "active": true
+            },
+            {
+                "symbol": "ADA/USDT:USDT",
+                "timeframe": "15m",
                 "active": true
             }
         ]

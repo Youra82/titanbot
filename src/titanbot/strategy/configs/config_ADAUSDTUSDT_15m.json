@@ -1,25 +1,25 @@
 {
     "market": {
-        "symbol": "LINK/USDT:USDT",
-        "timeframe": "2h"
+        "symbol": "ADA/USDT:USDT",
+        "timeframe": "15m"
     },
     "strategy": {
-        "swingsLength": 23,
+        "swingsLength": 18,
         "ob_mitigation": "High/Low",
-        "use_adx_filter": false,
+        "use_adx_filter": true,
         "adx_period": 14,
-        "adx_threshold": 25,
-        "use_pd_filter": true,
+        "adx_threshold": 22,
+        "use_pd_filter": false,
         "use_liquidity_sweep_filter": false,
         "liquidity_lookback": 15,
-        "min_fvg_size_pct": 0.1625,
-        "min_ob_quality": 0.218,
+        "min_fvg_size_pct": 0.086,
+        "min_ob_quality": 0.323,
         "max_ob_touches": 0,
-        "use_rejection_candle": true,
-        "use_mtf_filter": false,
-        "use_entry_confirmation": false,
+        "use_rejection_candle": false,
+        "use_mtf_filter": true,
+        "use_entry_confirmation": true,
         "use_swing_ob": false,
-        "use_zone_based_tp": true,
+        "use_zone_based_tp": false,
         "use_momentum_filter": false,
         "momentum_lookback": 3,
         "momentum_require_both": true,
@@ -27,10 +27,10 @@
     },
     "risk": {
         "margin_mode": "isolated",
-        "risk_reward_ratio": 2.98,
-        "min_leverage": 8,
-        "max_leverage": 25,
-        "atr_multiplier_sl": 1.744,
+        "risk_reward_ratio": 3.94,
+        "min_leverage": 2,
+        "max_leverage": 11,
+        "atr_multiplier_sl": 1.027,
         "min_sl_pct": 0.5,
         "structure_sl_buffer_pct": 0.2,
         "use_trailing_stop": false,
@@ -43,12 +43,12 @@
     },
     "_meta": {
         "wfv": "70/30",
-        "test_pnl_pct": 2.05,
-        "train_pnl_pct": 65.69,
-        "test_wr": 20.93,
-        "test_trades": 43,
-        "test_dd_pct": 10.6,
-        "composite_score": 0.252,
-        "optimized_at": "2026-09-06T04:24:58.653356Z"
+        "test_pnl_pct": 2.82,
+        "train_pnl_pct": 7.75,
+        "test_wr": 42.86,
+        "test_trades": 7,
+        "test_dd_pct": 3.78,
+        "composite_score": 0.2435,
+        "optimized_at": "2026-09-05T05:33:49.452770Z"
     }
 }

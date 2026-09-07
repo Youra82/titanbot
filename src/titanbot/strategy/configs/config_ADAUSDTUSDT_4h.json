@@ -1,0 +1,54 @@
+{
+    "market": {
+        "symbol": "ADA/USDT:USDT",
+        "timeframe": "4h"
+    },
+    "strategy": {
+        "swingsLength": 28,
+        "ob_mitigation": "High/Low",
+        "use_adx_filter": false,
+        "adx_period": 14,
+        "adx_threshold": 27,
+        "use_pd_filter": false,
+        "use_liquidity_sweep_filter": false,
+        "liquidity_lookback": 20,
+        "min_fvg_size_pct": 0.0836,
+        "min_ob_quality": 0.262,
+        "max_ob_touches": 1,
+        "use_rejection_candle": false,
+        "use_mtf_filter": false,
+        "use_entry_confirmation": true,
+        "use_swing_ob": true,
+        "use_zone_based_tp": true,
+        "use_momentum_filter": false,
+        "momentum_lookback": 3,
+        "momentum_require_both": true,
+        "volume_ma_period": 20
+    },
+    "risk": {
+        "margin_mode": "isolated",
+        "risk_reward_ratio": 2.97,
+        "min_leverage": 2,
+        "max_leverage": 12,
+        "atr_multiplier_sl": 1.409,
+        "min_sl_pct": 0.5,
+        "structure_sl_buffer_pct": 0.2,
+        "use_trailing_stop": true,
+        "trailing_stop_activation_rr": 2.63,
+        "trailing_stop_callback_rate_pct": 1.66
+    },
+    "behavior": {
+        "use_longs": true,
+        "use_shorts": true
+    },
+    "_meta": {
+        "wfv": "70/30",
+        "test_pnl_pct": 1.89,
+        "train_pnl_pct": 38.71,
+        "test_wr": 38.89,
+        "test_trades": 54,
+        "test_dd_pct": 11.93,
+        "composite_score": 0.3172,
+        "optimized_at": "2026-09-05T03:35:24.129513Z"
+    }
+}
