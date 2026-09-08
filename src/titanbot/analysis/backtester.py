@@ -25,6 +25,13 @@ from titanbot.strategy.smc_engine import SMCEngine, Bias
 from titanbot.strategy.trade_logic import get_titan_signal, get_zone_based_tp
 
 secrets_cache = None
+_exchange_cache = None  # siehe load_data(): EIN Exchange (und dessen teurer
+# load_markets()-Call) fuer den gesamten Prozess wiederverwenden statt bei
+# jedem Cache-Miss neu zu erzeugen -- ein Skript, das ueber viele Configs
+# loopt (z.B. time_analysis.py/regime_analysis.py ueber 57 Configs), loeste
+# sonst pro Cache-Miss einen neuen load_markets()-Call aus, unnoetig teuer
+# und ein zusaetzlicher Ausfallpunkt pro Config statt nur einmal pro Lauf.
+# auswertete statt aller 57.
 
 _TF_SECONDS = {300: '5m', 900: '15m', 1800: '30m', 3600: '1h',
                7200: '2h', 14400: '4h', 21600: '6h', 86400: '1d'}
@@ -177,9 +184,8 @@ def _get_fine_slice(fine_data, start_ts, end_ts):
     return fine_data.loc[(fine_data.index >= start_ts) & (fine_data.index < end_ts)]
 
 
-# --- load_data Funktion bleibt unverändert ---
 def load_data(symbol, timeframe, start_date_str, end_date_str):
-    global secrets_cache
+    global secrets_cache, _exchange_cache
     data_dir = os.path.join(PROJECT_ROOT, 'data')
     cache_dir = os.path.join(data_dir, 'cache')
     symbol_filename = symbol.replace('/', '-').replace(':', '-')
@@ -209,7 +215,9 @@ def load_data(symbol, timeframe, start_date_str, end_date_str):
         if 'titanbot' not in secrets_cache or not isinstance(secrets_cache['titanbot'], list) or not secrets_cache['titanbot']:
             print("FEHLER: 'titanbot' Schlüssel in secret.json fehlt/leer."); return pd.DataFrame()
         api_setup = secrets_cache['titanbot'][0]
-        exchange = Exchange(api_setup)
+        if _exchange_cache is None or not _exchange_cache.markets:
+            _exchange_cache = Exchange(api_setup)
+        exchange = _exchange_cache
         if not exchange.markets:
             print("FEHLER: Exchange konnte nicht initialisiert werden."); return pd.DataFrame()
         full_data = exchange.fetch_historical_ohlcv(symbol, timeframe, start_date_str, end_date_str)
