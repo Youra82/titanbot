@@ -1,0 +1,9 @@
+[Unit]
+Description=titanbot alle 5 Minuten (1 Minute nach jedem 5m-Kerzenschluss)
+
+[Timer]
+OnCalendar=*-*-* *:01/5:00
+Persistent=false
+
+[Install]
+WantedBy=timers.target

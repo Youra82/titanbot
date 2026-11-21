@@ -1,746 +1,94 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/%F0%9F%9A%A7%20BAUSTELLE-nicht%20live-orange?style=for-the-badge" alt="Baustelle – nicht live">
-</p>
-
-> 🚧 **Baustelle:** Dieser Bot ist aktuell **nicht live** und wird weiterentwickelt.
-
-# ⚡ TitanBot - High-Performance Trading System
-
-<div align="center">
-
-![TitanBot Logo](https://img.shields.io/badge/TitanBot-v1.0-blue?style=for-the-badge)
-[![Python](https://img.shields.io/badge/Python-3.8+-green?style=for-the-badge&logo=python)](https://www.python.org/)
-[![CCXT](https://img.shields.io/badge/CCXT-4.3.5-red?style=for-the-badge)](https://github.com/ccxt/ccxt)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-
-**Ein Trading-Bot auf Basis von Smart Money Concepts (SMC), mit dynamischem Stop-Loss und intelligenter Multi-Position-Verwaltung**
-
-[Features](#-features) • [Installation](#-installation) • [Konfiguration](#-konfiguration) • [Live-Trading](#-live-trading) • [Pipeline](#-interaktives-pipeline-script) • [Screening](#-coin-screening-screen_candidatespy) • [Analyse](#-analyse-script-run_analysissh) • [Monitoring](#-monitoring--status) • [Wartung](#-wartung)
-
-</div>
-
----
-
-## 📊 Übersicht
-
-TitanBot ist ein Trading-Bot auf Basis von Smart Money Concepts (SMC): Liquidity Sweeps, Order Blocks und Fair Value Gaps bilden den Signal-Kern, ergänzt um dynamische ATR-/Struktur-basierte Stop-Loss-Mechanismen und Multi-Position-Verwaltung.
-
-### 🧭 Trading-Logik (Kurzfassung)
-- **SMC-Kern**: Liquidity Sweep (Stop-Hunt) → Rücklauf in unmitigierte FVG/Order-Block in der Premium/Discount-Zone → Confirmation-Kerze → Entry
-- **Momentum-Filter (optional, standardmäßig AUS)**: MACD-Cross + RSI-Reversal als zusätzliches Gate (`use_momentum_filter` in der Strategie-Config) — reduziert die Trade-Anzahl stark, siehe `src/titanbot/strategy/momentum_indicators.py`
-- **Dynamischer Stop-Loss**: SL-Level passen sich an Volatilität/ATR an; optionaler Trailing-SL folgt dem Trend
-- **Position-Limit**: `max_open_positions` begrenzt parallele Trades über alle Strategien
-- **Risk Layer**: ATR- oder struktur-basierte SL/TP-Berechnung; Positionsgröße auf Konto-Risk begrenzt
-- **Execution**: CCXT-Orders mit realistischer Fee/Slippage-Annahme im Backtest
-- **Telegram-Notifications**: Real-time Updates für alle Position-State-Änderungen
-
-### 🔍 SMC-Entry im Detail
-
-![SMC-Entry-Mechanik](docs/concept_smc_entry.png)
-
-Der Bot sagt die Richtung nicht vorher, sondern wartet auf eine bereits erfolgte Bewegung: erst der Sweep (Liquidität wird genommen), dann der Rücklauf in eine noch unangetastete Zone, dann die Bestätigung durch die nächste Kerze. Erst wenn alle drei zusammenkommen, wird eine Position eröffnet.
-
----
-
-## 🚀 Features
-
-### Trading Features
-- ✅ Smart Money Concepts Implementierung
-- ✅ Dynamischer Stop-Loss (anpassbar an Volatilität)
-- ✅ Maximale offene Positionen: Konfigurierbar (Standard: 3)
-- ✅ Multi-Asset Trading (BTC, ETH, SOL, XRP, AAVE)
-- ✅ Multiple Timeframes (5m, 2h, 4h, 6h)
-- ✅ Signal-Ranking für höchste Qualität
-- ✅ Optionaler MACD-Filter
-- ✅ Intelligentes Position Sizing
-- ✅ Telegram-Benachrichtigungen
-
-### Technical Features
-- ✅ CCXT Integration für mehrere Börsen
-- ✅ Optuna Hyperparameter-Optimierung
-- ✅ Fortgeschrittene technische Indikatoren
-- ✅ Volume-basierte Analysen
-- ✅ Backtesting mit realistischer Simulation
-- ✅ Walk-Forward-Testing
-- ✅ Performance-Tracking und Reporting
-
----
-
-## 📋 Systemanforderungen
-
-### Hardware
-- **CPU**: Multi-Core Prozessor (i5 oder besser empfohlen)
-- **RAM**: Minimum 4GB, empfohlen 8GB+
-- **Speicher**: 2GB freier Speicherplatz
-
-### Software
-- **OS**: Linux (Ubuntu 20.04+), macOS, Windows 10/11
-- **Python**: Version 3.8 oder höher
-- **Git**: Für Repository-Verwaltung
-
----
-
-## 💻 Installation
-
-### 1. Repository klonen
-
-```bash
-git clone https://github.com/Youra82/titanbot.git
-cd titanbot
-```
-
-### 2. Automatische Installation (empfohlen)
-
-```bash
-# Linux/macOS
-chmod +x install.sh
-./install.sh
-
-# Windows (PowerShell)
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-Das Installations-Script führt folgende Schritte aus:
-- ✅ Erstellt eine virtuelle Python-Umgebung (`.venv`)
-- ✅ Installiert alle erforderlichen Abhängigkeiten
-- ✅ Erstellt notwendige Verzeichnisse (`data/`, `logs/`, `artifacts/`)
-- ✅ Initialisiert Konfigurationsdateien
-
-### 3. API-Credentials konfigurieren
-
-Erstelle eine `secret.json` Datei:
-
-```json
-{
-  "titanbot": [
-    {
-      "name": "Binance Trading Account",
-      "exchange": "binance",
-      "apiKey": "DEIN_API_KEY",
-      "secret": "DEIN_SECRET_KEY",
-      "options": {
-        "defaultType": "future"
-      }
-    }
-  ]
-}
-```
-
-⚠️ **Wichtig**: 
-- Niemals `secret.json` committen oder teilen!
-- Verwende nur API-Keys mit eingeschränkten Rechten
-- Aktiviere IP-Whitelist auf der Exchange
-
-### 4. Trading-Strategien konfigurieren
-
-Bearbeite `settings.json`:
-
-```json
-{
-  "live_trading_settings": {
-    "max_open_positions": 3,
-    "active_strategies": [
-      {
-        "symbol": "BTC/USDT:USDT",
-        "timeframe": "4h",
-        "use_momentum_filter": true,
-        "use_trailing_stop": true,
-        "active": true
-      },
-      {
-        "symbol": "ETH/USDT:USDT",
-        "timeframe": "2h",
-        "use_momentum_filter": true,
-        "use_trailing_stop": true,
-        "active": true
-      }
-    ]
-  }
-}
-```
-
-**Parameter-Erklärung**:
-- `max_open_positions`: Max. gleichzeitig offene Positionen
-- `symbol`: Handelspaar
-- `timeframe`: Zeitrahmen
-- `use_momentum_filter`: Momentum-Filter aktivieren
-- `use_trailing_stop`: Trailing Stop aktivieren
-- `active`: Strategie aktiv
-
----
-
-## 🔴 Live Trading
-
-### Start des Live-Trading
-
-```bash
-# Master Runner starten
-cd /home/ubuntu/titanbot && .venv/bin/python3 master_runner.py
-```
-
-### Manuell starten / Cronjob testen
-
-```bash
-cd /home/ubuntu/titanbot && .venv/bin/python3 master_runner.py
-```
-
-Der Master Runner:
-- ✅ Lädt Konfigurationen aus `settings.json`
-- ✅ Verwaltet offene Positionen (max_open_positions)
-- ✅ Startet separate Prozesse für aktive Strategien
-- ✅ Berechnet SMC-Signale und Momentum-Scores
-- ✅ Überwacht Kontostand und verfügbares Kapital
-- ✅ Aktualisiert dynamische Stop-Loss-Level
-- ✅ Loggt alle Trading-Aktivitäten
-- ✅ Sendet Telegram-Benachrichtigungen
-
-### Automatischer Start (Produktions-Setup)
-
-```bash
-crontab -e
-```
-
-```
-# Starte den TitanBot Master-Runner alle 15 Minuten
-*/15 * * * * /usr/bin/flock -n /home/ubuntu/titanbot/titanbot.lock /bin/sh -c "cd /home/ubuntu/titanbot && .venv/bin/python3 master_runner.py >> /home/ubuntu/titanbot/logs/cron.log 2>&1"
-```
-
-Logverzeichnis:
-
-```bash
-mkdir -p /home/ubuntu/titanbot/logs
-```
-
-
-
----
-
-## 📊 Interaktives Pipeline-Script
-
-Das **`run_pipeline.sh`** Script automatisiert die Parameter-Optimierung. Es optimiert SMC-Parameter, Momentum-Indikatoren und Position-Management-Einstellungen.
-
-### Features des Pipeline-Scripts
-
-✅ **Interaktive Eingabe** - Einfache Menü-Navigation  
-✅ **Automatische Datumswahl** - Zeitrahmen-basierte Lookback-Berechnung  
-✅ **Optuna-Optimierung** - Bayessche Hyperparameter-Suche  
-✅ **Batch-Optimierung** - Mehrere Symbol/Timeframe-Kombinationen  
-✅ **Automatisches Speichern** - Optimale Konfigurationen  
-✅ **Integrierte Backtests** - Sofort nach Optimierung testen  
-
-### Verwendung
-
-```bash
-chmod +x run_pipeline.sh
-./run_pipeline.sh
-```
-
-### Optimierte Konfigurationen
-
-```
-artifacts/optimal_configs/
-├── optimal_BTCUSDT_4h.json
-└── ...
-```
-
-**Beispiel-Konfiguration**:
-
-```json
-{
-  "symbol": "BTCUSDT",
-  "timeframe": "4h",
-  "parameters": {
-    "atr_period": 14,
-    "atr_multiplier_sl": 1.8,
-    "atr_multiplier_tp": 3.0,
-    "macd_fast": 12,
-    "macd_slow": 26,
-    "rsi_period": 14,
-    "momentum_threshold": 0.65,
-    "signal_quality_threshold": 0.70
-  },
-  "performance": {
-    "total_return": 11.25,
-    "win_rate": 61.5,
-    "num_trades": 13,
-    "max_drawdown": -6.80,
-    "end_capital": 812.50
-  }
-}
-```
-
-
-## 🔍 Coin-Screening: `screen_candidates.py`
-
-`run_pipeline.sh` optimiert gründlich (150-350 Optuna-Trials), aber genau
-deshalb ist es zu teuer, um es auf hunderte Coins gleichzeitig loszulassen.
-`screen_candidates.py` schließt diese Lücke: ein schneller, breiter Vorab-Scan
-über die liquidesten Bitget-USDT-Perpetuals, der den ECHTEN Optimierungs-/
-Bewertungscode nutzt (inkl. Leak-freiem 70/30-Scoring, Trailing-Stop, etc.),
-nur mit stark reduzierten Trials und kürzerem Zeitraum — Minuten/Coin statt
-Stunden.
-
-### Verwendung
-
-```bash
-# Standardlauf: Top 100 liquideste Coins, 40 Trials/Kombination, alle Timeframes
-.venv/bin/python3 screen_candidates.py
-
-# Kleinerer/schnellerer Scan (z.B. wenn nur 1 Stunde Zeit ist)
-.venv/bin/python3 screen_candidates.py --top-n 30 --trials 40 --jobs 6 --timeframes "30m 1h 2h"
-
-# Unterbrochenen Lauf fortsetzen (überspringt bereits gescreente Coins laut CSV)
-.venv/bin/python3 screen_candidates.py --resume
-```
-
-**Parameter**:
-- `--top-n` — Anzahl liquidester Symbole nach 24h-Volumen (Standard: 100)
-- `--trials` — Optuna-Trials pro Symbol/Timeframe-Kombination (Standard: 40 — bewusst grob, nur zur Vorselektion)
-- `--timeframes` — getestete Timeframes, Leerzeichen-getrennt (Standard: alle 5 — weniger = mehr Coins im gleichen Zeitbudget)
-- `--jobs` — Optuna-interne Parallelität pro Symbol-Lauf (Standard: 2)
-- `--lookback-weeks` — Backtest-Zeitraum in Wochen, intern 70/30 gesplittet (Standard: 12)
-- `--resume` — bereits gescreente Symbole laut CSV überspringen
-
-**Isolation von der Produktion**: läuft komplett getrennt von `run_pipeline.sh`
-— nutzt `--config_suffix "_screen"` (landet nie im Config-Glob von
-`run_portfolio_optimizer.py`) und eine eigene `--results_file`
-(überschreibt nicht die echte `artifacts/results/last_optimizer_run.json`).
-Generierte `*_screen.json`-Configs werden nach jedem Coin wieder gelöscht —
-das Ergebnis steht bereits in der CSV.
-
-**Ergebnis**: `artifacts/results/screen_candidates.csv`, nach jedem Coin
-inkrementell geschrieben (ein Abbruch verliert nichts) — Spalten `symbol`,
-`timeframe`, `confirmed`, `test_pnl`, `train_pnl`, `test_trades`, `status`.
-Am Ende druckt das Script eine nach Test-PnL sortierte Rangliste der
-bestätigten Kandidaten für die volle Pipeline.
-
-> ⚠️ Ein Screening-Treffer ist eine erste Vorselektion, kein Beweis — jeder
-> vielversprechende Kandidat sollte danach durch die volle Pipeline
-> (`run_pipeline.sh`) und einen echten Walk-Forward-Test
-> (`run_analysis.sh` → 1) laufen, bevor er live geht.
-
----
-
-## 📈 Analyse-Script: `run_analysis.sh`
-
-Das **`run_analysis.sh`** Script bietet 19 wissenschaftliche Analysen für den titanbot unter einem einzigen Befehl.
-
-### Starten
-
-```bash
-chmod +x run_analysis.sh
-./run_analysis.sh
-./run_analysis.sh --no-telegram    # kein Telegram, nur lokale Ausgabe
-```
-
-### Menü-Übersicht
-
-```
-=======================================================
-  titanbot — Wissenschaftliche Analysen
-=======================================================
-
-  ── Priorität 1: Fundament ─────────────────────────
-   1) Walk-Forward Lookback-Analyse
-   2) Slippage & Fee Impact
-   3) Monte Carlo Simulation
-   4) Bootstrap Signifikanztest
-
-  ── Priorität 2: Direkte Gewinnoptimierung ──────────
-   5) RR-Ratio Optimierung          (Walk-Forward)
-   6) ATR Multiplier Sweep          (Walk-Forward)
-   7) SMC Window Sweep              (Walk-Forward)
-   8) Parameter Sensitivity         (Tornado-Diagramm)
-
-  ── Priorität 3: Systemverbesserung ─────────────────
-   9) Regime Performance Analysis
-  10) Tageszeit-Analyse
-  11) Anti-Korrelations-Portfolio
-  12) Kelly Position Sizing
-
-  ── Priorität 4–6: Feintuning & Portfolio ───────────
-  13) SMC Filter Kombinationen
-  14) Order Block Qualitäts-Analyse
-  15) FVG Hit Rate Analyse
-  16) Volatilitäts-Filter Optimierung
-  17) Multi-Timeframe Confirmation Impact
-  18) Drawdown Duration Analysis
-  19) Entry Timing Analyse
-
-   0) Alle Analysen nacheinander ausführen
-
-Auswahl (0-19):
-```
-
-### Analysen im Detail
-
-| Nr | Name | Was es zeigt |
+# titanbot – SMC-Raid
+
+**Kauft den Sell-Side-Liquidity-Raid im Discount**, aber nur, wenn echte Daten zeigen, dass Liquidität eingesammelt wurde.
+Alle 5 Minuten, 60 Coins, Bitget USDT-M, Papier/Echtgeld-Schalter wie beim jaegerbot.
+
+| SMC-Baustein | Messung (Binance-Daten, öffentlich) |
+|---|---|
+| Discount | Kurs ≥ 20 % unter dem 90-Tage-Hoch |
+| Sell-Side-Sweep | 15-min-Abverkauf z ≤ −4 (Rendite / Schwankung der letzten 30 Tage) |
+| Liquidität eingesammelt | Open Interest ≥ 3 % unter dem 6-h-Maximum (Stops und Liquidationen ausgelöst) |
+| Inducement | Anteil long positionierter Kleinanleger-Konten kleiner als vor 72 h |
+| Einstieg / Ausstieg | Long zur nächsten Minute nach Kerzenschluss, raus nach 24 h, kein Stop (Hebel 1) |
+| Größe | 6,25 % des Kontostands bei starkem Hebel-Abbau (OI ≤ −5 %), sonst 3,75 %; höchstens 20 gleichzeitig |
+
+## Warum diese Form (Forschung 21.11.2026, Claude + Codex)
+
+`botprojekte/forschung/2026-11-21-smc-neu` (Präregistrierungen, Ideen und Prüfberichte von Codex, Skripte):
+
+- **titanbot v1** (SMC-Kerzenmuster + Optuna je Coin) hatte keine Kante: Die „Gewinner“-Configs reproduzierten nicht. Der alte Code
+  liegt im Git-Tag `v1-smc-alt`.
+- **Runde 1:** 13 SMC-Ideen mit echten OI-/Taker-Daten (Sweeps gleicher Hochs/Tiefs, FVG, gefangene Ausbrecher, Funding, Paare)
+  → 0/13; auf 5m/≤24 h liegen sie brutto bei ≈ 0.
+- **Raid im Discount** (= kapbot-Kapitulationsregel) auf **30 nie benutzten Coins**: +1,28 %/Trade netto, p 0,0005,
+  29/30 Coins und jedes Jahr 2021–2026 positiv. Das ist die vierte unabhängige Bestätigung.
+- **SMC-Feinschliff** (Sweep+Rückeroberung, FVG-Limit, Ausstieg an Buy-Side-Liquidität, Wochen-Sweeps, früherer 1m-Einstieg) → alle
+  schlechter. Wer auf Bestätigung wartet, verpasst den Rebound.
+- **Größe nach OI-Abbau** (Codex) auf frischen Coins bestanden.
+
+Konto 12/2021–11/2026 (Bewertung alle 5 Minuten, 0,22 % Kosten + Funding):
+
+| | Rendite/Jahr | größter Rückgang |
+|---|---:|---:|
+| 30 frische Coins, Hebel 1 (diese Einstellung) | **32,4 %** | **−38,9 %** |
+| dieselben, doppelte Kosten | 26,1 % | −39,3 % |
+| Hebel 2 (Forschung) | ~50 % | ~−70 % |
+
+Die Rückgänge kommen von Crash-Tagen, an denen viele Coins gleichzeitig raiden. Gerade diese Raids sind im Mittel die besten
+(≥ 10 in 24 h: +3,8 %/Trade), sie laufen aber gemeinsam erst weiter nach unten.
+
+## Schalter (`settings.json`)
+
+| Schalter | Standard | Wirkung |
 |---|---|---|
-| 1 | Walk-Forward Lookback | Welcher `backtest_lookback_weeks`-Wert (1–8W) ist am robustesten? |
-| 2 | Fee Impact | Ab welcher Gebühr wird der Bot unrentabel? Break-Even-Fee |
-| 3 | Monte Carlo | 10.000 Trade-Shuffles → 5./95. Perzentil, Ruin-Risiko |
-| 4 | Bootstrap Test | Sind Win-Raten statistisch signifikant > 50% (Zufall)? |
-| 5 | RR-Ratio | Optimales Risk:Reward out-of-sample (1.0–4.0) |
-| 6 | ATR Multiplier | Optimaler Stop-Loss ATR-Faktor out-of-sample (0.5–3.0) |
-| 7 | SMC Window | Optimale `swingsLength` out-of-sample (10–50) |
-| 8 | Sensitivity | Tornado-Chart: welche Parameter machen das System fragil? |
-| 9 | Regime | Win-Rate pro Markt-Regime (TREND_UP/DOWN, RANGE, NEUTRAL) |
-| 10 | Tageszeit | Win-Rate pro Session (Asia/Europa/US) und Wochentag |
-| 11 | Korrelation | Korrelationsmatrix der Pairs → Portfolio mit min. Drawdown |
-| 12 | Kelly Sizing | Optimaler Risk% pro Trade (Full/Half-Kelly vs. Config-Wert) |
-| 13 | SMC Filter | Alle 8 Kombinationen der P/D × Sweep × Rejection-Filter |
-| 14 | OB Quality | `min_ob_quality` Sweep (0.0–0.5) → Qualität vs. Trade-Anzahl |
-| 15 | FVG Size | `min_fvg_size_pct` Sweep (0.02–0.5) → FVG-Filter-Optimum |
-| 16 | Vola Filter | ADX-Filter ON/OFF + Schwellwert-Sweep (15–35) |
-| 17 | MTF Filter | `use_mtf_filter` True vs. False: Qualität vs. Trade-Anzahl |
-| 18 | DD Duration | Wie lange dauern Drawdown-Phasen? Recovery-Zeit |
-| 19 | Entry Timing | Stunden-Heatmap (0–23h UTC × Wochentag) |
+| `echtgeld.aktiv` · `papier_startkapital` | **aus** · 200 | aus = Papierhandel mit echten Bitget-Kursen, Spread, Gebühren, Funding (Konto `data/papier/konto.json`, Telegram „📝 PAPIER“); an = echte Orders über `secret.json` → `titanbot` (Konto `data/echtgeld`). Je Lauf neu gelesen, Wechsel wird gemeldet, offene Positionen des anderen Modus schließen trotzdem regulär. `update.sh` behält deine Einstellung. |
+| `titanbot.aktiv` · `einsatz_oi_stark` · `einsatz_normal` · `hebel` · `max_offen` | an · 0,0625 · 0,0375 · 1 · 20 | aus = keine neuen Trades, offene laufen aus |
 
-### Zeitraum-Konfiguration
+**Kontogröße:** mindestens ~135 USDT. Sonst liegen normale Trades (3,75 %) unter Bitgets Mindestwert von 5 USDT und werden übersprungen.
 
-Alle Analysen nutzen automatisch `backtest_lookback_weeks` und `warmup_weeks` aus `settings.json`:
+**kapbot:** kapbot handelt dieselbe Regel auf 30 dieser Coins. Beide mit Echtgeld auf demselben Konto wären doppeltes Risiko,
+und die Positionen desselben Symbols würden sich mischen. Wenn beide laufen, dann auf getrennten Bitget-Unterkonten.
+
+## `secret.json` (nicht im Git)
 
 ```json
-"optimization_settings": {
-    "backtest_lookback_weeks": 2,
-    "warmup_weeks": 4
+{
+  "titanbot": [{"apiKey": "...", "secret": "...", "password": "..."}],
+  "telegram": {"bot_token": "...", "chat_id": "..."}
 }
 ```
+Für Papier reicht `telegram`. Ein leerer `apiKey` gilt als „kein Zugang“.
 
-- **`backtest_lookback_weeks`**: Wie viele Wochen zurück der Backtest geht (rollierende Fenster)
-- **`warmup_weeks`**: Extra-Wochen für SMC-Strukturaufbau (Order Blocks, FVGs) — diese Trades zählen nicht in der Statistik
+## Installation auf dem Mini-PC
 
-## 🔄 Auto-Optimizer Verwaltung
-Der Bot verfügt über einen automatischen Optimizer, der wöchentlich die besten Parameter für alle aktiven Strategien sucht. Die folgenden Befehle helfen beim manuellen Triggern, Debugging und Monitoring des Optimizers (angepasst für `titanbot`).
-
-> Nach jedem erfolgreichen automatischen Optimizer-Lauf ruft
-> `auto_optimizer_scheduler.py` automatisch `push_configs.sh` auf, damit
-> `settings.json::active_strategies` auf der VPS und im Git-Repo synchron bleiben.
-
-### Optimizer manuell triggern
-Um eine sofortige Optimierung zu starten (ignoriert das Zeitintervall):
-
-```bash
-# Direkt forcen (empfohlen)
-cd ~/titanbot && .venv/bin/python3 auto_optimizer_scheduler.py --force
-
-# Alternativ: Letzten Optimierungszeitpunkt löschen (erzwingt Neustart beim nächsten Master Runner Aufruf)
-rm ~/titanbot/data/cache/.last_optimization_run
-
-# Master Runner starten (prüft ob Optimierung fällig ist)
-cd ~/titanbot && .venv/bin/python3 master_runner.py
+```sh
+git clone https://github.com/Youra82/titanbot.git ~/botprojekte/titanbot && cd ~/botprojekte/titanbot
+./install.sh            # .venv, Dienst titanbot.timer (alle 5 min, 1 min nach Kerzenschluss)
+sudo systemctl start titanbot.service ; journalctl -u titanbot -n 40
 ```
-
-### Replot — Charts neu generieren (ohne Re-Optimierung)
-
-Das aktive Portfolio erneut simulieren und Equity-Chart + Trades-Excel via Telegram senden — ohne die komplette Optimierung neu durchzuführen:
-
-```bash
-cd ~/titanbot && .venv/bin/python3 run_portfolio_optimizer.py --replot
-```
-
-Optionale Parameter (werden sonst aus `settings.json` gelesen):
-```bash
-.venv/bin/python3 run_portfolio_optimizer.py --replot --capital 200 --start-date 2024-01-01 --end-date 2025-01-01
-```
-
-### Optimizer-Logs überwachen
-```bash
-# Optimizer-Log live mitverfolgen
-tail -f ~/titanbot/logs/optimizer_output.log
-
-# Letzte 50 Zeilen des Optimizer-Logs anzeigen
-tail -50 ~/titanbot/logs/optimizer_output.log
-```
-
-### Optimierungsergebnisse ansehen
-```bash
-# Beste gefundene Parameter anzeigen (erste 50 Zeilen)
-cat ~/titanbot/artifacts/results/optimization_results.json | head -50
-```
-
-### Optimizer-Prozess überwachen
-```bash
-# Prüfen ob Optimizer gerade läuft (aktualisiert jede Sekunde)
-watch -n 1 "ps aux | grep optimizer"
-```
-
-### Optimizer stoppen
-```bash
-# Alle Optimizer-Prozesse auf einmal stoppen
-pkill -f "auto_optimizer_scheduler" ; pkill -f "run_pipeline_automated" ; pkill -f "optimizer.py"
-
-# Prüfen ob alles gestoppt ist
-pgrep -fa "optimizer" && echo "Noch aktiv!" || echo "Alle gestoppt."
-
-# In-Progress-Marker aufräumen (sauberer Neustart danach)
-rm -f ~/titanbot/data/cache/.optimization_in_progress ~/titanbot/data/cache/.optimization_start_notified
-```
-
----
-
-## 📊 Chart-Simulation
-
-Generiert SMC-Charts mit allen Zonen (Order Blocks, FVGs, Liquiditätsniveaus) und simulierten Entry/SL/TP-Levels — **ohne echten Trade**. Sendet die Charts direkt per Telegram.
-
-```bash
-# Alle aktiven Strategien aus settings.json (LONG-Simulation)
-.venv/bin/python show_chart.py
-
-# Nur ein bestimmtes Symbol/Timeframe
-.venv/bin/python show_chart.py --symbol LTC/USDT:USDT --timeframe 6h
-
-# Als SHORT simulieren
-.venv/bin/python show_chart.py --symbol LTC/USDT:USDT --timeframe 6h --side sell
-```
-
-Die simulierten Trade-Levels werden aus dem aktuellen Close-Preis + ATR berechnet — identisch zur Live-Logik.
-
----
-
-## 📊 Monitoring & Status
-
-### Status-Dashboard
-
-```bash
-./show_status.sh
-```
-
-### Live-Position Tracking
-
-```bash
-./show_results.sh
-```
-
-### Log-Files
-
-```bash
-tail -f logs/cron.log
-tail -f logs/error.log
-tail -n 100 logs/titanbot_BTCUSDTUSDT_4h.log
-```
-
-
-
----
-
-## 🛠️ Wartung & Pflege
-
-### Logs ansehen
-
-```bash
-tail -f logs/cron.log
-tail -n 200 logs/cron.log
-grep -i "ERROR" logs/cron.log
-grep -i "POSITION" logs/cron.log
-```
-
-### Bot aktualisieren
-
-```bash
-chmod +x update.sh
-bash ./update.sh
-```
-
-### 🔧 Config-Management
-
-#### Vollständiger Reset & Neuoptimierung (empfohlen)
-
-Wenn sich der Optimizer-Code oder die Trading-Logik grundlegend geändert hat, müssen alle alten Konfigurationen und die Optuna-Datenbank gelöscht werden, bevor eine neue Pipeline gestartet wird:
-
-```bash
-# 1. Alles zurücksetzen (Configs + Optuna-DB + Optimizer-History)
-./run_pipeline.sh cleanup
-
-# 2. Alten Autopilot-Run löschen (verhindert dass der Bot alte Strategien startet)
-rm -f artifacts/results/last_optimizer_run.json
-
-# 3. Neue Optimierung starten
-./run_pipeline.sh
-```
-
-> ⚠️ Die Optuna-Datenbank (`artifacts/db/optuna_studies_smc.db`) **muss** gelöscht werden wenn sich Parameter-Namen im Code geändert haben — sonst schlägt die Optimierung mit einem `KeyError` fehl.
-
-#### Konfigurationsdateien manuell löschen
-
-```bash
-rm -f src/titanbot/strategy/configs/config_*.json
-```
-
-#### Löschung verifizieren
-
-```bash
-ls -la src/titanbot/strategy/configs/config_*.json 2>&1 || echo "✅ Alle Konfigurationsdateien wurden gelöscht"
-```
-
-
-
-### Tests ausführen
-
-```bash
-./run_tests.sh
-pytest tests/test_strategy.py -v
-pytest tests/test_smc_detector.py -v
-pytest --cov=src tests/
-```
-
----
-
-## 📂 Projekt-Struktur
-
-```
-titanbot/
-├── src/
-│   └── titanbot/
-│       ├── strategy/          # Trading-Logik
-│       │   ├── run.py
-│       │   ├── smc_detector.py
-│       │   └── momentum_scorer.py
-│       ├── backtest/          # Backtesting
-│       │   └── backtester.py
-│       └── utils/             # Hilfsfunktionen
-│           ├── exchange.py
-│           ├── telegram.py
-│           └── position_manager.py
-├── scripts/
-├── tests/
-├── data/
-├── logs/
-├── artifacts/
-├── master_runner.py
-├── settings.json
-├── secret.json
-└── requirements.txt
-```
-
----
-
-## ⚠️ Wichtige Hinweise
-
-### Risiko-Disclaimer
-
-⚠️ **Trading mit Kryptowährungen birgt erhebliche Risiken!**
-
-- Nur Kapital einsetzen, dessen Verlust Sie verkraften können
-- Keine Garantie für Gewinne
-- Vergangene Performance ist kein Indikator
-- Testen Sie mit Demo-Accounts
-- Starten Sie mit kleinen Beträgen
-- Multi-Position-Management erhöht Risiko - `max_open_positions` entsprechend setzen
-
-### Security Best Practices
-
-- 🔐 Keine API-Keys mit Withdrawal-Rechten
-- 🔐 IP-Whitelist aktivieren
-- 🔐 2FA verwenden
-- 🔐 `secret.json` niemals committen
-- 🔐 Regelmäßige Updates durchführen
-- 🔐 Position-Manager-Logs überwachen
-
-### Performance-Tipps
-
-- 💡 Starten Sie mit max_open_positions = 1
-- 💡 Längere Timeframes für stabilere Signale
-- 💡 Monitoren Sie regelmäßig die Position-Performance
-- 💡 Parameter regelmäßig optimieren
-- 💡 Dynamische SL-Anpassung überwachen
-- 💡 Position-Sizing angemessen konfigurieren
-
----
-
-## 🤝 Support & Community
-
-### Probleme melden
-
-1. Prüfen Sie die Logs
-2. Führen Sie Tests aus
-3. Öffnen Sie ein Issue
-
-### Updates
-
-```bash
-git fetch origin
-./update.sh
-```
-
-### Configs pushen
-
-```bash
-chmod +x push_configs.sh
-./push_configs.sh
-```
-
-Staged automatisch alle Configs + `settings.json`, holt Remote-Stand via Rebase und pusht — ohne manuelle git-Befehle.
-
-#### Merge-Konflikt beim Pushen lösen
-
-Falls `push_configs.sh` mit Rebase-Konflikten abbricht (z.B. weil Configs auf dem Remote gelöscht wurden), die lokalen Configs behalten und durchsetzen:
-
-```bash
-git checkout --theirs src/titanbot/strategy/configs/
-git add src/titanbot/strategy/configs/
-git rebase --continue
-git push
-```
-
-- `--theirs` übernimmt beim Rebase die lokale (VPS) Version der Configs
-- Danach läuft der Rebase durch und der Push funktioniert normal
-
----
-
-## 📜 Lizenz
-
-Dieses Projekt ist lizenziert unter der MIT License.
-
----
-
-## Coin & Timeframe Empfehlungen
-
-TitanBot trifft keine feste Coin- oder Timeframe-Bewertung. `run_pipeline.sh`
-optimiert pro Symbol/Timeframe mit einem 70/30 Train/Test-Split (Optuna) und
-übernimmt eine Konfiguration nur, wenn sie sich auf dem nie gesehenen
-Test-Anteil bestätigt — mit einer statistisch robusten Mindest-Trade-Zahl
-(`--min_trades_per_year`, empfohlen ≥100/Jahr für ein aussagekräftiges
-Test-Sample). Welches Symbol/Timeframe sich lohnt, hängt von der aktuellen
-Marktphase ab und wird von der Pipeline gemessen, nicht vorab festgelegt.
-
-Beispielhafte Test-Ergebnisse (70/30-Split, ≥29 Test-Trades im 30%-Fenster,
-letztes Jahr):
-
-![Optimizer-Ergebnisse pro Paar](docs/robust_optimizer_findings.png)
-
-| Paar | Test-PnL | Test-Trades |
-|---|---|---|
-| ADA/1h | -4.6% | 29+ |
-| XRP/1h | +2.1% | 29+ |
-| **ARB/30m** | **+8.3%** | 29+ |
-| **AVAX/1h** | **+36.3%** | 29+ |
-| SOL/30m | +11.5% | 29+ |
-
-Maßgeblich ist nicht der Coin-Name, sondern die Test-Trades-Zahl (Stichprobe
-groß genug für eine belastbare Aussage?) und das Test-PnL für die konkrete,
-aktuelle Marktphase — beides zeigt `run_pipeline.sh` pro Lauf direkt an.
-
----
-
-## 🙏 Credits
-
-Entwickelt mit:
-- [CCXT](https://github.com/ccxt/ccxt)
-- [Optuna](https://optuna.org/)
-- [Pandas](https://pandas.pydata.org/)
-- [TA-Lib](https://github.com/mrjbq7/ta-lib)
-
----
-
-<div align="center">
-
-**Made with ❤️ by the TitanBot Team**
-
-⭐ Star uns auf GitHub wenn dir dieses Projekt gefällt!
-
-[🔝 Nach oben](#-titanbot---high-performance-trading-system)
-
-</div>
+Der erste Lauf lädt 90 Tage 5m-Kerzen für 60 Coins nach (≈ 15–20 min, ≈ 25 MB in `data/`), danach dauert jeder Lauf wenige Sekunden.
+Bericht: `.venv/bin/python -m titanbot bericht` · Update: `./update.sh`.
+
+## Echtgeld-Absicherung (Codex-Review 21.11.2026, zwei Prüfrunden)
+
+- **Kein Doppelkauf:** Jede Order hat eine feste clientOid (aus dem Signal bzw. fortlaufend), die zusammen mit der reservierten Margin **vor**
+  dem Senden gespeichert wird. Nach Netzfehler oder Absturz schlägt der nächste Lauf genau diese Order nach und bucht die gefüllte Menge.
+  Eine unauffindbare Order wird erst nach 15 min, 3 leeren Abfragen und ohne unerklärte Börsenmenge freigegeben, sonst kommt eine Warnung.
+- **Keine falsche Liquidation:** Zuerst wird die eigene Close-Order nachgeschlagen. Fehlt Menge ohne eigenen Close, gilt das erst nach
+  10 min als Liquidation. Bereits realisierte Teil-Closes zählen dabei mit.
+- **Gebucht wird die tatsächliche Füllung** (Menge, Kurs, Gebühren, Funding). Order-IDs werden nur einmal gebucht, und Vormerkungen zählen zu `max_offen`.
+- **Fehler isoliert:** Ein Fehler im Kontoabgleich oder bei einem Ausstieg blockiert die übrigen Ausstiege nicht. Ohne gesicherte
+  Echtgeld-Initialisierung gibt es keine Einstiege, und ohne Zugang laufen die Papier-Ausstiege weiter.
+- **Fremde Positionen** auf demselben Bitget-Konto werden einmal am Tag gemeldet. Trotzdem gilt: **eigenes Unterkonto je Bot.**
+- `update.sh` wartet auf einen laufenden Takt und pausiert den Timer bis zum Ende des Updates.
+- Bewusste Grenzen: Das Konto ist ein Buchwert (offene Gewinne zählen erst beim Ausstieg), und Funding wird aus den Bitget-Sätzen des
+  Haltefensters berechnet. Eine aggregierte Symbolposition, die mit einem anderen Bot geteilt wird, ist nicht sauber zuzuordnen.
+
+## Cockpit
+
+`cockpit.json` meldet das Papierkonto (`data/papier/konto.json`, Format wie evobot, Takt 5 min, ohne SL).
+
+## Prüfungen
+
+- `PYTHONPATH=src python -m unittest discover -s tests`: offline, keine Netz- oder Order-Aufrufe
+- `python tools/parity_signale.py`: Live-Regel gegen alle 4.208 Forschungssignale der 60 Coins

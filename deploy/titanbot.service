@@ -1,0 +1,19 @@
+[Unit]
+Description=titanbot (SMC-Raid: Sell-Side-Raid im Discount kaufen, alle 5 Minuten, Papier/Echtgeld laut settings.json)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# als der Benutzer, der installiert hat (nicht root): Daten bleiben für Cockpit und Bedienung lesbar
+User=@USER@
+Type=oneshot
+WorkingDirectory=@ROOT@
+Environment=TITANBOT_ROOT=@ROOT@
+ExecStart=@ROOT@/.venv/bin/python -m titanbot run --data @ROOT@/data --telegram
+UMask=0077
+NoNewPrivileges=true
+Nice=10
+MemoryMax=192M
+MemorySwapMax=0
+# erster Lauf lädt 90 Tage 5m-Kerzen für 60 Coins nach (≈ 15–20 min)
+TimeoutStartSec=1800

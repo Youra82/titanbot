@@ -1,32 +1,10 @@
-# Datenbanken und temporäre Dateien ausschließen
-artifacts/db/optuna_studies_smc.db
-artifacts/db/*.db
-
-# Allgemeine Ausschlüsse
-.venv/
 __pycache__/
-*.pyc
-
-# Logs
+*.py[cod]
+*.egg-info/
+build/
+.venv/
+data/
+secret.json
+_aus_evobot/
 logs/
 *.log
-
-# CSV-Daten
-data/cache/*.csv
-data/cache_fine/*.csv
-data/cache/.optimization_status.json
-*.csv
-
-# Laufzeit-Artefakte (Optimizer-/Screener-Zustand, kein Quellcode)
-artifacts/results/*.json
-
-# Claude Code local settings
-.claude/
-
-# Local trade exports / livebot data
-livebot/
-*.xls
-*.xlsx
-
-# API-Keys / Secrets — niemals committen
-secret.json

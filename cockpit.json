@@ -1,0 +1,7 @@
+{
+  "papier": "data/papier/konto.json",
+  "format": "evo",
+  "takt_min": 5,
+  "ohne_sl": true,
+  "echtgeld_standard": false
+}
