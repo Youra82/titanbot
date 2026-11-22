@@ -75,7 +75,25 @@ die Größenregel wurde auf ihnen gewählt. Die 30 frischen Coins zeigen dasselb
 | `echtgeld.aktiv` · `papier_startkapital` | **aus** · 200 | aus = Papierhandel mit echten Bitget-Kursen, Spread, Gebühren, Funding (Konto `data/papier/konto.json`, Telegram „📝 PAPIER“); an = echte Orders über `secret.json` → `titanbot` (Konto `data/echtgeld`). Je Lauf neu gelesen, Wechsel wird gemeldet, offene Positionen des anderen Modus schließen trotzdem regulär. `update.sh` behält deine Einstellung. |
 | `titanbot.aktiv` · `einsatz_oi_stark` · `einsatz_normal` · `hebel` · `max_offen` | an · 0,0625 · 0,0375 · 1 · 20 | aus = keine neuen Trades, offene laufen aus |
 
-**Kontogröße:** mindestens ~135 USDT. Sonst liegen normale Trades (3,75 %) unter Bitgets Mindestwert von 5 USDT und werden übersprungen.
+## Kontogröße
+
+Die Rendite in Prozent hängt nicht vom Kontostand ab. Das Konto muss nur groß genug sein, dass Bitget jede Order annimmt,
+und klein genug, dass die eigenen Orders im Raid den Kurs nicht bewegen. Gerechnet mit allen 3.670 Nachspiel-Trades und Bitgets
+Mindestgrößen (Stand 22.11.2026):
+
+| Start | übersprungene Trades | vom Nachspiel-Gewinn | Hinweis |
+|---|---:|---:|---|
+| unter ~135 USDT | viele | – | normale Trades (3,75 %) liegen unter Bitgets Mindestwert von 5 USDT |
+| **200 USDT** | 1,6 % | **98 %** | ab und zu fallen ETH, AAVE, UNI, LINK oder XMR weg (kleinste Order größer als der Einsatz) |
+| 300 USDT | 0,4 % | 99 % | nur noch einzelne ETH-Trades |
+| **ab ~460 USDT** | 0 % | 99 % | alle 60 Coins handelbar |
+| **~1.000 USDT** | 0 % | 99 % | **optimal:** alle Coins bleiben handelbar, auch nach −40 % Rückgang |
+| bis ~25.000 USDT | 0 % | 99 % | Positionen bleiben klein gegenüber dem Markt |
+| darüber | – | – | in dünnen Coins (IOST, BAT, RVN, COTI, HOT) wird die eigene Order spürbar, Ein- und Ausstieg werden teurer |
+
+Obergrenze aus dem echten Binance-Volumen der Einstiegskerzen: Bis ~70.000 USDT wäre eine Position bei 75 % der Trades höchstens 1 %
+des 5-Minuten-Volumens, seit 2025 bis ~38.000 USDT. Bitget hat weniger Volumen, deshalb ~25.000 USDT als sichere Grenze.
+Die Mindestgrößen hängen am Kurs: Steigt z. B. ETH stark, steigt auch die Untergrenze.
 
 **kapbot:** kapbot handelt dieselbe Regel auf 30 dieser Coins. Beide mit Echtgeld auf demselben Konto wären doppeltes Risiko,
 und die Positionen desselben Symbols würden sich mischen. Wenn beide laufen, dann auf getrennten Bitget-Unterkonten.
@@ -92,13 +110,47 @@ Für Papier reicht `telegram`. Ein leerer `apiKey` gilt als „kein Zugang“.
 
 ## Installation auf dem Mini-PC
 
+Die Bots liegen auf dem Mini-PC direkt im Home-Ordner (`~/titanbot`, `~/kapbot` …). Das Repo ist öffentlich, `git clone` braucht kein Login.
+
 ```sh
-git clone https://github.com/Youra82/titanbot.git ~/botprojekte/titanbot && cd ~/botprojekte/titanbot
+git clone https://github.com/Youra82/titanbot.git ~/titanbot && cd ~/titanbot
+# Papierbetrieb: nur Telegram nötig, z. B. aus einem anderen Bot übernehmen (keine Bitget-Schlüssel)
+python3 -c "import json; t=json.load(open('$HOME/jaegerbot/secret.json'))['telegram']; json.dump({'telegram': t}, open('secret.json','w'), indent=1)"
 ./install.sh            # .venv, Dienst titanbot.timer (alle 5 min, 1 min nach Kerzenschluss)
-sudo systemctl start titanbot.service ; journalctl -u titanbot -n 40
+sudo systemctl start titanbot.service ; journalctl -u titanbot -n 20 --no-pager
 ```
-Der erste Lauf lädt 90 Tage 5m-Kerzen für 60 Coins nach (≈ 15–20 min, ≈ 25 MB in `data/`), danach dauert jeder Lauf wenige Sekunden.
-Bericht: `.venv/bin/python -m titanbot bericht` · Update: `./update.sh`.
+
+Der erste Lauf lädt 90 Tage 5m-Kerzen für 60 Coins nach (≈ 25 MB in `data/`). Auf dem Mini-PC dauerte er 28 Minuten (Zeitlimit des
+Dienstes 30 Minuten), danach braucht jeder Lauf ~20 Sekunden und ~2 Sekunden Rechenzeit. Fertig ist ein Lauf, wenn
+`systemctl is-active titanbot.service` die Antwort `inactive` gibt.
+
+| Aufgabe | Befehl |
+|---|---|
+| Update | `cd ~/titanbot && ./update.sh` (wartet auf einen laufenden Takt, behält `secret.json` und den Papier/Echtgeld-Schalter) |
+| Laufen die Takte? | `journalctl -u titanbot -n 6 --no-pager` (zwischen „Starting“ und „Finished“ nur Sekunden) |
+| Kontobericht | `cd ~/titanbot && .venv/bin/python -m titanbot bericht` |
+| Timer | `systemctl list-timers \| grep titanbot` |
+
+Wer von einem alten titanbot (v1) kommt: Das alte `update.sh` holt zwar den neuen Code, richtet aber den Dienst nicht ein. Dann einmalig
+`cd ~/titanbot && ./install.sh`, ab da übernimmt das neue `update.sh` alles.
+
+## Auf Echtgeld umstellen
+
+1. Auf Bitget ein **eigenes Unterkonto** für titanbot mit USDT im USDT-M-Futures-Konto (Kontogröße siehe oben), keine offenen Positionen.
+   API-Schlüssel mit Futures-Handel, ohne Auszahlungsrecht; bei IP-Bindung die Adresse des Mini-PC freigeben.
+2. Zugangsdaten in `secret.json` → `titanbot` prüfen (zeigt nur ja/nein, keine Werte):
+   ```sh
+   python3 -c "import json;c=json.load(open('$HOME/titanbot/secret.json'))['titanbot'][0];print({k:bool(c.get(k)) for k in ('apiKey','secret','password')})"
+   ```
+   Alle drei müssen `True` sein (`password` = Passphrase des Bitget-API-Schlüssels).
+3. Prüfen, dass kein anderer laufender Live-Bot denselben Schlüssel nutzt. Teilen sich zwei Bots ein Konto, vermischen sich Positionen und Margin.
+4. Umschalten:
+   ```sh
+   cd ~/titanbot && python3 -c "import json;p='settings.json';s=json.load(open(p,encoding='utf-8'));s['echtgeld']['aktiv']=True;json.dump(s,open(p,'w',encoding='utf-8'),indent=2,ensure_ascii=False);print('Echtgeld an')"
+   ```
+   Beim nächsten Takt meldet Telegram „titanbot umgeschaltet auf ECHTGELD“. Startkapital ist das verfügbare Bitget-Guthaben, der Bot stellt
+   das Konto auf Hedge-Modus, jede Position bekommt isolierte Margin mit Hebel 1. Zurück auf Papier: derselbe Befehl mit `False` statt `True`. Offene
+   Echtgeld-Positionen werden trotzdem nach 24 h regulär geschlossen.
 
 ## Echtgeld-Absicherung (Codex-Review 21.11.2026, zwei Prüfrunden)
 
@@ -117,7 +169,10 @@ Bericht: `.venv/bin/python -m titanbot bericht` · Update: `./update.sh`.
 
 ## Cockpit
 
-`cockpit.json` meldet das Papierkonto (`data/papier/konto.json`, Format wie evobot, Takt 5 min, ohne SL).
+`cockpit.json` meldet das Papierkonto (`data/papier/konto.json`, Format wie evobot, Takt 5 min, ohne SL). Das Cockpit erkennt titanbot
+darüber automatisch, ab Cockpit-Stand `caa3c6e` (20.11.2026; prüfen mit `cd ~/cockpit && git log --oneline -1`, sonst `./update.sh`).
+Neu erkannte Bots starten in der App **ausgeblendet** und müssen einmal eingeblendet werden. Im Echtgeldmodus zeigt das Cockpit das Bitget-Konto
+hinter `secret.json` → `titanbot`.
 
 ## Prüfungen
 
